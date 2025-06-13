@@ -1,0 +1,25 @@
+---
+- name: Deploy Kubernetes
+  hosts: master
+  tasks:
+    - name: Create CouchDB Secret
+      ansible.builtin.shell: |
+        kubectl create secret generic secret-db-couchdb \
+          --from-literal=password={{ lookup('env', 'COUCHDB_PASSWORD') }} \
+          --namespace {{ lookup('env', 'NAMESPACE') }} \
+          --dry-run=client -o yaml | kubectl apply -f -
+      environment:
+        COUCHDB_PASSWORD: "{{ lookup('env', 'COUCHDB_PASSWORD') }}"
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Deploy CouchDB Deployment
+      ansible.builtin.shell: |
+        kubectl apply -n {{ lookup('env', 'NAMESPACE') }} -f k8s/deployment.yaml
+      args:
+        chdir: "{{ playbook_dir }}/.."
+
+    - name: Deploy CouchDB Service
+      ansible.builtin.shell: |
+        kubectl apply -n {{ lookup('env', 'NAMESPACE') }} -f k8s/service.yaml
+      args:
+        chdir: "{{ playbook_dir }}/.."

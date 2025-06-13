@@ -50,17 +50,24 @@ jobs:
           echo "namespace=eightbitsaxlounge-dev" >> $GITHUB_ENV
         fi
 
-    - name: Create CouchDB Secret
+    - name: Deploy CouchDB via Ansible
+      working-directory: ./db
       env:
         COUCHDB_PASSWORD: ${{ secrets.DB_COUCHDB_PASSWORD }}
-      run: |
-        kubectl create secret generic secret-db-couchdb \
-          --from-literal=password=$COUCHDB_PASSWORD \
-          --namespace ${{ env.namespace }} \
-          --dry-run=client -o yaml | kubectl apply -f -
+        NAMESPACE: ${{ env.namespace }}
+      run: make deploy-couchdb
+    
+    # - name: Create CouchDB Secret
+    #   env:
+    #     COUCHDB_PASSWORD: ${{ secrets.DB_COUCHDB_PASSWORD }}
+    #   run: |
+    #     kubectl create secret generic secret-db-couchdb \
+    #       --from-literal=password=$COUCHDB_PASSWORD \
+    #       --namespace ${{ env.namespace }} \
+    #       --dry-run=client -o yaml | kubectl apply -f -
 
-    - name: Deploy CouchDB Resources
-      working-directory: ./db
-      run: |
-        kubectl apply -n ${{ env.namespace }} -f k8s/deployment.yaml
-        kubectl apply -n ${{ env.namespace }} -f k8s/service.yaml
+    # - name: Deploy CouchDB Resources
+    #   working-directory: ./db
+    #   run: |
+    #     kubectl apply -n ${{ env.namespace }} -f k8s/deployment.yaml
+    #     kubectl apply -n ${{ env.namespace }} -f k8s/service.yaml
