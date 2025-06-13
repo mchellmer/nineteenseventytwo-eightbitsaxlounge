@@ -36,7 +36,7 @@
 
     - name: Deploy CouchDB Service
       ansible.builtin.shell: |
-        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/service.yaml"
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/service.yaml
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 
