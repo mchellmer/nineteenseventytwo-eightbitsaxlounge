@@ -16,6 +16,10 @@ The resources in this folder are designed to:
   - `deployment.yaml`: Defines the CouchDB deployment.
   - `service.yaml`: Exposes the CouchDB deployment as a service within the cluster.
 - **`.github/workflows/db-release.yaml`**: A GitHub Actions workflow to automate the build, push, and deployment process.
+  - triggers on updates to `version.txt`
+  - merging to main deploys to namespace 'eightbitsaxlounge-prod' else 'eightbitsaxlounge-dev'
+- **`db-couchdb.yaml`**: An Ansible playbook for deployment db components to cluster
+- **`Makefile`**: Makefile defining steps to deploy db components
 
 ## Prerequisites
 

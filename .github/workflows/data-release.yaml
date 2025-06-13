@@ -1,16 +1,17 @@
-name: DB Release
+name: Data Release
 
 on:
   workflow_dispatch:
   push:
     branches:
       - datainit
+      - main
     paths:
-      - 'db/version.txt' 
+      - 'data/version.txt'
 
 jobs:
   build-and-push:
-    name: Build and Push CouchDB Image
+    name: Build and Push Data Image
     runs-on: self-hosted
     permissions:
       packages: write
@@ -26,15 +27,13 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build and Push Docker Image
-      working-directory: ./db
-      env:
-        COUCHDB_PASSWORD: ${{ secrets.DB_COUCHDB_PASSWORD }}
+      working-directory: ./data
       run: |
-        docker build -t ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb:latest .
-        docker push ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb:latest
+        docker build -t ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb-api:latest .
+        docker push ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb-api:latest
 
   deploy:
-    name: Deploy CouchDB to Kubernetes
+    name: Deploy Data API to Kubernetes
     needs: build-and-push
     runs-on: self-hosted
     steps:
@@ -51,8 +50,7 @@ jobs:
         fi
 
     - name: Deploy CouchDB via Ansible
-      working-directory: ./db
+      working-directory: ./data
       env:
-        COUCHDB_PASSWORD: ${{ secrets.DB_COUCHDB_PASSWORD }}
         NAMESPACE: ${{ env.namespace }}
-      run: make deploy-couchdb
+      run: make deploy-data-api

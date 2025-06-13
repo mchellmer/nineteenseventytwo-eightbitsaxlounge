@@ -9,10 +9,96 @@ import (
 	"os"
 )
 
-var couchURL = os.Getenv("COUCHDB_URL") // e.g. http://couchdb:5984/dbname
+var couchEndpoint = os.Getenv("COUCHDB_ENDPOINT")
+var couchUsername = os.Getenv("COUCHDB_USER")
+var couchPassword = os.Getenv("COUCHDB_PASSWORD")
+var couchURL = fmt.Sprintf("http://%s:%s@%s", couchUsername, couchPassword, couchEndpoint)
 
-func GetFromCouch(id string) (map[string]interface{}, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/%s", couchURL, id))
+func CreateDbHandler(dbName string) error {
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/%s", couchURL, dbName), nil)
+	if err != nil {
+		return fmt.Errorf("failed to create PUT request: %w", err)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send PUT request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusPreconditionFailed {
+		// 412 Precondition Failed means the DB already exists
+		body, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("failed to create database, status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+func CreateDocHandler(dbname string, doc map[string]interface{}) error {
+	b, err := json.Marshal(doc)
+	if err != nil {
+		return fmt.Errorf("failed to marshal document: %w", err)
+	}
+
+	dbURL := fmt.Sprintf("%s/%s", couchURL, dbname)
+
+	resp, err := http.Post(dbURL, "application/json", bytes.NewReader(b))
+	if err != nil {
+		return fmt.Errorf("failed to send POST request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("POST request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+func DeleteDocHandler(dbname string, id string) error {
+	// Step 1: Retrieve the document to get its _rev
+	doc, err := GetDocHandler(dbname, id)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve document for deletion: %w", err)
+	}
+
+	rev, ok := doc["_rev"].(string)
+	if !ok {
+		return fmt.Errorf("document does not contain a valid _rev field")
+	}
+
+	dbUrl := fmt.Sprintf("%s/%s", couchURL, dbname)
+
+	// Step 2: Construct the DELETE request URL with the _rev query parameter
+	url := fmt.Sprintf("%s/%s?rev=%s", dbUrl, id, rev)
+
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create DELETE request: %w", err)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send DELETE request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("DELETE request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+func GetDocHandler(dbname string, id string) (map[string]interface{}, error) {
+	dbURL := fmt.Sprintf("%s/%s", couchURL, dbname)
+
+	resp, err := http.Get(fmt.Sprintf("%s/%s", dbURL, id))
 	if err != nil {
 		return nil, fmt.Errorf("failed to send GET request: %w", err)
 	}
@@ -30,33 +116,15 @@ func GetFromCouch(id string) (map[string]interface{}, error) {
 	return result, nil
 }
 
-func SaveToCouch(doc map[string]interface{}) error {
+func UpdateDocHandler(dbname string, id string, doc map[string]interface{}) error {
 	b, err := json.Marshal(doc)
 	if err != nil {
 		return fmt.Errorf("failed to marshal document: %w", err)
 	}
 
-	resp, err := http.Post(couchURL, "application/json", bytes.NewReader(b))
-	if err != nil {
-		return fmt.Errorf("failed to send POST request: %w", err)
-	}
-	defer resp.Body.Close()
+	dbURL := fmt.Sprintf("%s/%s", couchURL, dbname)
 
-	if resp.StatusCode != http.StatusCreated {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("POST request failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	return nil
-}
-
-func UpdateInCouch(id string, doc map[string]interface{}) error {
-	b, err := json.Marshal(doc)
-	if err != nil {
-		return fmt.Errorf("failed to marshal document: %w", err)
-	}
-
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/%s", couchURL, id), bytes.NewReader(b))
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/%s", dbURL, id), bytes.NewReader(b))
 	if err != nil {
 		return fmt.Errorf("failed to create PUT request: %w", err)
 	}
@@ -72,41 +140,6 @@ func UpdateInCouch(id string, doc map[string]interface{}) error {
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return fmt.Errorf("PUT request failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	return nil
-}
-
-func DeleteFromCouch(id string) error {
-	// Step 1: Retrieve the document to get its _rev
-	doc, err := GetFromCouch(id)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve document for deletion: %w", err)
-	}
-
-	rev, ok := doc["_rev"].(string)
-	if !ok {
-		return fmt.Errorf("document does not contain a valid _rev field")
-	}
-
-	// Step 2: Construct the DELETE request URL with the _rev query parameter
-	url := fmt.Sprintf("%s/%s?rev=%s", couchURL, id, rev)
-
-	req, err := http.NewRequest(http.MethodDelete, url, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create DELETE request: %w", err)
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to send DELETE request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("DELETE request failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
 	return nil

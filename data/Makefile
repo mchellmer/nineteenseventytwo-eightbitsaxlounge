@@ -1,3 +1,6 @@
+deploy-data-api:
+	ansible-playbook data-go-couchdb.yaml
+
 docker-build:
 	docker build -t eightbitsaxlounge-data .
 
