@@ -1,2 +1,2 @@
 deploy-couchdb:
-	ansible-playbook couchdb.yaml
+	ansible-playbook db-couchdb.yaml
