@@ -11,7 +11,9 @@ import (
 
 var httpClient = http.DefaultClient
 
-func GetDoc(dbname string, id string) (map[string]interface{}, error) {
+type ProdCouchService struct{}
+
+func (s *ProdCouchService) GetDoc(dbname string, id string) (map[string]interface{}, error) {
 	docURL := fmt.Sprintf("%s/%s/%s", couchURL(), dbname, id)
 	resp, err := httpClient.Get(fmt.Sprintf("%s/%s", docURL, id))
 	if err != nil {
@@ -31,7 +33,7 @@ func GetDoc(dbname string, id string) (map[string]interface{}, error) {
 	return result, nil
 }
 
-func CreateDoc(dbname string, doc map[string]interface{}) error {
+func (s *ProdCouchService) CreateDoc(dbname string, doc map[string]interface{}) error {
 	b, err := json.Marshal(doc)
 	if err != nil {
 		return fmt.Errorf("failed to marshal document: %w", err)
@@ -59,7 +61,7 @@ func CreateDoc(dbname string, doc map[string]interface{}) error {
 	return nil
 }
 
-func UpdateDoc(dbname string, id string, doc map[string]interface{}) error {
+func (s *ProdCouchService) UpdateDoc(dbname string, id string, doc map[string]interface{}) error {
 	b, err := json.Marshal(doc)
 	if err != nil {
 		return fmt.Errorf("failed to marshal document: %w", err)
@@ -87,8 +89,8 @@ func UpdateDoc(dbname string, id string, doc map[string]interface{}) error {
 	return nil
 }
 
-func DeleteDoc(dbname string, id string) error {
-	doc, err := GetDoc(dbname, id)
+func (s *ProdCouchService) DeleteDoc(dbname string, id string) error {
+	doc, err := s.GetDoc(dbname, id)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve document for deletion: %w", err)
 	}
@@ -121,7 +123,7 @@ func DeleteDoc(dbname string, id string) error {
 	return nil
 }
 
-func CreateDb(dbName string) error {
+func (s *ProdCouchService) CreateDb(dbName string) error {
 	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/%s", couchURL(), dbName), nil)
 	if err != nil {
 		return fmt.Errorf("failed to create PUT request: %w", err)

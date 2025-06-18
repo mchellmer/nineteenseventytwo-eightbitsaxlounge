@@ -23,7 +23,10 @@ func setMockClient(resp *http.Response, err error) {
 	}
 }
 
-func TestGetFromCouch_Success(t *testing.T) {
+// Use the real service struct for tests
+var svc = &ProdCouchService{}
+
+func TestGetDoc_Success(t *testing.T) {
 	body := io.NopCloser(bytes.NewReader([]byte(`{"_id":"123","foo":"bar"}`)))
 	resp := &http.Response{
 		StatusCode: 200,
@@ -31,7 +34,7 @@ func TestGetFromCouch_Success(t *testing.T) {
 	}
 	setMockClient(resp, nil)
 
-	doc, err := GetDoc("testdb", "123")
+	doc, err := svc.GetDoc("testdb", "123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -40,7 +43,7 @@ func TestGetFromCouch_Success(t *testing.T) {
 	}
 }
 
-func TestSaveToCouch_Success(t *testing.T) {
+func TestCreateDoc_Success(t *testing.T) {
 	body := io.NopCloser(bytes.NewReader([]byte(`{"ok":true,"id":"123","rev":"1-xyz"}`)))
 	resp := &http.Response{
 		StatusCode: 201,
@@ -49,13 +52,13 @@ func TestSaveToCouch_Success(t *testing.T) {
 	setMockClient(resp, nil)
 
 	doc := map[string]interface{}{"foo": "bar"}
-	err := CreateDoc("testdb", doc)
+	err := svc.CreateDoc("testdb", doc)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestUpdateInCouch_Success(t *testing.T) {
+func TestUpdateDoc_Success(t *testing.T) {
 	body := io.NopCloser(bytes.NewReader([]byte(`{"ok":true,"id":"123","rev":"2-xyz"}`)))
 	resp := &http.Response{
 		StatusCode: 200,
@@ -64,14 +67,14 @@ func TestUpdateInCouch_Success(t *testing.T) {
 	setMockClient(resp, nil)
 
 	doc := map[string]interface{}{"_id": "123", "_rev": "1-xyz", "foo": "baz"}
-	err := UpdateDoc("testdb", "123", doc)
+	err := svc.UpdateDoc("testdb", "123", doc)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestDeleteFromCouch_Success(t *testing.T) {
-	// First, mock GetFromCouch to return a doc with _rev
+func TestDeleteDoc_Success(t *testing.T) {
+	// First, mock GetDoc to return a doc with _rev
 	getBody := io.NopCloser(bytes.NewReader([]byte(`{"_id":"123","_rev":"1-xyz"}`)))
 	getResp := &http.Response{
 		StatusCode: 200,
@@ -98,7 +101,7 @@ func TestDeleteFromCouch_Success(t *testing.T) {
 		}),
 	}
 
-	err := DeleteDoc("testdb", "123")
+	err := svc.DeleteDoc("testdb", "123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -112,13 +115,13 @@ func TestCreateDb_Success(t *testing.T) {
 	}
 	setMockClient(resp, nil)
 
-	err := CreateDb("testdb")
+	err := svc.CreateDb("mydb")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-// Helper to allow custom logic in RoundTrip for DeleteFromCouch
+// Helper to allow custom logic in RoundTrip for DeleteDoc
 type roundTripperFunc func(req *http.Request) (*http.Response, error)
 
 func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
