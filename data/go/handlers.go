@@ -1,4 +1,4 @@
-package main
+package gofiles
 
 import (
 	"encoding/json"
@@ -7,10 +7,10 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func GetDoc(w http.ResponseWriter, r *http.Request) {
+func GetDocHandler(w http.ResponseWriter, r *http.Request) {
 	dbname := chi.URLParam(r, "dbname")
 	id := chi.URLParam(r, "id")
-	doc, err := GetDocHandler(dbname, id)
+	doc, err := GetDoc(dbname, id)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -18,9 +18,9 @@ func GetDoc(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(doc)
 }
 
-func CreateDb(w http.ResponseWriter, r *http.Request) {
+func CreateDbHandler(w http.ResponseWriter, r *http.Request) {
 	dbname := chi.URLParam(r, "dbname")
-	err := CreateDbHandler(dbname)
+	err := CreateDb(dbname)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -28,11 +28,11 @@ func CreateDb(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func CreateDoc(w http.ResponseWriter, r *http.Request) {
+func CreateDocHandler(w http.ResponseWriter, r *http.Request) {
 	dbname := chi.URLParam(r, "dbname")
 	var doc map[string]interface{}
 	json.NewDecoder(r.Body).Decode(&doc)
-	err := CreateDocHandler(dbname, doc)
+	err := CreateDoc(dbname, doc)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -40,12 +40,12 @@ func CreateDoc(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func UpdateDoc(w http.ResponseWriter, r *http.Request) {
+func UpdateDocHandler(w http.ResponseWriter, r *http.Request) {
 	dbname := chi.URLParam(r, "dbname")
 	id := chi.URLParam(r, "id")
 	var doc map[string]interface{}
 	json.NewDecoder(r.Body).Decode(&doc)
-	err := UpdateDocHandler(dbname, id, doc)
+	err := UpdateDoc(dbname, id, doc)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -53,10 +53,10 @@ func UpdateDoc(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func DeleteDoc(w http.ResponseWriter, r *http.Request) {
+func DeleteDocHandler(w http.ResponseWriter, r *http.Request) {
 	dbname := chi.URLParam(r, "dbname")
 	id := chi.URLParam(r, "id")
-	err := DeleteDocHandler(dbname, id)
+	err := DeleteDoc(dbname, id)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
