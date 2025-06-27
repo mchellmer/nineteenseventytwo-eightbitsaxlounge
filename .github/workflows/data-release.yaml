@@ -19,7 +19,7 @@ jobs:
 
       - name: Run Go Tests in Container
         run: |
-          docker run --rm -v "${{ github.workspace }}/data/go":/app -w /app golang:1.24-alpine go test ./...
+          docker run --rm -v "${{ github.workspace}}/data:/data" -w /data/go golang:1.24-alpine go test ./...
 
   build-and-push:
     name: Build and Push Data Image
