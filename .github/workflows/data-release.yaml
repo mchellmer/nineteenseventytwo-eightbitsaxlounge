@@ -10,8 +10,20 @@ on:
       - 'data/version.txt'
 
 jobs:
+  test:
+    name: Run Go Tests
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run Go Tests in Container
+        run: |
+          docker run --rm -v "${{ github.workspace }}/data/go":/app -w /app golang:1.24-alpine go test ./...
+
   build-and-push:
     name: Build and Push Data Image
+    needs: test
     runs-on: self-hosted
     permissions:
       packages: write
