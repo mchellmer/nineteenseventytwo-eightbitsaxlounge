@@ -3,3 +3,9 @@ A data layer consisting of go api, cluster service, and nginx ingress integrates
 
 # Requirements
 - db layer deployed exposing CouchdDb instance via ClusterIp service 'http://db-service:5984' in appropriate namespace.
+
+# Test
+```
+cd /date/go
+go test -v
+```

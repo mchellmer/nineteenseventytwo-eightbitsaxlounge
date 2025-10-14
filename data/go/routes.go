@@ -10,7 +10,7 @@ func SetupRoutes(svc CouchService) http.Handler {
 	r := chi.NewRouter()
 
 	// Database-level CRUD (e.g., create or delete a database)
-	r.Post("/data/{dbname}", CreateDbHandler(svc))
+	r.Put("/data/{dbname}", CreateDbHandler(svc))
 	// r.Delete("/data/{dbname}", DeleteDbHandler)
 	// r.Get("/data/{dbname}", GetDbInfoHandler)
 

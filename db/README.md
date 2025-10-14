@@ -35,3 +35,17 @@ Before using these resources, ensure the following:
 1. Build the CouchDB Docker image:
    ```bash
    docker build -t ghcr.io/<repository_owner>/couchdb:latest .
+
+## Test
+```
+# Check pod service and endpoint
+kubectl -n eightbitsaxlounge-dev get pods -o wide
+kubectl -n eightbitsaxlounge-dev get svc db-service
+kubectl -n eightbitsaxlounge-dev get endpoints db-service
+
+# Public welcome doc (no auth)
+curl -s http://<cluster ip>:5984/
+
+# List DBs (requires admin)
+curl -s -u admin:$DB_COUCHDB_PASSWORD http://<cluster ip>:5984/_all_dbs
+```

@@ -83,7 +83,7 @@ func TestGetDocHandler_NotFound(t *testing.T) {
 }
 
 func TestCreateDbHandler_Success(t *testing.T) {
-	req := httptest.NewRequest("POST", "/data/testdb", nil)
+	req := httptest.NewRequest("PUT", "/data/testdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
@@ -96,7 +96,7 @@ func TestCreateDbHandler_Success(t *testing.T) {
 }
 
 func TestCreateDbHandler_Error(t *testing.T) {
-	req := httptest.NewRequest("POST", "/data/testdb", nil)
+	req := httptest.NewRequest("PUT", "/data/testdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
