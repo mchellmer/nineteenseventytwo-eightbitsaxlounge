@@ -1,0 +1,49 @@
+<mxfile host="65bd71144e">
+    <diagram id="_AM15bitoc1FmoLZ1Xtb" name="Page-1">
+        <mxGraphModel dx="722" dy="659" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="Kubernetes" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+                    <mxGeometry x="40" y="40" width="460" height="310" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="data layer" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+                    <mxGeometry x="60" y="70" width="280" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="3" target="8">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="Container&lt;div&gt;go api&lt;/div&gt;&lt;div&gt;couchdb crud&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="70" y="180" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" style="edgeStyle=none;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="5" target="6">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="Ingress&lt;div&gt;nginx&lt;/div&gt;&lt;div&gt;/data&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="100" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="6" target="3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="Service&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;ClusterIP&lt;br&gt;&lt;/font&gt;&lt;div&gt;port 80 &amp;gt; 8080&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="70" y="100" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="db layer&lt;div&gt;couchdb service&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="70" y="268" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="12" target="14">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="REST Client&lt;div&gt;http&lt;/div&gt;&lt;div&gt;lbip/data/*&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="520" y="100" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" style="edgeStyle=none;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="14" target="5">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="service layer&lt;div&gt;metallb&lt;/div&gt;&lt;div&gt;loadbalancer ip&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="360" y="100" width="120" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
