@@ -24,7 +24,7 @@ read -s -p "Enter a password for the vault: " vault_password; echo
 read -s -p "Enter Wi-Fi password: " wifi_password; echo
 read -s -p "Enter become pass: " become_pass; echo
 read -p  "Enter ansible_default_ipv4_address: " ansible_default_ipv4_address; echo
-read -s -p "Enter Grafana token: " grafana_token; echo
+read -s -p "Enter Grafana token: " grafana_password; echo
 
 # Write vault password with strict perms
 umask 077
@@ -61,8 +61,8 @@ echo >> "$tmp_vault"
 ansible-vault encrypt_string \
   --vault-password-file="$vault_pass_file_path" \
   --encrypt-vault-id default \
-  "$grafana_token" \
-  --name "grafana_token" >> "$tmp_vault"
+  "$grafana_password" \
+  --name "grafana_password" >> "$tmp_vault"
 
 # Atomically replace the vault file
 mv -f "$tmp_vault" "$vault_file_path"
