@@ -2,7 +2,7 @@
 set -euo pipefail
 
 vault_pass_file_path="$HOME/vault_password.txt"
-vault_file_path="$HOME/nineteenseventytwo-eightbitsaxlounge/group_vars/all/vault.yml"
+vault_file_path="$HOME/nineteenseventytwo-eightbitsaxlounge/server/group_vars/all/vault.yml"
 ansible_config_path="$HOME/ansible.cfg"
 ansible_log_path="$HOME/ansible.log"
 
