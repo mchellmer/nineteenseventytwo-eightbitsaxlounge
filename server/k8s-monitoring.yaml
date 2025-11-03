@@ -25,6 +25,18 @@
       ansible.builtin.shell:
         cmd: helm repo update
 
+    - name: Install Alloy CRD
+      ansible.builtin.command:
+        cmd: kubectl apply -f https://github.com/grafana/alloy-operator/releases/download/v0.2.9/collectors.grafana.com_alloy.yaml
+
+    - name: Wait for Alloy CRD to be established
+      ansible.builtin.command:
+        cmd: kubectl get crd alloys.collectors.grafana.com
+      register: crd_check
+      retries: 10
+      delay: 3
+      until: crd_check.rc == 0
+
     - name: Install or upgrade Grafana Kubernetes Monitoring
       ansible.builtin.command:
         cmd: >

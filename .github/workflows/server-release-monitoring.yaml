@@ -14,7 +14,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Debug environment info
         run: |
@@ -25,6 +25,13 @@ jobs:
           echo "Repository: ${{ github.repository }}"
           echo "Branch: ${{ github.ref_name }}"
           echo "Actor: ${{ github.actor }}"
+
+      - name: Make vault available to runner
+        working-directory: ./server
+        run: |
+          if [ -f "$HOME/nineteenseventytwo-eightbitsaxlounge/server/group_vars/all/vault.yml" ]; then
+            cp -f "$HOME/nineteenseventytwo-eightbitsaxlounge/server/group_vars/all/vault.yml" ./group_vars/all/vault.yml
+          fi
 
       - name: Deploy monitoring
         working-directory: ./server
