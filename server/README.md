@@ -40,6 +40,7 @@ iaas and kubernetes cluster config for 1972
       make init-cicd
       ```
     - You will be prompted to provide the GitHub action Runner token. Obtain this token from your GitLab project under **Settings > Runners**.
+    - Note that server pipelines requiring ansible vault secrets should load the vault file from server to runner environment
 
 4. Init console
     - Updates/upgrades and install ansible/ansible vault on console host, generate secrets on server
