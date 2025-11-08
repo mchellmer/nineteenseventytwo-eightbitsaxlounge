@@ -103,7 +103,8 @@ func (s *ProdCouchService) UpdateDocumentByDatabaseNameAndDocumentId(dbname stri
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	// Accept both 200 OK and 201 Created as success responses from CouchDB
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("PUT request failed with status %d: %s", resp.StatusCode, string(body))
 	}
