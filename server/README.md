@@ -40,6 +40,7 @@ iaas and kubernetes cluster config for 1972
       make init-cicd
       ```
     - You will be prompted to provide the GitHub action Runner token. Obtain this token from your GitLab project under **Settings > Runners**.
+    - Note that server pipelines requiring ansible vault secrets should load the vault file from server to runner environment
 
 4. Init console
     - Updates/upgrades and install ansible/ansible vault on console host, generate secrets on server
@@ -75,6 +76,18 @@ iaas and kubernetes cluster config for 1972
   - Use the following command to deploy the Kubernetes namespaces for the app and environments:
     ```bash
     make deploy-namespaces
+    ```
+
+6. Deploy Monitoring
+  - kubernetes monitoring via grafana
+  - setup grafana account and activate kubernetes monitoring
+  - set server name and options in ansible playbook - use Kubernetes > Configuration in Grafana to generate scripts
+  - init: run make command on console server and provide token
+  ```bash
+  make deploy-monitoring
+  ```
+  - releases: increment versions/monitoring.txt and push change
+
 
 # Test
 - ingress - apply the files/manifests/nginxtest.yaml and try to curl from nodes/another machine on the same subnet
