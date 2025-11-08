@@ -20,6 +20,7 @@ spec:
       containers:
       - name: eightbitsaxlounge-data-api
         image: ghcr.io/mchellmer/eightbitsaxlounge-couchdb-api:latest
+        imagePullPolicy: Always
         env:
         - name: COUCHDB_ENDPOINT
           value: db-service:5984

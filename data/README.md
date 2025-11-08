@@ -71,6 +71,13 @@ Deploy using the provided Ansible playbook:
 ansible-playbook data-go-couchdb.yaml
 ```
 
+> TODO: Move to versioned image tags
+>
+> The Deployment currently uses `:latest`. To avoid stale images and make
+> rollouts deterministic, tag/push images with the value from `data/version.txt`
+> (e.g., `:0.0.8`) in CI and reference that tag in `data/k8s/deployment.yaml`.
+> Keep `:latest` as a convenience tag if desired.
+
 ## Testing
 ```bash
 cd data/go
