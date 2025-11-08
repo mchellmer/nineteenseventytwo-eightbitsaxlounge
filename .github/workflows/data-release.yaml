@@ -73,17 +73,6 @@ jobs:
       working-directory: ./data
       env:
         NAMESPACE: ${{ env.NAMESPACE }}
+        VERSION: ${{ env.VERSION }}
+        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
       run: make deploy-data-api
-
-    - name: Patch Deployment to versioned image and rollout
-      run: |
-        IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb-api
-        kubectl -n "$NAMESPACE" set image deploy/eightbitsaxlounge-data-api eightbitsaxlounge-data-api="$IMAGE_BASE:$VERSION"
-        kubectl -n "$NAMESPACE" annotate deploy/eightbitsaxlounge-data-api kubernetes.io/change-cause="data-api $VERSION" --overwrite
-        kubectl -n "$NAMESPACE" rollout status deploy/eightbitsaxlounge-data-api --timeout=180s
-
-    - name: Verify running image
-      run: |
-        IMAGE=$(kubectl -n "$NAMESPACE" get deploy eightbitsaxlounge-data-api -o jsonpath='{.spec.template.spec.containers[0].image}')
-        echo "Deployment image: $IMAGE"
-        kubectl -n "$NAMESPACE" get pods -l app=eightbitsaxlounge,component=data -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.containerStatuses[0].imageID}{"\n"}{end}'

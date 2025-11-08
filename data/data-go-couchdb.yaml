@@ -1,7 +1,13 @@
----
 - name: Deploy Eightbitsaxlounge Data API on Kubernetes
   hosts: master
   tasks:
+    - name: Ensure required environment variables are provided
+      ansible.builtin.assert:
+        that:
+          - lookup('env','NAMESPACE') | length > 0
+          - lookup('env','VERSION') | length > 0
+        fail_msg: "Missing required env vars: NAMESPACE and/or VERSION. Ensure the workflow passes them to Ansible."
+
     - name: Create a temporary directory for manifests
       ansible.builtin.tempfile:
         state: directory
@@ -40,6 +46,42 @@
         kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/ingress.yaml
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Patch Deployment image to versioned tag
+      ansible.builtin.shell: |
+        IMAGE_BASE=${IMAGE_BASE:-ghcr.io/${GITHUB_REPOSITORY_OWNER}/eightbitsaxlounge-couchdb-api}
+        kubectl -n "$NAMESPACE" set image deploy/eightbitsaxlounge-data-api \
+          eightbitsaxlounge-data-api="${IMAGE_BASE}:${VERSION}"
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+        VERSION: "{{ lookup('env', 'VERSION') }}"
+        GITHUB_REPOSITORY_OWNER: "{{ lookup('env', 'GITHUB_REPOSITORY_OWNER') | default('', true) }}"
+        IMAGE_BASE: "{{ lookup('env', 'IMAGE_BASE') | default('', true) }}"
+
+    - name: Annotate Deployment with change cause
+      ansible.builtin.shell: |
+        kubectl -n "$NAMESPACE" annotate deploy/eightbitsaxlounge-data-api \
+          kubernetes.io/change-cause="data-api ${VERSION}" --overwrite
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+        VERSION: "{{ lookup('env', 'VERSION') }}"
+
+    - name: Wait for rollout to complete
+      ansible.builtin.shell: |
+        kubectl -n "$NAMESPACE" rollout status deploy/eightbitsaxlounge-data-api --timeout=180s
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Verify running image
+      ansible.builtin.shell: |
+        kubectl -n "$NAMESPACE" get deploy eightbitsaxlounge-data-api -o jsonpath='{.spec.template.spec.containers[0].image}'
+      register: deploy_image
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Print running image
+      ansible.builtin.debug:
+        msg: "Deployment image: {{ deploy_image.stdout }}"
 
     - name: Remove temporary directory
       ansible.builtin.file:
