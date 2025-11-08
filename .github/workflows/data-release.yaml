@@ -41,8 +41,12 @@ jobs:
     - name: Build and Push Docker Image
       working-directory: ./data
       run: |
-        docker build -t ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb-api:latest .
-        docker push ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb-api:latest
+        VERSION=$(cat version.txt)
+        IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb-api
+        docker build -t "$IMAGE_BASE:$VERSION" -t "$IMAGE_BASE:latest" .
+        docker push "$IMAGE_BASE:$VERSION"
+        docker push "$IMAGE_BASE:latest"
+        echo "IMAGE_VERSION=$VERSION" >> $GITHUB_ENV
 
   deploy:
     name: Deploy Data API to Kubernetes
@@ -56,13 +60,30 @@ jobs:
       id: set-namespace
       run: |
         if [[ "${{ github.ref_name }}" == "main" ]]; then
-          echo "namespace=eightbitsaxlounge-prod" >> $GITHUB_ENV
+          echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
         else
-          echo "namespace=eightbitsaxlounge-dev" >> $GITHUB_ENV
+          echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
         fi
 
-    - name: Deploy CouchDB via Ansible
+    - name: Read version
+      run: |
+        echo "VERSION=$(cat data/version.txt)" >> $GITHUB_ENV
+
+    - name: Deploy CouchDB via Ansible (other k8s resources)
       working-directory: ./data
       env:
-        NAMESPACE: ${{ env.namespace }}
+        NAMESPACE: ${{ env.NAMESPACE }}
       run: make deploy-data-api
+
+    - name: Patch Deployment to versioned image and rollout
+      run: |
+        IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb-api
+        kubectl -n "$NAMESPACE" set image deploy/eightbitsaxlounge-data-api eightbitsaxlounge-data-api="$IMAGE_BASE:$VERSION"
+        kubectl -n "$NAMESPACE" annotate deploy/eightbitsaxlounge-data-api kubernetes.io/change-cause="data-api $VERSION" --overwrite
+        kubectl -n "$NAMESPACE" rollout status deploy/eightbitsaxlounge-data-api --timeout=180s
+
+    - name: Verify running image
+      run: |
+        IMAGE=$(kubectl -n "$NAMESPACE" get deploy eightbitsaxlounge-data-api -o jsonpath='{.spec.template.spec.containers[0].image}')
+        echo "Deployment image: $IMAGE"
+        kubectl -n "$NAMESPACE" get pods -l app=eightbitsaxlounge,component=data -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.containerStatuses[0].imageID}{"\n"}{end}'
