@@ -17,24 +17,25 @@ import (
 //   - Registers endpoints.
 //
 // Notes:
-//   - chi path params are segment-based (e.g., /data/{dbname}/{id}).
+//   - chi path params are segment-based (e.g., /{dbname}/{id}).
 //   - Handlers read params with chi.URLParam(r, "dbname") and "id".
-//   - Kubernetes Ingress configured to route external /data/* paths to this api.
+//   - Kubernetes Ingress now uses host-based routing (data[-dev].<ip>.sslip.io) and
+//     sends all requests at path root '/' here, so no /data prefix is required.
 func SetupRoutes(svc CouchService) http.Handler {
 	r := chi.NewRouter()
 
-	// Database-level endpoints
-	r.Put("/data/{dbname}", CreateDatabaseByNameHandler(svc))
-	r.Get("/data/{dbname}", GetDatabaseByNameHandler(svc))
-	r.Delete("/data/{dbname}", DeleteDatabaseByNameHandler(svc))
+	// Database-level endpoints (host root based)
+	r.Put("/{dbname}", CreateDatabaseByNameHandler(svc))
+	r.Get("/{dbname}", GetDatabaseByNameHandler(svc))
+	r.Delete("/{dbname}", DeleteDatabaseByNameHandler(svc))
 
 	// Document-level CRUD within a specific database
 	// List all docs endpoint placed before {id} to avoid param capture
-	r.Get("/data/{dbname}/docs", GetDocumentsByDatabaseNameHandler(svc))
-	r.Get("/data/{dbname}/{id}", GetDocumentByDatabaseNameAndDocumentIdHandler(svc))
-	r.Post("/data/{dbname}", CreateDocumentByDatabaseNameHandler(svc))
-	r.Put("/data/{dbname}/{id}", UpdateDocumentByDatabaseNameAndDocumentIdHandler(svc))
-	r.Delete("/data/{dbname}/{id}", DeleteDocumentByDatabaseNameAndDocumentIdHandler(svc))
+	r.Get("/{dbname}/docs", GetDocumentsByDatabaseNameHandler(svc))
+	r.Get("/{dbname}/{id}", GetDocumentByDatabaseNameAndDocumentIdHandler(svc))
+	r.Post("/{dbname}", CreateDocumentByDatabaseNameHandler(svc))
+	r.Put("/{dbname}/{id}", UpdateDocumentByDatabaseNameAndDocumentIdHandler(svc))
+	r.Delete("/{dbname}/{id}", DeleteDocumentByDatabaseNameAndDocumentIdHandler(svc))
 
 	return r
 }

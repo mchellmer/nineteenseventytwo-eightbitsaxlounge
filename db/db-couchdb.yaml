@@ -8,6 +8,19 @@
           - lookup('env','NAMESPACE') | length > 0
           - lookup('env','VERSION') | length > 0
         fail_msg: "Missing required env vars: NAMESPACE and/or VERSION. Ensure the workflow passes them to Ansible."
+
+    - name: Determine Ingress Controller external IP (MetalLB)
+      ansible.builtin.shell: |
+        kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+      register: ingress_ip_cmd
+      changed_when: false
+
+    - name: Compute db ingress host
+      ansible.builtin.set_fact:
+        db_ingress_host: >-
+          {{ lookup('env','DB_INGRESS_HOST')
+             | default(( (lookup('env','NAMESPACE') == 'eightbitsaxlounge-prod')
+                        | ternary('db.', 'db-dev.') ) ~ ingress_ip_cmd.stdout ~ '.sslip.io', true) }}
     - name: Create a temporary directory for manifests
       ansible.builtin.tempfile:
         state: directory
@@ -23,6 +36,13 @@
       ansible.builtin.copy:
         src: k8s/service.yaml
         dest: "{{ tempdir.path }}/service.yaml"
+
+    - name: Template ingress manifest to temp directory
+      ansible.builtin.template:
+        src: k8s/ingress.yaml.j2
+        dest: "{{ tempdir.path }}/ingress.yaml"
+      vars:
+        db_ingress_host: "{{ db_ingress_host }}"
 
     - name: Create CouchDB Secret
       ansible.builtin.shell: |
@@ -43,6 +63,12 @@
     - name: Deploy CouchDB Service
       ansible.builtin.shell: |
         kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/service.yaml
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Deploy CouchDB Ingress
+      ansible.builtin.shell: |
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/ingress.yaml
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 

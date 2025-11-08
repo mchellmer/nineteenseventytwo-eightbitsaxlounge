@@ -103,7 +103,7 @@ func (m *mockCouchService) GetDocumentsByDatabaseName(dbname string) ([]map[stri
 }
 
 func TestGetDocumentByDatabaseNameAndDocumentIdHandler_Success(t *testing.T) {
-	req := httptest.NewRequest("GET", "/data/testdb/123", nil)
+	req := httptest.NewRequest("GET", "/testdb/123", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
 	rr := httptest.NewRecorder()
 
@@ -123,7 +123,7 @@ func TestGetDocumentByDatabaseNameAndDocumentIdHandler_Success(t *testing.T) {
 }
 
 func TestGetDocumentByDatabaseNameAndDocumentIdHandler_NotFound(t *testing.T) {
-	req := httptest.NewRequest("GET", "/data/testdb/404", nil)
+	req := httptest.NewRequest("GET", "/testdb/404", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "404"})
 	rr := httptest.NewRecorder()
 
@@ -138,7 +138,7 @@ func TestGetDocumentByDatabaseNameAndDocumentIdHandler_NotFound(t *testing.T) {
 func TestCreateDocumentByDatabaseNameHandler_Success(t *testing.T) {
 	doc := map[string]interface{}{"foo": "bar"}
 	body, _ := json.Marshal(doc)
-	req := httptest.NewRequest("POST", "/data/testdb", bytes.NewReader(body))
+	req := httptest.NewRequest("POST", "/testdb", bytes.NewReader(body))
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
@@ -151,7 +151,7 @@ func TestCreateDocumentByDatabaseNameHandler_Success(t *testing.T) {
 }
 
 func TestCreateDocumentByDatabaseNameHandler_BadJSON(t *testing.T) {
-	req := httptest.NewRequest("POST", "/data/testdb", bytes.NewReader([]byte("{bad json")))
+	req := httptest.NewRequest("POST", "/testdb", bytes.NewReader([]byte("{bad json")))
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
@@ -166,7 +166,7 @@ func TestCreateDocumentByDatabaseNameHandler_BadJSON(t *testing.T) {
 func TestCreateDocumentByDatabaseNameHandler_Error(t *testing.T) {
 	doc := map[string]interface{}{"foo": "bar"}
 	body, _ := json.Marshal(doc)
-	req := httptest.NewRequest("POST", "/data/testdb", bytes.NewReader(body))
+	req := httptest.NewRequest("POST", "/testdb", bytes.NewReader(body))
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
@@ -181,7 +181,7 @@ func TestCreateDocumentByDatabaseNameHandler_Error(t *testing.T) {
 func TestUpdateDocumentByDatabaseNameAndDocumentIdHandler_Success(t *testing.T) {
 	doc := map[string]interface{}{"foo": "baz"}
 	body, _ := json.Marshal(doc)
-	req := httptest.NewRequest("PUT", "/data/testdb/123", bytes.NewReader(body))
+	req := httptest.NewRequest("PUT", "/testdb/123", bytes.NewReader(body))
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
 	rr := httptest.NewRecorder()
 
@@ -194,7 +194,7 @@ func TestUpdateDocumentByDatabaseNameAndDocumentIdHandler_Success(t *testing.T) 
 }
 
 func TestUpdateDocumentByDatabaseNameAndDocumentIdHandler_BadJSON(t *testing.T) {
-	req := httptest.NewRequest("PUT", "/data/testdb/123", bytes.NewReader([]byte("{bad json")))
+	req := httptest.NewRequest("PUT", "/testdb/123", bytes.NewReader([]byte("{bad json")))
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
 	rr := httptest.NewRecorder()
 
@@ -209,7 +209,7 @@ func TestUpdateDocumentByDatabaseNameAndDocumentIdHandler_BadJSON(t *testing.T) 
 func TestUpdateDocumentByDatabaseNameAndDocumentIdHandler_Error(t *testing.T) {
 	doc := map[string]interface{}{"foo": "baz"}
 	body, _ := json.Marshal(doc)
-	req := httptest.NewRequest("PUT", "/data/testdb/123", bytes.NewReader(body))
+	req := httptest.NewRequest("PUT", "/testdb/123", bytes.NewReader(body))
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
 	rr := httptest.NewRecorder()
 
@@ -222,7 +222,7 @@ func TestUpdateDocumentByDatabaseNameAndDocumentIdHandler_Error(t *testing.T) {
 }
 
 func TestDeleteDocumentByDatabaseNameAndDocumentIdHandler_Success(t *testing.T) {
-	req := httptest.NewRequest("DELETE", "/data/testdb/123", nil)
+	req := httptest.NewRequest("DELETE", "/testdb/123", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
 	rr := httptest.NewRecorder()
 
@@ -235,7 +235,7 @@ func TestDeleteDocumentByDatabaseNameAndDocumentIdHandler_Success(t *testing.T) 
 }
 
 func TestDeleteDocumentByDatabaseNameAndDocumentIdHandler_Error(t *testing.T) {
-	req := httptest.NewRequest("DELETE", "/data/testdb/123", nil)
+	req := httptest.NewRequest("DELETE", "/testdb/123", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
 	rr := httptest.NewRecorder()
 
@@ -257,7 +257,7 @@ func setChiURLParams(req *http.Request, params map[string]string) *http.Request 
 }
 
 func TestCreateDatabaseByNameHandler_Success(t *testing.T) {
-	req := httptest.NewRequest("PUT", "/data/testdb", nil)
+	req := httptest.NewRequest("PUT", "/testdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
@@ -270,7 +270,7 @@ func TestCreateDatabaseByNameHandler_Success(t *testing.T) {
 }
 
 func TestCreateDatabaseByNameHandler_Error(t *testing.T) {
-	req := httptest.NewRequest("PUT", "/data/testdb", nil)
+	req := httptest.NewRequest("PUT", "/testdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
@@ -283,7 +283,7 @@ func TestCreateDatabaseByNameHandler_Error(t *testing.T) {
 }
 
 func TestGetDocumentsByDatabaseNameHandler_Success(t *testing.T) {
-	req := httptest.NewRequest("GET", "/data/testdb/docs", nil)
+	req := httptest.NewRequest("GET", "/testdb/docs", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 	handler := GetDocumentsByDatabaseNameHandler(&mockCouchService{})
@@ -301,7 +301,7 @@ func TestGetDocumentsByDatabaseNameHandler_Success(t *testing.T) {
 }
 
 func TestGetDocumentsByDatabaseNameHandler_Error(t *testing.T) {
-	req := httptest.NewRequest("GET", "/data/testdb/docs", nil)
+	req := httptest.NewRequest("GET", "/testdb/docs", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 	handler := GetDocumentsByDatabaseNameHandler(&mockCouchService{returnError: true})
@@ -312,7 +312,7 @@ func TestGetDocumentsByDatabaseNameHandler_Error(t *testing.T) {
 }
 
 func TestGetDatabaseByNameHandler_Success(t *testing.T) {
-	req := httptest.NewRequest("GET", "/data/testdb", nil)
+	req := httptest.NewRequest("GET", "/testdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
@@ -332,7 +332,7 @@ func TestGetDatabaseByNameHandler_Success(t *testing.T) {
 }
 
 func TestGetDatabaseByNameHandler_NotFound(t *testing.T) {
-	req := httptest.NewRequest("GET", "/data/missingdb", nil)
+	req := httptest.NewRequest("GET", "/missingdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "missingdb"})
 	rr := httptest.NewRecorder()
 
@@ -345,7 +345,7 @@ func TestGetDatabaseByNameHandler_NotFound(t *testing.T) {
 }
 
 func TestDeleteDatabaseByNameHandler_Success(t *testing.T) {
-	req := httptest.NewRequest("DELETE", "/data/testdb", nil)
+	req := httptest.NewRequest("DELETE", "/testdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
@@ -358,7 +358,7 @@ func TestDeleteDatabaseByNameHandler_Success(t *testing.T) {
 }
 
 func TestDeleteDatabaseByNameHandler_Error(t *testing.T) {
-	req := httptest.NewRequest("DELETE", "/data/testdb", nil)
+	req := httptest.NewRequest("DELETE", "/testdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
