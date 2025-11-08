@@ -12,10 +12,21 @@ package gofiles
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 )
+
+// writeJSONError writes a consistent JSON error with service details.
+func writeJSONError(w http.ResponseWriter, status int, code string, err error) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"error":   code,
+		"message": err.Error(),
+	})
+}
 
 // GetDocumentByDatabaseNameAndDocumentIdHandler handles:
 //
@@ -28,7 +39,8 @@ func GetDocumentByDatabaseNameAndDocumentIdHandler(svc CouchService) http.Handle
 		id := chi.URLParam(r, "id")
 		doc, err := svc.GetDocumentByDatabaseNameAndDocumentId(dbname, id)
 		if err != nil {
-			http.Error(w, "not found", http.StatusNotFound)
+			log.Printf("get doc db=%s id=%s error=%v", dbname, id, err)
+			writeJSONError(w, http.StatusNotFound, "document_not_found", err)
 			return
 		}
 		json.NewEncoder(w).Encode(doc)
@@ -44,7 +56,8 @@ func CreateDatabaseByNameHandler(svc CouchService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dbname := chi.URLParam(r, "dbname")
 		if err := svc.CreateDatabaseByName(dbname); err != nil {
-			http.Error(w, "failed to create db", http.StatusInternalServerError)
+			log.Printf("create db db=%s error=%v", dbname, err)
+			writeJSONError(w, http.StatusInternalServerError, "create_database_failed", err)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
@@ -62,11 +75,12 @@ func CreateDocumentByDatabaseNameHandler(svc CouchService) http.HandlerFunc {
 		dbname := chi.URLParam(r, "dbname")
 		var doc map[string]interface{}
 		if err := json.NewDecoder(r.Body).Decode(&doc); err != nil {
-			http.Error(w, "invalid json", http.StatusBadRequest)
+			writeJSONError(w, http.StatusBadRequest, "invalid_json", err)
 			return
 		}
 		if err := svc.CreateDocumentByDatabaseName(dbname, doc); err != nil {
-			http.Error(w, "failed to create doc", http.StatusInternalServerError)
+			log.Printf("create doc db=%s error=%v", dbname, err)
+			writeJSONError(w, http.StatusInternalServerError, "create_document_failed", err)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
@@ -85,11 +99,13 @@ func UpdateDocumentByDatabaseNameAndDocumentIdHandler(svc CouchService) http.Han
 		id := chi.URLParam(r, "id")
 		var doc map[string]interface{}
 		if err := json.NewDecoder(r.Body).Decode(&doc); err != nil {
-			http.Error(w, "invalid json", http.StatusBadRequest)
+			writeJSONError(w, http.StatusBadRequest, "invalid_json", err)
 			return
 		}
 		if err := svc.UpdateDocumentByDatabaseNameAndDocumentId(dbname, id, doc); err != nil {
-			http.Error(w, "failed to update doc", http.StatusInternalServerError)
+			log.Printf("update doc db=%s id=%s error=%v", dbname, id, err)
+			// Later: distinguish 409 conflict by parsing err.Error()
+			writeJSONError(w, http.StatusInternalServerError, "update_document_failed", err)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -106,7 +122,8 @@ func DeleteDocumentByDatabaseNameAndDocumentIdHandler(svc CouchService) http.Han
 		dbname := chi.URLParam(r, "dbname")
 		id := chi.URLParam(r, "id")
 		if err := svc.DeleteDocumentByDatabaseNameAndDocumentId(dbname, id); err != nil {
-			http.Error(w, "failed to delete doc", http.StatusInternalServerError)
+			log.Printf("delete doc db=%s id=%s error=%v", dbname, id, err)
+			writeJSONError(w, http.StatusInternalServerError, "delete_document_failed", err)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -123,7 +140,8 @@ func GetDatabaseByNameHandler(svc CouchService) http.HandlerFunc {
 		dbname := chi.URLParam(r, "dbname")
 		dbInfo, err := svc.GetDatabaseByName(dbname)
 		if err != nil {
-			http.Error(w, "not found", http.StatusNotFound)
+			log.Printf("get db db=%s error=%v", dbname, err)
+			writeJSONError(w, http.StatusNotFound, "database_not_found", err)
 			return
 		}
 		json.NewEncoder(w).Encode(dbInfo)
@@ -139,7 +157,8 @@ func DeleteDatabaseByNameHandler(svc CouchService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dbname := chi.URLParam(r, "dbname")
 		if err := svc.DeleteDatabaseByName(dbname); err != nil {
-			http.Error(w, "failed to delete db", http.StatusInternalServerError)
+			log.Printf("delete db db=%s error=%v", dbname, err)
+			writeJSONError(w, http.StatusInternalServerError, "delete_database_failed", err)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -156,7 +175,8 @@ func GetDocumentsByDatabaseNameHandler(svc CouchService) http.HandlerFunc {
 		dbname := chi.URLParam(r, "dbname")
 		docs, err := svc.GetDocumentsByDatabaseName(dbname)
 		if err != nil {
-			http.Error(w, "failed to list documents", http.StatusInternalServerError)
+			log.Printf("list docs db=%s error=%v", dbname, err)
+			writeJSONError(w, http.StatusInternalServerError, "list_documents_failed", err)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
