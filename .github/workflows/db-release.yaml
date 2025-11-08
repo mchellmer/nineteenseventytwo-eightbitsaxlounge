@@ -1,0 +1,58 @@
+name: DB Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - datainit
+    paths:
+      - 'db/version.txt' 
+
+jobs:
+  build-and-push:
+    name: Build and Push CouchDB Image
+    runs-on: self-hosted
+    permissions:
+      packages: write
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and Push Docker Image
+      working-directory: ./db
+      env:
+        COUCHDB_PASSWORD: ${{ secrets.DB_COUCHDB_PASSWORD }}
+      run: |
+        docker build -t ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb:latest .
+        docker push ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb:latest
+
+  deploy:
+    name: Deploy CouchDB to Kubernetes
+    needs: build-and-push
+    runs-on: self-hosted
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set Namespace Based on Branch
+      id: set-namespace
+      run: |
+        if [[ "${{ github.ref_name }}" == "main" ]]; then
+          echo "namespace=eightbitsaxlounge-prod" >> $GITHUB_ENV
+        else
+          echo "namespace=eightbitsaxlounge-dev" >> $GITHUB_ENV
+        fi
+
+    - name: Deploy CouchDB via Ansible
+      working-directory: ./db
+      env:
+        COUCHDB_PASSWORD: ${{ secrets.DB_COUCHDB_PASSWORD }}
+        NAMESPACE: ${{ env.namespace }}
+      run: make deploy-couchdb

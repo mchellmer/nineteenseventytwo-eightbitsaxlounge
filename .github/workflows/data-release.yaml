@@ -1,0 +1,78 @@
+name: Data Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - datainit
+      - main
+    paths:
+      - 'data/version.txt'
+
+jobs:
+  test:
+    name: Run Go Tests
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run Go Tests in Container
+        run: |
+          docker run --rm -v "${{ github.workspace}}/data:/data" -w /data/go golang:1.24-alpine go test ./...
+
+  build-and-push:
+    name: Build and Push Data Image
+    needs: test
+    runs-on: self-hosted
+    permissions:
+      packages: write
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and Push Docker Image
+      working-directory: ./data
+      run: |
+        VERSION=$(cat version.txt)
+        IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb-api
+        docker build -t "$IMAGE_BASE:$VERSION" -t "$IMAGE_BASE:latest" .
+        docker push "$IMAGE_BASE:$VERSION"
+        docker push "$IMAGE_BASE:latest"
+        echo "IMAGE_VERSION=$VERSION" >> $GITHUB_ENV
+
+  deploy:
+    name: Deploy Data API to Kubernetes
+    needs: build-and-push
+    runs-on: self-hosted
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set Namespace Based on Branch
+      id: set-namespace
+      run: |
+        if [[ "${{ github.ref_name }}" == "main" ]]; then
+          echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
+        else
+          echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
+        fi
+
+    - name: Read version
+      run: |
+        echo "VERSION=$(cat data/version.txt)" >> $GITHUB_ENV
+
+    - name: Deploy CouchDB via Ansible (other k8s resources)
+      working-directory: ./data
+      env:
+        NAMESPACE: ${{ env.NAMESPACE }}
+        VERSION: ${{ env.VERSION }}
+        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+      run: make deploy-data-api

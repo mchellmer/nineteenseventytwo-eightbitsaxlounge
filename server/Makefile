@@ -1,4 +1,4 @@
-.PHONY: deploy-kubernetes deploy-cni console-init init-ansible-vault
+.PHONY: deploy-kubernetes deploy-cni console-init init-ansible-vault init-cicd
 
 ansible-docker:
 	ansible-playbook k8s-docker.yaml
@@ -28,8 +28,12 @@ deploy-loadbalancer:
 deploy-monitoring:
 	ansible-playbook k8s-monitoring.yaml
 
-init-cicd: scripts/gitlabs-runner.sh
-	bash scripts/github-runner.sh
+deploy-namespaces:
+	ansible-playbook k8s-namespaces.yaml
+
+init-cicd: scripts/github-runner.sh
+	@read -p "Enter the GitHub Actions Runner token: " TOKEN; \
+	bash scripts/github-runner.sh $$TOKEN
 
 init-console: scripts/init.sh
 	bash scripts/init.sh

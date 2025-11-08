@@ -1,0 +1,14 @@
+- name: Create Kubernetes namespaces for eightbitsaxlounge
+  hosts: master
+  tasks:
+    - name: Create namespaces for dev, test, and prod
+      ansible.builtin.shell: kubectl create namespace {{ item }}
+      loop:
+        - eightbitsaxlounge-dev
+        - eightbitsaxlounge-test
+        - eightbitsaxlounge-prod
+      register: namespace_creation
+
+    - name: Debug namespace creation output
+      debug:
+        var: namespace_creation.results

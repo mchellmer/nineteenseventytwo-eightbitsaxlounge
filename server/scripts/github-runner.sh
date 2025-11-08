@@ -1,11 +1,23 @@
 #!/bin/bash
 
+# Note that the runner will remove itself from github due to inactivity after some time
+#  in this case run: sudo ./svc.sh uninstall && ./config.sh uninstall && rm -rf $HOME/actions-runner
+
 # Variables
-RUNNER_VERSION="2.323.0"
+RUNNER_VERSION="2.325.0"
 RUNNER_URL="https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-arm64-${RUNNER_VERSION}.tar.gz"
 RUNNER_FOLDER="$HOME/actions-runner"
-REPO_URL="https://github.com/mchellmer/nineteenseventytwo-server"
-HASH="9cb778fffd4c6d8bd74bc4110df7cb8c0122eb62fda30b389318b265d3ade538"
+REPO_URL="https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge"
+HASH="0e916ad0d354089d320011c132d46bdbe3353c8b925a2e1056c7c8e85d2f2490"
+
+# Check if the token is provided as an argument
+if [ -z "$1" ]; then
+  echo "Error: GitHub Actions Runner token is required."
+  echo "Usage: $0 <TOKEN>"
+  exit 1
+fi
+
+TOKEN=$1
 
 # Install prerequisites
 echo "Installing prerequisites..."
@@ -41,8 +53,8 @@ sudo ./svc.sh install
 
 # Enable the service to start on boot
 echo "Enabling the GitHub Actions Runner service..."
-sudo systemctl enable actions.runner.mchellmer-nineteenseventytwo-server.1972-console-1.service
+sudo systemctl enable actions.runner.mchellmer-nineteenseventytwo-eightbitsaxlounge.1972-console-1.service
 
 # Start the service
 echo "Starting the GitHub Actions Runner service..."
-sudo systemctl start actions.runner.mchellmer-nineteenseventytwo-server.1972-console-1.service
+sudo systemctl start actions.runner.mchellmer-nineteenseventytwo-eightbitsaxlounge.1972-console-1.service

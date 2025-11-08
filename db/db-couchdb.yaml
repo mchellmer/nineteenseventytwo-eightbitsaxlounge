@@ -1,0 +1,46 @@
+---
+- name: Deploy Eightbitsaxlounge CouchDB on Kubernetes
+  hosts: master
+  tasks:
+    - name: Create a temporary directory for manifests
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: couchdb-k8s
+      register: tempdir
+
+    - name: Copy deployment manifest to temp directory
+      ansible.builtin.copy:
+        src: k8s/deployment.yaml
+        dest: "{{ tempdir.path }}/deployment.yaml"
+
+    - name: Copy service manifest to temp directory
+      ansible.builtin.copy:
+        src: k8s/service.yaml
+        dest: "{{ tempdir.path }}/service.yaml"
+
+    - name: Create CouchDB Secret
+      ansible.builtin.shell: |
+        kubectl create secret generic secret-db-couchdb \
+          --from-literal=password=$COUCHDB_PASSWORD \
+          --namespace $NAMESPACE \
+          --dry-run=client -o yaml | kubectl apply -f -
+      environment:
+        COUCHDB_PASSWORD: "{{ lookup('env', 'COUCHDB_PASSWORD') }}"
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Deploy CouchDB Deployment
+      ansible.builtin.shell: |
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/deployment.yaml
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Deploy CouchDB Service
+      ansible.builtin.shell: |
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/service.yaml
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Remove temporary directory
+      ansible.builtin.file:
+        path: "{{ tempdir.path }}"
+        state: absent
