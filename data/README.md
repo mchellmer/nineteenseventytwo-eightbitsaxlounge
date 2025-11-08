@@ -14,6 +14,15 @@ The data layer consists of:
 - **NGINX Ingress**: Routes external traffic on `/data/*` path
 - **CouchDB Integration**: Connects to existing `db-service:5984`
 
+## API Development
+The API routes requests to the /data endpoint through appropriate handler and CRUD service operation. The service instantiated in main.go and injected in routes.go. A handler for each route decodes the url and calls the relevant CRUD service operation.
+
+1. Define routes in routes.go e.g. GET/POST and link to handler
+2. Create handler in handlers.go to implement route capturing url params
+3. Create method in service interface couchservice.go
+4. Implement method in service code couchdb.go
+5. Add handler and service tests for new method
+
 ## API Routes
 
 ### Database Operations
