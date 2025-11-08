@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - datainit
+      - main
+      - prodReleaseDbData
     paths:
       - 'db/version.txt' 
 
@@ -27,11 +28,13 @@ jobs:
 
     - name: Build and Push Docker Image
       working-directory: ./db
-      env:
-        COUCHDB_PASSWORD: ${{ secrets.DB_COUCHDB_PASSWORD }}
       run: |
-        docker build -t ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb:latest .
-        docker push ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb:latest
+        VERSION=$(cat version.txt)
+        IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb
+        docker build -t "$IMAGE_BASE:$VERSION" -t "$IMAGE_BASE:latest" .
+        docker push "$IMAGE_BASE:$VERSION"
+        docker push "$IMAGE_BASE:latest"
+        echo "IMAGE_VERSION=$VERSION" >> $GITHUB_ENV
 
   deploy:
     name: Deploy CouchDB to Kubernetes
@@ -45,14 +48,20 @@ jobs:
       id: set-namespace
       run: |
         if [[ "${{ github.ref_name }}" == "main" ]]; then
-          echo "namespace=eightbitsaxlounge-prod" >> $GITHUB_ENV
+          echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
         else
-          echo "namespace=eightbitsaxlounge-dev" >> $GITHUB_ENV
+          echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
         fi
+
+    - name: Read version
+      run: |
+        echo "VERSION=$(cat db/version.txt)" >> $GITHUB_ENV
 
     - name: Deploy CouchDB via Ansible
       working-directory: ./db
       env:
         COUCHDB_PASSWORD: ${{ secrets.DB_COUCHDB_PASSWORD }}
-        NAMESPACE: ${{ env.namespace }}
+        NAMESPACE: ${{ env.NAMESPACE }}
+        VERSION: ${{ env.VERSION }}
+        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
       run: make deploy-couchdb

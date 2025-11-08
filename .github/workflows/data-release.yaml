@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - datainit
       - main
+      - prodReleaseDbData
     paths:
       - 'data/version.txt'
 
@@ -69,7 +69,7 @@ jobs:
       run: |
         echo "VERSION=$(cat data/version.txt)" >> $GITHUB_ENV
 
-    - name: Deploy CouchDB via Ansible (other k8s resources)
+    - name: Deploy data layer
       working-directory: ./data
       env:
         NAMESPACE: ${{ env.NAMESPACE }}
