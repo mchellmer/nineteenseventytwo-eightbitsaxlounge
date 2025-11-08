@@ -25,12 +25,12 @@ var httpClient = http.DefaultClient
 
 type ProdCouchService struct{}
 
-// GetDoc performs: GET /{dbname}/{id}
+// GetDocumentByDatabaseNameAndDocumentId performs: GET /{dbname}/{id}
 // Returns the JSON-decoded document on 200 OK; otherwise an error containing
 // status and body. The map includes CouchDB metadata fields like _id and _rev.
-func (s *ProdCouchService) GetDoc(dbname string, id string) (map[string]interface{}, error) {
+func (s *ProdCouchService) GetDocumentByDatabaseNameAndDocumentId(dbname string, id string) (map[string]interface{}, error) {
 	docURL := fmt.Sprintf("%s/%s/%s", couchURL(), dbname, id)
-	resp, err := httpClient.Get(fmt.Sprintf("%s/%s", docURL, id))
+	resp, err := httpClient.Get(docURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send GET request: %w", err)
 	}
@@ -48,10 +48,10 @@ func (s *ProdCouchService) GetDoc(dbname string, id string) (map[string]interfac
 	return result, nil
 }
 
-// CreateDoc performs: POST /{dbname}
+// CreateDocumentByDatabaseName performs: POST /{dbname}
 // Expects a JSON document in the request body; responds with 201 Created on
 // success. Returns error with status/body if creation fails.
-func (s *ProdCouchService) CreateDoc(dbname string, doc map[string]interface{}) error {
+func (s *ProdCouchService) CreateDocumentByDatabaseName(dbname string, doc map[string]interface{}) error {
 	b, err := json.Marshal(doc)
 	if err != nil {
 		return fmt.Errorf("failed to marshal document: %w", err)
@@ -79,11 +79,11 @@ func (s *ProdCouchService) CreateDoc(dbname string, doc map[string]interface{}) 
 	return nil
 }
 
-// UpdateDoc performs: PUT /{dbname}/{id}
+// UpdateDocumentByDatabaseNameAndDocumentId performs: PUT /{dbname}/{id}
 // Expects a JSON document in the request body; responds with 200 OK on
 // success. The caller should include the correct _rev within the document if
 // using CouchDB's MVCC (not enforced here).
-func (s *ProdCouchService) UpdateDoc(dbname string, id string, doc map[string]interface{}) error {
+func (s *ProdCouchService) UpdateDocumentByDatabaseNameAndDocumentId(dbname string, id string, doc map[string]interface{}) error {
 	b, err := json.Marshal(doc)
 	if err != nil {
 		return fmt.Errorf("failed to marshal document: %w", err)
@@ -111,11 +111,11 @@ func (s *ProdCouchService) UpdateDoc(dbname string, id string, doc map[string]in
 	return nil
 }
 
-// DeleteDoc performs: DELETE /{dbname}/{id}?rev={rev}
+// DeleteDocumentByDatabaseNameAndDocumentId performs: DELETE /{dbname}/{id}?rev={rev}
 // It first fetches the doc to retrieve its current _rev, then issues the
 // DELETE with that revision. Returns 200 OK on success.
-func (s *ProdCouchService) DeleteDoc(dbname string, id string) error {
-	doc, err := s.GetDoc(dbname, id)
+func (s *ProdCouchService) DeleteDocumentByDatabaseNameAndDocumentId(dbname string, id string) error {
+	doc, err := s.GetDocumentByDatabaseNameAndDocumentId(dbname, id)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve document for deletion: %w", err)
 	}
@@ -148,9 +148,9 @@ func (s *ProdCouchService) DeleteDoc(dbname string, id string) error {
 	return nil
 }
 
-// GetDb performs: GET /{dbname}
+// GetDatabaseByName performs: GET /{dbname}
 // Returns database info (e.g., doc count) on 200 OK; otherwise error.
-func (s *ProdCouchService) GetDb(dbName string) (map[string]interface{}, error) {
+func (s *ProdCouchService) GetDatabaseByName(dbName string) (map[string]interface{}, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", couchURL(), dbName), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GET request: %w", err)
@@ -174,10 +174,10 @@ func (s *ProdCouchService) GetDb(dbName string) (map[string]interface{}, error) 
 	return result, nil
 }
 
-// CreateDb performs: PUT /{dbname}
+// CreateDatabaseByName performs: PUT /{dbname}
 // Treats 201 Created as success, and 412 Precondition Failed (already exists)
 // as a no-op success to keep the operation idempotent.
-func (s *ProdCouchService) CreateDb(dbName string) error {
+func (s *ProdCouchService) CreateDatabaseByName(dbName string) error {
 	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/%s", couchURL(), dbName), nil)
 	if err != nil {
 		return fmt.Errorf("failed to create PUT request: %w", err)
@@ -197,9 +197,9 @@ func (s *ProdCouchService) CreateDb(dbName string) error {
 	return nil
 }
 
-// DeleteDb performs: DELETE /{dbname}
+// DeleteDatabaseByName performs: DELETE /{dbname}
 // Treats 200 OK as success. Returns error for other status codes.
-func (s *ProdCouchService) DeleteDb(dbName string) error {
+func (s *ProdCouchService) DeleteDatabaseByName(dbName string) error {
 	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/%s", couchURL(), dbName), nil)
 	if err != nil {
 		return fmt.Errorf("failed to create DELETE request: %w", err)
@@ -217,6 +217,40 @@ func (s *ProdCouchService) DeleteDb(dbName string) error {
 	}
 
 	return nil
+}
+
+// GetDocumentsByDatabaseName fetches all documents from the database using
+// GET /{db}/_all_docs?include_docs=true and returns the embedded docs.
+func (s *ProdCouchService) GetDocumentsByDatabaseName(dbName string) ([]map[string]interface{}, error) {
+	url := fmt.Sprintf("%s/%s/_all_docs?include_docs=true", couchURL(), dbName)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GET request: %w", err)
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send GET request: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("_all_docs failed with status %d: %s", resp.StatusCode, string(body))
+	}
+	var parsed struct {
+		Rows []struct {
+			Doc map[string]interface{} `json:"doc"`
+		} `json:"rows"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
+		return nil, fmt.Errorf("failed to decode _all_docs response: %w", err)
+	}
+	docs := make([]map[string]interface{}, 0, len(parsed.Rows))
+	for _, row := range parsed.Rows {
+		if row.Doc != nil {
+			docs = append(docs, row.Doc)
+		}
+	}
+	return docs, nil
 }
 
 // couchURL builds the base CouchDB URL with embedded basic-auth credentials.

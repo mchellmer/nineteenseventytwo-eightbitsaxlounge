@@ -53,7 +53,7 @@ func setMockClient(resp *http.Response, err error) {
 // Use the real service struct for tests
 var svc = &ProdCouchService{}
 
-func TestGetDoc_Success(t *testing.T) {
+func TestGetDocumentByDatabaseNameAndDocumentId_Success(t *testing.T) {
 	body := io.NopCloser(bytes.NewReader([]byte(`{"_id":"123","foo":"bar"}`)))
 	resp := &http.Response{
 		StatusCode: 200,
@@ -61,7 +61,7 @@ func TestGetDoc_Success(t *testing.T) {
 	}
 	setMockClient(resp, nil)
 
-	doc, err := svc.GetDoc("testdb", "123")
+	doc, err := svc.GetDocumentByDatabaseNameAndDocumentId("testdb", "123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestGetDoc_Success(t *testing.T) {
 	}
 }
 
-func TestCreateDoc_Success(t *testing.T) {
+func TestCreateDocumentByDatabaseName_Success(t *testing.T) {
 	body := io.NopCloser(bytes.NewReader([]byte(`{"ok":true,"id":"123","rev":"1-xyz"}`)))
 	resp := &http.Response{
 		StatusCode: 201,
@@ -79,13 +79,13 @@ func TestCreateDoc_Success(t *testing.T) {
 	setMockClient(resp, nil)
 
 	doc := map[string]interface{}{"foo": "bar"}
-	err := svc.CreateDoc("testdb", doc)
+	err := svc.CreateDocumentByDatabaseName("testdb", doc)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestUpdateDoc_Success(t *testing.T) {
+func TestUpdateDocumentByDatabaseNameAndDocumentId_Success(t *testing.T) {
 	body := io.NopCloser(bytes.NewReader([]byte(`{"ok":true,"id":"123","rev":"2-xyz"}`)))
 	resp := &http.Response{
 		StatusCode: 200,
@@ -94,14 +94,14 @@ func TestUpdateDoc_Success(t *testing.T) {
 	setMockClient(resp, nil)
 
 	doc := map[string]interface{}{"_id": "123", "_rev": "1-xyz", "foo": "baz"}
-	err := svc.UpdateDoc("testdb", "123", doc)
+	err := svc.UpdateDocumentByDatabaseNameAndDocumentId("testdb", "123", doc)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestDeleteDoc_Success(t *testing.T) {
-	// First, mock GetDoc to return a doc with _rev
+func TestDeleteDocumentByDatabaseNameAndDocumentId_Success(t *testing.T) {
+	// First, mock GetDocument to return a doc with _rev
 	getBody := io.NopCloser(bytes.NewReader([]byte(`{"_id":"123","_rev":"1-xyz"}`)))
 	getResp := &http.Response{
 		StatusCode: 200,
@@ -128,13 +128,13 @@ func TestDeleteDoc_Success(t *testing.T) {
 		}),
 	}
 
-	err := svc.DeleteDoc("testdb", "123")
+	err := svc.DeleteDocumentByDatabaseNameAndDocumentId("testdb", "123")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestGetDb_Success(t *testing.T) {
+func TestGetDatabaseByName_Success(t *testing.T) {
 	body := io.NopCloser(bytes.NewReader([]byte(`{"db_name":"mydb","doc_count":10}`)))
 	resp := &http.Response{
 		StatusCode: 200,
@@ -142,7 +142,7 @@ func TestGetDb_Success(t *testing.T) {
 	}
 	setMockClient(resp, nil)
 
-	dbInfo, err := svc.GetDb("mydb")
+	dbInfo, err := svc.GetDatabaseByName("mydb")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -151,7 +151,7 @@ func TestGetDb_Success(t *testing.T) {
 	}
 }
 
-func TestCreateDb_Success(t *testing.T) {
+func TestCreateDatabaseByName_Success(t *testing.T) {
 	body := io.NopCloser(bytes.NewReader([]byte(`{"ok":true}`)))
 	resp := &http.Response{
 		StatusCode: 201,
@@ -159,13 +159,13 @@ func TestCreateDb_Success(t *testing.T) {
 	}
 	setMockClient(resp, nil)
 
-	err := svc.CreateDb("mydb")
+	err := svc.CreateDatabaseByName("mydb")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestDeleteDb_Success(t *testing.T) {
+func TestDeleteDatabaseByName_Success(t *testing.T) {
 	body := io.NopCloser(bytes.NewReader([]byte(`{"ok":true}`)))
 	resp := &http.Response{
 		StatusCode: 200,
@@ -173,9 +173,22 @@ func TestDeleteDb_Success(t *testing.T) {
 	}
 	setMockClient(resp, nil)
 
-	err := svc.DeleteDb("mydb")
+	err := svc.DeleteDatabaseByName("mydb")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestGetDocumentsByDatabaseName_Success(t *testing.T) {
+	body := io.NopCloser(bytes.NewReader([]byte(`{"rows":[{"doc":{"_id":"1","type":"note"}},{"doc":{"_id":"2","type":"note"}}]}`)))
+	resp := &http.Response{StatusCode: 200, Body: body}
+	setMockClient(resp, nil)
+	docs, err := svc.GetDocumentsByDatabaseName("mydb")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(docs) != 2 {
+		t.Fatalf("expected 2 docs, got %d", len(docs))
 	}
 }
 

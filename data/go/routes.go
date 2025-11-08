@@ -24,15 +24,17 @@ func SetupRoutes(svc CouchService) http.Handler {
 	r := chi.NewRouter()
 
 	// Database-level endpoints
-	r.Put("/data/{dbname}", CreateDbHandler(svc))
-	r.Get("/data/{dbname}", GetDbHandler(svc))
-	r.Delete("/data/{dbname}", DeleteDbHandler(svc))
+	r.Put("/data/{dbname}", CreateDatabaseByNameHandler(svc))
+	r.Get("/data/{dbname}", GetDatabaseByNameHandler(svc))
+	r.Delete("/data/{dbname}", DeleteDatabaseByNameHandler(svc))
 
 	// Document-level CRUD within a specific database
-	r.Get("/data/{dbname}/{id}", GetDocHandler(svc))
-	r.Post("/data/{dbname}", CreateDocHandler(svc))
-	r.Put("/data/{dbname}/{id}", UpdateDocHandler(svc))
-	r.Delete("/data/{dbname}/{id}", DeleteDocHandler(svc))
+	// List all docs endpoint placed before {id} to avoid param capture
+	r.Get("/data/{dbname}/docs", GetDocumentsByDatabaseNameHandler(svc))
+	r.Get("/data/{dbname}/{id}", GetDocumentByDatabaseNameAndDocumentIdHandler(svc))
+	r.Post("/data/{dbname}", CreateDocumentByDatabaseNameHandler(svc))
+	r.Put("/data/{dbname}/{id}", UpdateDocumentByDatabaseNameAndDocumentIdHandler(svc))
+	r.Delete("/data/{dbname}/{id}", DeleteDocumentByDatabaseNameAndDocumentIdHandler(svc))
 
 	return r
 }

@@ -29,10 +29,13 @@ The API routes requests to the /data endpoint through appropriate handler and CR
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `PUT` | `/data/{dbname}` | Create a new database |
+| `GET` | `/data/{dbname}` | Get database info (doc count, etc.) |
+| `DELETE` | `/data/{dbname}` | Delete the database |
 
 ### Document Operations
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| `GET` | `/data/{dbname}/docs` | List all documents in the database |
 | `GET` | `/data/{dbname}/{id}` | Get document by ID |
 | `POST` | `/data/{dbname}` | Create new document |
 | `PUT` | `/data/{dbname}/{id}` | Update existing document |
@@ -43,6 +46,9 @@ The API routes requests to the /data endpoint through appropriate handler and CR
 # Create database
 curl -X PUT http://<ingress-ip>/data/mydb
 
+# Get database info
+curl -X GET http://<ingress-ip>/data/mydb
+
 # Create document
 curl -X POST http://<ingress-ip>/data/mydb \
   -H "Content-Type: application/json" \
@@ -50,6 +56,9 @@ curl -X POST http://<ingress-ip>/data/mydb \
 
 # Get document
 curl -X GET http://<ingress-ip>/data/mydb/doc123
+
+# List all documents in the database
+curl -X GET http://<ingress-ip>/data/mydb/docs
 
 # Update document
 curl -X PUT http://<ingress-ip>/data/mydb/doc123 \
@@ -71,15 +80,20 @@ Deploy using the provided Ansible playbook:
 ansible-playbook data-go-couchdb.yaml
 ```
 
-> TODO: Move to versioned image tags
->
-> The Deployment currently uses `:latest`. To avoid stale images and make
-> rollouts deterministic, tag/push images with the value from `data/version.txt`
-> (e.g., `:0.0.8`) in CI and reference that tag in `data/k8s/deployment.yaml`.
-> Keep `:latest` as a convenience tag if desired.
+Notes on image versioning:
+- Images are tagged from `data/version.txt` during CI and pushed as both `:latest` and `:$VERSION`.
+- The Ansible playbook patches the Deployment to the exact `:$VERSION` tag and waits for rollout.
+- This ensures deterministic deploys while keeping `:latest` for convenience.
 
 ## Testing
 ```bash
 cd data/go
 go test -v
 ```
+
+## Configuration
+- Environment variables for CouchDB are set in the Deployment:
+  - `COUCHDB_ENDPOINT` (e.g., `db-service:5984`)
+  - `COUCHDB_USER`
+  - `COUCHDB_PASSWORD` (from secret `secret-db-couchdb`)
+- Ingress routes `/data/*` to the API Service; use your ingress IP/host in the examples above.

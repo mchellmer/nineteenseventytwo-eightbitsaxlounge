@@ -48,56 +48,66 @@ type mockCouchService struct {
 	returnError bool
 }
 
-func (m *mockCouchService) GetDoc(dbname, id string) (map[string]interface{}, error) {
+func (m *mockCouchService) GetDocumentByDatabaseNameAndDocumentId(dbname, id string) (map[string]interface{}, error) {
 	if m.returnError {
 		return nil, errors.New("not found")
 	}
 	return map[string]interface{}{"_id": id, "foo": "bar"}, nil
 }
-func (m *mockCouchService) CreateDoc(dbname string, doc map[string]interface{}) error {
+func (m *mockCouchService) CreateDocumentByDatabaseName(dbname string, doc map[string]interface{}) error {
 	if m.returnError {
 		return errors.New("create error")
 	}
 	return nil
 }
-func (m *mockCouchService) UpdateDoc(dbname, id string, doc map[string]interface{}) error {
+func (m *mockCouchService) UpdateDocumentByDatabaseNameAndDocumentId(dbname, id string, doc map[string]interface{}) error {
 	if m.returnError {
 		return errors.New("update error")
 	}
 	return nil
 }
-func (m *mockCouchService) DeleteDoc(dbname, id string) error {
+func (m *mockCouchService) DeleteDocumentByDatabaseNameAndDocumentId(dbname, id string) error {
 	if m.returnError {
 		return errors.New("delete error")
 	}
 	return nil
 }
 
-func (m *mockCouchService) GetDb(dbname string) (map[string]interface{}, error) {
+func (m *mockCouchService) GetDatabaseByName(dbname string) (map[string]interface{}, error) {
 	if m.returnError {
 		return nil, errors.New("get db error")
 	}
 	return map[string]interface{}{"db_name": dbname, "doc_count": 0}, nil
 }
-func (m *mockCouchService) CreateDb(dbname string) error {
+func (m *mockCouchService) CreateDatabaseByName(dbname string) error {
 	if m.returnError {
 		return errors.New("create db error")
 	}
 	return nil
 }
-func (m *mockCouchService) DeleteDb(dbname string) error {
+func (m *mockCouchService) DeleteDatabaseByName(dbname string) error {
 	if m.returnError {
 		return errors.New("delete db error")
 	}
 	return nil
 }
 
-func TestGetDocHandler_Success(t *testing.T) {
+func (m *mockCouchService) GetDocumentsByDatabaseName(dbname string) ([]map[string]interface{}, error) {
+	if m.returnError {
+		return nil, errors.New("list docs error")
+	}
+	return []map[string]interface{}{
+		{"_id": "1", "type": "note"},
+		{"_id": "2", "type": "note"},
+	}, nil
+}
+
+func TestGetDocumentByDatabaseNameAndDocumentIdHandler_Success(t *testing.T) {
 	req := httptest.NewRequest("GET", "/data/testdb/123", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
 	rr := httptest.NewRecorder()
 
-	handler := GetDocHandler(&mockCouchService{})
+	handler := GetDocumentByDatabaseNameAndDocumentIdHandler(&mockCouchService{})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusOK {
@@ -112,12 +122,12 @@ func TestGetDocHandler_Success(t *testing.T) {
 	}
 }
 
-func TestGetDocHandler_NotFound(t *testing.T) {
+func TestGetDocumentByDatabaseNameAndDocumentIdHandler_NotFound(t *testing.T) {
 	req := httptest.NewRequest("GET", "/data/testdb/404", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "404"})
 	rr := httptest.NewRecorder()
 
-	handler := GetDocHandler(&mockCouchService{returnError: true})
+	handler := GetDocumentByDatabaseNameAndDocumentIdHandler(&mockCouchService{returnError: true})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusNotFound {
@@ -125,14 +135,14 @@ func TestGetDocHandler_NotFound(t *testing.T) {
 	}
 }
 
-func TestCreateDocHandler_Success(t *testing.T) {
+func TestCreateDocumentByDatabaseNameHandler_Success(t *testing.T) {
 	doc := map[string]interface{}{"foo": "bar"}
 	body, _ := json.Marshal(doc)
 	req := httptest.NewRequest("POST", "/data/testdb", bytes.NewReader(body))
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
-	handler := CreateDocHandler(&mockCouchService{})
+	handler := CreateDocumentByDatabaseNameHandler(&mockCouchService{})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusCreated {
@@ -140,12 +150,12 @@ func TestCreateDocHandler_Success(t *testing.T) {
 	}
 }
 
-func TestCreateDocHandler_BadJSON(t *testing.T) {
+func TestCreateDocumentByDatabaseNameHandler_BadJSON(t *testing.T) {
 	req := httptest.NewRequest("POST", "/data/testdb", bytes.NewReader([]byte("{bad json")))
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
-	handler := CreateDocHandler(&mockCouchService{})
+	handler := CreateDocumentByDatabaseNameHandler(&mockCouchService{})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusBadRequest {
@@ -153,14 +163,14 @@ func TestCreateDocHandler_BadJSON(t *testing.T) {
 	}
 }
 
-func TestCreateDocHandler_Error(t *testing.T) {
+func TestCreateDocumentByDatabaseNameHandler_Error(t *testing.T) {
 	doc := map[string]interface{}{"foo": "bar"}
 	body, _ := json.Marshal(doc)
 	req := httptest.NewRequest("POST", "/data/testdb", bytes.NewReader(body))
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
-	handler := CreateDocHandler(&mockCouchService{returnError: true})
+	handler := CreateDocumentByDatabaseNameHandler(&mockCouchService{returnError: true})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
@@ -168,14 +178,14 @@ func TestCreateDocHandler_Error(t *testing.T) {
 	}
 }
 
-func TestUpdateDocHandler_Success(t *testing.T) {
+func TestUpdateDocumentByDatabaseNameAndDocumentIdHandler_Success(t *testing.T) {
 	doc := map[string]interface{}{"foo": "baz"}
 	body, _ := json.Marshal(doc)
 	req := httptest.NewRequest("PUT", "/data/testdb/123", bytes.NewReader(body))
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
 	rr := httptest.NewRecorder()
 
-	handler := UpdateDocHandler(&mockCouchService{})
+	handler := UpdateDocumentByDatabaseNameAndDocumentIdHandler(&mockCouchService{})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusOK {
@@ -183,12 +193,12 @@ func TestUpdateDocHandler_Success(t *testing.T) {
 	}
 }
 
-func TestUpdateDocHandler_BadJSON(t *testing.T) {
+func TestUpdateDocumentByDatabaseNameAndDocumentIdHandler_BadJSON(t *testing.T) {
 	req := httptest.NewRequest("PUT", "/data/testdb/123", bytes.NewReader([]byte("{bad json")))
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
 	rr := httptest.NewRecorder()
 
-	handler := UpdateDocHandler(&mockCouchService{})
+	handler := UpdateDocumentByDatabaseNameAndDocumentIdHandler(&mockCouchService{})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusBadRequest {
@@ -196,14 +206,14 @@ func TestUpdateDocHandler_BadJSON(t *testing.T) {
 	}
 }
 
-func TestUpdateDocHandler_Error(t *testing.T) {
+func TestUpdateDocumentByDatabaseNameAndDocumentIdHandler_Error(t *testing.T) {
 	doc := map[string]interface{}{"foo": "baz"}
 	body, _ := json.Marshal(doc)
 	req := httptest.NewRequest("PUT", "/data/testdb/123", bytes.NewReader(body))
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
 	rr := httptest.NewRecorder()
 
-	handler := UpdateDocHandler(&mockCouchService{returnError: true})
+	handler := UpdateDocumentByDatabaseNameAndDocumentIdHandler(&mockCouchService{returnError: true})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
@@ -211,12 +221,12 @@ func TestUpdateDocHandler_Error(t *testing.T) {
 	}
 }
 
-func TestDeleteDocHandler_Success(t *testing.T) {
+func TestDeleteDocumentByDatabaseNameAndDocumentIdHandler_Success(t *testing.T) {
 	req := httptest.NewRequest("DELETE", "/data/testdb/123", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
 	rr := httptest.NewRecorder()
 
-	handler := DeleteDocHandler(&mockCouchService{})
+	handler := DeleteDocumentByDatabaseNameAndDocumentIdHandler(&mockCouchService{})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusOK {
@@ -224,12 +234,12 @@ func TestDeleteDocHandler_Success(t *testing.T) {
 	}
 }
 
-func TestDeleteDocHandler_Error(t *testing.T) {
+func TestDeleteDocumentByDatabaseNameAndDocumentIdHandler_Error(t *testing.T) {
 	req := httptest.NewRequest("DELETE", "/data/testdb/123", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
 	rr := httptest.NewRecorder()
 
-	handler := DeleteDocHandler(&mockCouchService{returnError: true})
+	handler := DeleteDocumentByDatabaseNameAndDocumentIdHandler(&mockCouchService{returnError: true})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
@@ -246,12 +256,12 @@ func setChiURLParams(req *http.Request, params map[string]string) *http.Request 
 	return req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 }
 
-func TestCreateDbHandler_Success(t *testing.T) {
+func TestCreateDatabaseByNameHandler_Success(t *testing.T) {
 	req := httptest.NewRequest("PUT", "/data/testdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
-	handler := CreateDbHandler(&mockCouchService{})
+	handler := CreateDatabaseByNameHandler(&mockCouchService{})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusCreated {
@@ -259,12 +269,12 @@ func TestCreateDbHandler_Success(t *testing.T) {
 	}
 }
 
-func TestCreateDbHandler_Error(t *testing.T) {
+func TestCreateDatabaseByNameHandler_Error(t *testing.T) {
 	req := httptest.NewRequest("PUT", "/data/testdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
-	handler := CreateDbHandler(&mockCouchService{returnError: true})
+	handler := CreateDatabaseByNameHandler(&mockCouchService{returnError: true})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
@@ -272,12 +282,41 @@ func TestCreateDbHandler_Error(t *testing.T) {
 	}
 }
 
-func TestGetDbHandler_Success(t *testing.T) {
+func TestGetDocumentsByDatabaseNameHandler_Success(t *testing.T) {
+	req := httptest.NewRequest("GET", "/data/testdb/docs", nil)
+	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
+	rr := httptest.NewRecorder()
+	handler := GetDocumentsByDatabaseNameHandler(&mockCouchService{})
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+	var docs []map[string]interface{}
+	if err := json.NewDecoder(rr.Body).Decode(&docs); err != nil {
+		t.Fatalf("failed to decode docs: %v", err)
+	}
+	if len(docs) != 2 {
+		t.Fatalf("expected 2 docs, got %d", len(docs))
+	}
+}
+
+func TestGetDocumentsByDatabaseNameHandler_Error(t *testing.T) {
+	req := httptest.NewRequest("GET", "/data/testdb/docs", nil)
+	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
+	rr := httptest.NewRecorder()
+	handler := GetDocumentsByDatabaseNameHandler(&mockCouchService{returnError: true})
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500, got %d", rr.Code)
+	}
+}
+
+func TestGetDatabaseByNameHandler_Success(t *testing.T) {
 	req := httptest.NewRequest("GET", "/data/testdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
-	handler := GetDbHandler(&mockCouchService{})
+	handler := GetDatabaseByNameHandler(&mockCouchService{})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusOK {
@@ -292,12 +331,12 @@ func TestGetDbHandler_Success(t *testing.T) {
 	}
 }
 
-func TestGetDbHandler_NotFound(t *testing.T) {
+func TestGetDatabaseByNameHandler_NotFound(t *testing.T) {
 	req := httptest.NewRequest("GET", "/data/missingdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "missingdb"})
 	rr := httptest.NewRecorder()
 
-	handler := GetDbHandler(&mockCouchService{returnError: true})
+	handler := GetDatabaseByNameHandler(&mockCouchService{returnError: true})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusNotFound {
@@ -305,12 +344,12 @@ func TestGetDbHandler_NotFound(t *testing.T) {
 	}
 }
 
-func TestDeleteDbHandler_Success(t *testing.T) {
+func TestDeleteDatabaseByNameHandler_Success(t *testing.T) {
 	req := httptest.NewRequest("DELETE", "/data/testdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
-	handler := DeleteDbHandler(&mockCouchService{})
+	handler := DeleteDatabaseByNameHandler(&mockCouchService{})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusOK {
@@ -318,12 +357,12 @@ func TestDeleteDbHandler_Success(t *testing.T) {
 	}
 }
 
-func TestDeleteDbHandler_Error(t *testing.T) {
+func TestDeleteDatabaseByNameHandler_Error(t *testing.T) {
 	req := httptest.NewRequest("DELETE", "/data/testdb", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb"})
 	rr := httptest.NewRecorder()
 
-	handler := DeleteDbHandler(&mockCouchService{returnError: true})
+	handler := DeleteDatabaseByNameHandler(&mockCouchService{returnError: true})
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
