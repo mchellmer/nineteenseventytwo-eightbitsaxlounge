@@ -1,20 +1,20 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: eightbitsaxlounge-data-ingress
+  name: couchdb-ingress
   labels:
     app: eightbitsaxlounge
-    component: data
+    component: db
 spec:
   ingressClassName: nginx
   rules:
-  - host: {{ data_ingress_host }}
+  - host: {{ db_ingress_host }}
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: eightbitsaxlounge-data-service
+            name: db-service
             port:
-              number: 80
+              number: 5984
