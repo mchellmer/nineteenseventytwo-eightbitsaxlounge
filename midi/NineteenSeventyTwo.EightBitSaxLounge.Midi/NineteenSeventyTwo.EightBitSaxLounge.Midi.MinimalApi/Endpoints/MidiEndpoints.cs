@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Endpoints;
@@ -10,8 +10,7 @@ public static class MidiEndpoints
     {
         app.MapPut("api/Midi/{deviceName}/reset", ResetDevice);
     }
-
-
+    
     [Authorize]
     private static async Task<IResult> ResetDevice(IMidiDeviceService midiService, IMidiDataService db, string deviceName)
     {

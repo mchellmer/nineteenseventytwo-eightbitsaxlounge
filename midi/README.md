@@ -29,6 +29,9 @@ Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
 - implement IMidiDeviceService reset, put
 - implement IMidiDataService reset, put
 
+## Tests
+- test project
+
 # Development
 - new dotnet solution with class library to hold data models
   - couchdb data access via data layer
@@ -38,3 +41,4 @@ Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
   - REST methods to manage documents
 - methods defined to maintain data in db e.g. seed db with static midi info
 - methods defined to manage midi device state e.g. set 'enginea' to 'Hall'
+- ci/cd managed release of some sort
