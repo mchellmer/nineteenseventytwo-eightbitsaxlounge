@@ -25,6 +25,33 @@ Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
 
 ## Library
 - midi device document model
+- db/ventrisdualreverb
+  - Name
+    Description
+    ActiveEngineA: true/false - only one engine active at a time
+    ActiveEngineB: true/false - only one engine active at a time
+    EngineParameters:
+      Id:
+      Name:
+      Description:
+      MidiControlChangeNumberEngineA:
+      MidiControlChangeNumberEngineB:
+      MidiControlChangeValueEngineA:
+      MidiControlChangeValueEngineB:
+    MidiControlChangeNumberEngineA:
+    MidiControlChangeNumberEngineB:
+    MidiControlChangeValueEngineA:
+    MidiControlChangeValueEngineB:
+    MidiControlChangeValues: optional for parameters with discrete number of options
+      Name
+      MidiControlChangeValueEngineA:
+      MidiControlChangeValueEngineB:
+    MidiControlChangeValueMin: optional usually 0
+    MidiControlChangeValueMax: optional usually 127
+    Size: only for engines that support this
+    Sizes: ditto - int number of sizes
+
+
 - data access service? e.g. in sql stored procedures manage access i.e. save/load operations in a standard way
 - implement IMidiDeviceService reset, put
 - implement IMidiDataService reset, put
