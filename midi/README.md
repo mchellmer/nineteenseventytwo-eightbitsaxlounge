@@ -25,32 +25,48 @@ Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
 
 ## Library
 - midi device document model
-- db/ventrisdualreverb
-  - Name
-    Description
-    ActiveEngineA: true/false - only one engine active at a time
-    ActiveEngineB: true/false - only one engine active at a time
-    EngineParameters:
-      Id:
-      Name:
-      Description:
-      MidiControlChangeNumberEngineA:
-      MidiControlChangeNumberEngineB:
-      MidiControlChangeValueEngineA:
-      MidiControlChangeValueEngineB:
-    MidiControlChangeNumberEngineA:
-    MidiControlChangeNumberEngineB:
-    MidiControlChangeValueEngineA:
-    MidiControlChangeValueEngineB:
-    MidiControlChangeValues: optional for parameters with discrete number of options
-      Name
-      MidiControlChangeValueEngineA:
-      MidiControlChangeValueEngineB:
-    MidiControlChangeValueMin: optional usually 0
-    MidiControlChangeValueMax: optional usually 127
-    Size: only for engines that support this
-    Sizes: ditto - int number of sizes
+- devices
+  - Name: VentrisDualReverb
+    Description: Reverb effects pedal with two engines.
+    Active: true
+    Effects:
+      Name: ReverbEngineA
+      Active: true
+      MidiControlChangeNumber: 1
+      MidiControlChangeValueSelector: reverbengine
+      EffectSettings: # dynamic values set by app
+        Name: ReverbEngine
+        Value: Room
 
+        Name: PreDelay
+        Value: 0
+
+        Name: Time
+        Value: 0
+
+        Name: Control1
+        Value: 0 # 0-127 or selector dependent
+
+        Name: Control2
+        Value: 0
+      
+      Name: ReverbEngineB
+      etc
+    
+- selectors (size,dual/single mode)
+  - Name: ReverbEngine
+    Selections:
+      Name: Room
+      MidiCCValue: 0
+      etc
+
+- effects
+  - Name: Room
+    Description: text
+    Settings:
+      Name: Control1
+      Effect: Bass
+      DeviceEffect: Bass # Effect with specific midi config, some effects can be e.g. EngineParam1-5
 
 - data access service? e.g. in sql stored procedures manage access i.e. save/load operations in a standard way
 - implement IMidiDeviceService reset, put
