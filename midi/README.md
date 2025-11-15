@@ -24,19 +24,68 @@ Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
       - set midi device to default config
 
 ## Library
-- midi device document model
+- midi device data model
+  - the data model must store device and effect details to be used by the 8 bit sax lounge app (CRUD implemented via data layer)
+    - UI gets effect details and values to display
+    - midi app gets/puts device/effect midi details
+      - control change message: control change address, control change value
+  - dbs
+    - devices - details of device properties and state e.g. name/description, is it active, list of effects and states
+    - selectors - maps effects having discrete/named midi values e.g. reverb engine A set to Room is CC address 0, value 0; differs from e.g. Bass having a range of 0-127
+    - effects - name/description and device specific settings
+  - ventris dual reverb example
+    - the device model will mirror the physical device
+      - knob: set engine (e.g. room, plate, spring)
+      - knob: time - length of time to apply reverb effect
+      - knob: pre-delay - delay between dry signal and applying reverb
+      - knob: control 1 - engine epecific setting e.g. Room 1 Control 1 = Bass
+      - knob: control 2 - same
+      - knob: EngineA or B or both active
+    - the midi implementation defines midi control change message details required to adjust engine similar to knobs
+    - some knobs midi implementation depends on the active engine e.g. EchoVerb Control1 is 'PreDelayFeedback' with a static CC address for the device, EchoVerb Control2 is 'DelayReverbCrossfade' and uses midi address for EngineParam5
+    - Sample request: update VentrisDualReverb effect ReverbEngineA to EchoVerb
+      - PUT VentrisDualReverb.Effects.ReverbEngineA.EffectSettings?Name=ReverbEngine
+        - Value=EchoVerb
+      - cc message to midi device
+        - CC#=GET devices.VentrisDualReverb.MidiImplementation?Name=ReverbEngine.ControlChangeAddress?Name=ReverbEngineA.Value
+        - CCValue=GET selectors.ReverbEngine.Selections?Name=Echoverb.MidiControlChangeValue
+    - Sample request: update VentrisDualReverb effect ReverbEngineA control2 'knob' to 7
+      - PUT VentrisDualReverb.Effects.ReverbEngineA.EffectSettings?Name=Control1
+        - Value=7
+      - cc message to midi device
+        - EffectName = GET devices/VentrisDualReverb.Effects.ReverbEngineA.EffectSettings?Name=ReverbEngine.Value
+        - VentrisDualReverbMidiParam = GET effects/(EffectName).DeviceSettings?DeviceName=VentrisDualReverb.Control1.Parameter
+        CC#=GET devices.VentrisDualReverb.MidiImplementation?Name=(VentrisDualReverbMidiParam).ControlChangeAddress?Name=ReverbEngineA.Value
+
 - devices
   - Name: VentrisDualReverb
     Description: Reverb effects pedal with two engines.
     Active: true
+    MidiImplementation:
+      Name: ReverbEngine
+      ControlChangeValueSelector: ReverbEngine
+      ControlChangeAddress:
+        Name: ReverbEngineA
+        Value: 1
+        Name: ReverbEngineB
+        Value: 27
+      
+      Name: Time
+      (ControlChangeValueSelector ? db/selectors.value : value ranges from 0-127)
+      etc
+
+      Name: PreDelayFeedback
+      etc
+
+      Name: EngineParam5
+      etc
+
     Effects:
       Name: ReverbEngineA
       Active: true
-      MidiControlChangeNumber: 1
-      MidiControlChangeValueSelector: reverbengine
       EffectSettings: # dynamic values set by app
         Name: ReverbEngine
-        Value: Room
+        Value: EchoVerb
 
         Name: PreDelay
         Value: 0
@@ -61,12 +110,26 @@ Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
       etc
 
 - effects
-  - Name: Room
+  - Name: EchoVerb
     Description: text
-    Settings:
+    DeviceSettings:
+      DeviceName: VentrisDualReverb
       Name: Control1
-      Effect: Bass
-      DeviceEffect: Bass # Effect with specific midi config, some effects can be e.g. EngineParam1-5
+      DeviceEffect:
+        Name: PreDelayFeedback 
+        Parameter: PreDelayFeedback # Effect with specific midi config, effect is either engine specific i.e. parameter = EngineParam1-5 or engine agnostic i.e. parameter = Name
+      
+      DeviceName: VentrisDualReverb
+      Name: Control2
+      DeviceEffect:
+        Name: DelayReverbCrossfade
+        Parameter: EngineParameter5
+  
+  - Name: PreDelayFeedback
+    Description: text
+  
+  - Name: DelayReverbCrossfade
+    Description: text
 
 - data access service? e.g. in sql stored procedures manage access i.e. save/load operations in a standard way
 - implement IMidiDeviceService reset, put
