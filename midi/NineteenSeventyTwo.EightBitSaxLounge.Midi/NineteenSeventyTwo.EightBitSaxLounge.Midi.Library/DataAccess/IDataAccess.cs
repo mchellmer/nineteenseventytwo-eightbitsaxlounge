@@ -8,11 +8,11 @@ public interface IDataAccess
     /// <summary>
     /// Loads data from the database asynchronously.
     /// </summary>
-    /// <param name="databaseFunction">
-    /// The name of the database function e.g. stored procedure/view to execute.
+    /// <param name="dataFunction">
+    /// The name of the data function e.g. stored procedure/view/service to execute.
     /// </param>
     /// <param name="parameters">
-    /// The parameters to pass to the database function.
+    /// The parameters to pass to the data function.
     /// </param>
     /// <param name="connectionStringName">
     /// The name of the connection string to use.
@@ -21,11 +21,13 @@ public interface IDataAccess
     /// The type of data to load, maps a list of returned data to typed objects.
     /// </typeparam>
     /// <typeparam name="TU">
-    /// The type of the parameters object used to execute the function in the database.
+    /// The type of the parameters object used to execute the function.
     /// </typeparam>
-    /// <returns></returns>
+    /// <returns>
+    /// A list of data of type T.
+    /// </returns>
     Task<List<T>> LoadDataAsync<T, TU>(
-        string databaseFunction,
+        string dataFunction,
         TU parameters,
         string connectionStringName);
 

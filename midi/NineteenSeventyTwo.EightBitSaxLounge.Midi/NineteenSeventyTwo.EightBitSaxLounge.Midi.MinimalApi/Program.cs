@@ -61,7 +61,7 @@ builder.Services.AddSwaggerGen(opts =>
 
 // Inject models
 builder.Services.AddSingleton<IMidiDeviceService, WinmmMidiDeviceService>();
-builder.Services.AddSingleton<IMidiDataService, CouchdbMidiDataService>();
+builder.Services.AddSingleton<IMidiDataService, EightBitSaxLoungeMidiDataService>();
 
 // Auth
 builder.Services.AddAuthorization(opts =>

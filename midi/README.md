@@ -57,81 +57,83 @@ Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
         - VentrisDualReverbMidiParam = GET effects/(EffectName).DeviceSettings?DeviceName=VentrisDualReverb.Control1.Parameter
         CC#=GET devices.VentrisDualReverb.MidiImplementation?Name=(VentrisDualReverbMidiParam).ControlChangeAddress?Name=ReverbEngineA.Value
 
-- devices
-  - Name: VentrisDualReverb
-    Description: Reverb effects pedal with two engines.
-    Active: true
-    MidiImplementation:
-      Name: ReverbEngine
-      ControlChangeValueSelector: ReverbEngine
-      ControlChangeAddress:
-        Name: ReverbEngineA
-        Value: 1
-        Name: ReverbEngineB
-        Value: 27
-      
-      Name: Time
-      (ControlChangeValueSelector ? db/selectors.value : value ranges from 0-127)
-      etc
+    - Sample db documents:
+      - devices
+        - Name: VentrisDualReverb
+          Description: Reverb effects pedal with two engines.
+          Active: true
+          MidiImplementation:
+            Name: ReverbEngine
+            ControlChangeValueSelector: ReverbEngine
+            ControlChangeAddresses:
+              Name: ReverbEngineA
+              Value: 1
+              Name: ReverbEngineB
+              Value: 27
+            
+            Name: Time
+            (ControlChangeValueSelector ? db/selectors.value : value ranges from 0-127)
+            etc
 
-      Name: PreDelayFeedback
-      etc
+            Name: PreDelayFeedback
+            etc
 
-      Name: EngineParam5
-      etc
+            Name: EngineParam5
+            etc
 
-    Effects:
-      Name: ReverbEngineA
-      Active: true
-      EffectSettings: # dynamic values set by app
-        Name: ReverbEngine
-        Value: EchoVerb
+          DeviceEffects:
+            Name: ReverbEngineA
+            Active: true
+            DefaultActive: true
+            EffectSettings: # dynamic values set by app
+              Name: ReverbEngine
+              Value: 8 # for Echoverb
 
-        Name: PreDelay
-        Value: 0
+              Name: PreDelay
+              Value: 0
 
-        Name: Time
-        Value: 0
+              Name: Time
+              Value: 0
 
-        Name: Control1
-        Value: 0 # 0-127 or selector dependent
+              Name: Control1
+              Value: 0 # 0-127 or selector dependent
 
-        Name: Control2
-        Value: 0
-      
-      Name: ReverbEngineB
-      etc
-    
-- selectors (size,dual/single mode)
-  - Name: ReverbEngine
-    Selections:
-      Name: Room
-      MidiCCValue: 0
-      etc
+              Name: Control2
+              Value: 0
+            
+            Name: ReverbEngineB
+            etc
+          
+      - selectors (size,dual/single mode)
+        - Name: ReverbEngine
+          Selections:
+            Name: EchoVerb
+            MidiCCValue: 8
+            etc
 
-- effects
-  - Name: EchoVerb
-    Description: text
-    DeviceSettings:
-      DeviceName: VentrisDualReverb
-      Name: Control1
-      DeviceEffect:
-        Name: PreDelayFeedback 
-        Parameter: PreDelayFeedback # Effect with specific midi config, effect is either engine specific i.e. parameter = EngineParam1-5 or engine agnostic i.e. parameter = Name
-      
-      DeviceName: VentrisDualReverb
-      Name: Control2
-      DeviceEffect:
-        Name: DelayReverbCrossfade
-        Parameter: EngineParameter5
-  
-  - Name: PreDelayFeedback
-    Description: text
-  
-  - Name: DelayReverbCrossfade
-    Description: text
+      - effects
+        - Name: EchoVerb
+          Description: text
+          DeviceSettings:
+            Name: Control1
+            DeviceName: VentrisDualReverb
+            EffectName: PreDelayFeedback 
+            DeviceMidiImplementationName: PreDelayFeedback # Effect with specific midi config, effect is either engine specific i.e. parameter = EngineParam1-5 or engine agnostic i.e. parameter = Name
+            
+            DeviceName: VentrisDualReverb
+            Name: Control2
+            EffectName: DelayReverbCrossfade
+            DeviceMidiImplementationName: EngineParameter5
+        
+        - Name: PreDelayFeedback
+          Description: text
+        
+        - Name: DelayReverbCrossfade
+          Description: text
 
 - data access service? e.g. in sql stored procedures manage access i.e. save/load operations in a standard way
+  - use couchdb design doc/ view as db operation
+  - use CouchDB.Net package
 - implement IMidiDeviceService reset, put
 - implement IMidiDataService reset, put
 

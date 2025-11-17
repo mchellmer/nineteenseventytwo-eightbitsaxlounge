@@ -1,6 +1,8 @@
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
+
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 
 public interface IMidiDeviceService
 {
-    Task<object> ResetToDefaultsAsync(string deviceName);
+    Task<ControlChangeMessage> SendControlChangeMessageByDeviceNameAsync(string deviceName, ControlChangeMessage controlChangeMessage);
 }
