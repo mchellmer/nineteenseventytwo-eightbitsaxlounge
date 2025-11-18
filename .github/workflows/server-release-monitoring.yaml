@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - grafana220
     paths:
       - 'server/versions/monitoring.txt'
 
