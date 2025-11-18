@@ -109,6 +109,6 @@ public static class MidiEndpoints
         }
         
         // Return settings updated successfully or error
-        return Results.Ok(new { Message = "Not implemented yet" });
+        return Results.Ok(new { Message = $"Device '{deviceName}' reset to default settings successfully." });
     }
 }

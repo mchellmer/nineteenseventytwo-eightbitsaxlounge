@@ -6,6 +6,7 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Endpoints;
 
 using System.Text;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,6 +61,8 @@ builder.Services.AddSwaggerGen(opts =>
 });
 
 // Inject models
+builder.Services.AddSingleton<IDataAccess, EightbitSaxLoungeDataAccess>();
+builder.Services.AddSingleton<IEffectActivatorFactory, EffectActivatorFactory>();
 builder.Services.AddSingleton<IMidiDeviceService, WinmmMidiDeviceService>();
 builder.Services.AddSingleton<IMidiDataService, EightBitSaxLoungeMidiDataService>();
 

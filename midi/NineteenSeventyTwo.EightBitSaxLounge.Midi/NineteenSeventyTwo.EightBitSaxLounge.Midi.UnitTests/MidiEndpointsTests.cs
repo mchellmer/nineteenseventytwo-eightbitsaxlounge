@@ -11,25 +11,26 @@ namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.UnitTests;
 
 public class MidiEndpointsTests
 {
-    private const string DeviceName = "TestDevice";
+    private const string TestDeviceName = "TestDevice";
+    
+    private const string TestEffectName = "ReverbEngine";
 
     private static readonly MidiDevice TestDevice = new()
     {
-        Name = DeviceName,
+        Name = TestDeviceName,
         Description = "desc",
         Active = true,
         MidiImplementation = new List<MidiConfiguration>(),
-        DeviceEffects = new List<DeviceEffect>()
-    };
-    
-    private static readonly DeviceEffect TestEffect = new()
-    {
-        Name = "ReverbEngine",
-        Active = false,
-        DefaultActive = true,
-        DeviceEffectSettings = new List<DeviceEffectSetting>
-        {
-            new() { Name = "SettingA", Value = 3 }
+        DeviceEffects = new List<DeviceEffect> { new() 
+            {
+                Name = TestEffectName,
+                Active = false,
+                DefaultActive = true,
+                DeviceEffectSettings = new List<DeviceEffectSetting>
+                {
+                    new() { Name = "SettingA", Value = 3 }
+                }
+            }
         }
     };
 
@@ -43,7 +44,7 @@ public class MidiEndpointsTests
     private static async Task<IResult> InvokeResetDeviceAsync(ILogger logger, IMidiDeviceService deviceService, IMidiDataService dataService)
     {
         var mi = GetResetDeviceMethod();
-        var task = (Task)mi.Invoke(null, new object[] { logger, deviceService, dataService, DeviceName })!;
+        var task = (Task)mi.Invoke(null, new object[] { logger, deviceService, dataService, TestDeviceName })!;
         await task.ConfigureAwait(false);
         var result = task.GetType().GetProperty("Result")!.GetValue(task) as IResult;
         return result!;
@@ -108,22 +109,20 @@ public class MidiEndpointsTests
         var deviceServiceMock = new Mock<IMidiDeviceService>();
         var dataServiceMock = new Mock<IMidiDataService>();
 
-        var effect = TestEffect;
-
-        dataServiceMock.Setup(m => m.GetDeviceByNameAsync(DeviceName)).ReturnsAsync(TestDevice);
+        dataServiceMock.Setup(m => m.GetDeviceByNameAsync(TestDeviceName)).ReturnsAsync(TestDevice);
 
         var activateMsg = new ControlChangeMessage { Address = 1, Value = 1 };
         var revertMsg = new ControlChangeMessage { Address = 1, Value = 0 };
 
-        dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(DeviceName, effect.Name, true)).ReturnsAsync(activateMsg);
-        dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(DeviceName, effect.Name, false)).ReturnsAsync(revertMsg);
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(TestDeviceName, TestEffectName, true)).ReturnsAsync(activateMsg);
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(TestDeviceName, TestEffectName, false)).ReturnsAsync(revertMsg);
 
-        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceNameAsync(DeviceName, activateMsg)).ReturnsAsync(activateMsg);
-        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceNameAsync(DeviceName, revertMsg)).ReturnsAsync(revertMsg);
+        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceNameAsync(TestDeviceName, activateMsg)).ReturnsAsync(activateMsg);
+        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceNameAsync(TestDeviceName, revertMsg)).ReturnsAsync(revertMsg);
 
-        dataServiceMock.Setup(m => m.UpdateDeviceEffectActiveStateAsync(DeviceName, effect.Name, true)).Returns(Task.CompletedTask);
+        dataServiceMock.Setup(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true)).Returns(Task.CompletedTask);
 
-        dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync(DeviceName, effect.Name, "SettingA", 3))
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync(TestDeviceName, TestEffectName, "SettingA", 3))
             .ReturnsAsync(new ControlChangeMessage { Address = 2, Value = 3 });
 
         // Act
@@ -132,95 +131,102 @@ public class MidiEndpointsTests
 
         // Assert
         Assert.Equal(200, status);
-        Assert.Contains("Not implemented", body);
+        Assert.Contains("reset to default settings successfully.", body);
 
-        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceNameAsync(DeviceName, It.IsAny<ControlChangeMessage>()), Times.Once);
-        dataServiceMock.Verify(m => m.UpdateDeviceEffectActiveStateAsync(DeviceName, effect.Name, true), Times.Once);
+        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceNameAsync(TestDeviceName, It.IsAny<ControlChangeMessage>()), Times.Once);
+        dataServiceMock.Verify(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true), Times.Once);
     }
 
-    // [Fact]
-    // public async Task ResetDevice_UpdateFails_RevertSucceeds_Returns500()
-    // {
-    //     // Arrange
-    //     var loggerMock = new Mock<ILogger>();
-    //     var deviceServiceMock = new Mock<IMidiDeviceService>();
-    //     var dataServiceMock = new Mock<IMidiDataService>();
-    //
-    //     var effect = new DeviceEffect
-    //     {
-    //         Name = "ReverbEngine",
-    //         Active = false,
-    //         DefaultActive = true,
-    //         DeviceEffectSettings = new List<DeviceEffectSetting>()
-    //     };
-    //
-    //     var device = new MidiDevice { Name = DeviceName, Description = "desc", Active = true, MidiImplementation = new List<MidiConfiguration>(), DeviceEffects = new List<DeviceEffect>() };
-    //
-    //     dataServiceMock.Setup(m => m.GetDeviceByNameAsync(DeviceName)).ReturnsAsync(device);
-    //
-    //     var activateMsg = new ControlChangeMessage { Address = 1, Value = 1 };
-    //     var revertMsg = new ControlChangeMessage { Address = 1, Value = 0 };
-    //
-    //     dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(DeviceName, effect.Name, true)).ReturnsAsync(activateMsg);
-    //     dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(DeviceName, effect.Name, false)).ReturnsAsync(revertMsg);
-    //
-    //     deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceNameAsync(DeviceName, activateMsg)).ReturnsAsync(activateMsg);
-    //     deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceNameAsync(DeviceName, revertMsg)).ReturnsAsync(revertMsg);
-    //
-    //     dataServiceMock.Setup(m => m.UpdateDeviceEffectActiveStateAsync(DeviceName, effect.Name, true)).ThrowsAsync(new Exception("DB failure"));
-    //
-    //     // Act
-    //     var result = await InvokeResetDeviceAsync(loggerMock.Object, deviceServiceMock.Object, dataServiceMock.Object);
-    //     var (status, body) = await ExecuteResultAsync(result);
-    //
-    //     // Assert
-    //     Assert.Equal(500, status);
-    //     Assert.Contains("Device reset completed with errors", body);
-    //
-    //     deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceNameAsync(DeviceName, revertMsg), Times.Once);
-    //     dataServiceMock.Verify(m => m.UpdateDeviceEffectActiveStateAsync(DeviceName, effect.Name, true), Times.Once);
-    // }
-    //
-    // [Fact]
-    // public async Task ResetDevice_UpdateFails_RevertFails_Returns500WithDetail()
-    // {
-    //     // Arrange
-    //     var loggerMock = new Mock<ILogger>();
-    //     var deviceServiceMock = new Mock<IMidiDeviceService>();
-    //     var dataServiceMock = new Mock<IMidiDataService>();
-    //
-    //     var effect = new DeviceEffect
-    //     {
-    //         Name = "ReverbEngine",
-    //         Active = false,
-    //         DefaultActive = true,
-    //         DeviceEffectSettings = new List<DeviceEffectSetting>()
-    //     };
-    //
-    //     var device = new MidiDevice { Name = DeviceName, Description = "desc", Active = true, MidiImplementation = new List<MidiConfiguration>(), DeviceEffects = new List<DeviceEffect>() };
-    //
-    //     dataServiceMock.Setup(m => m.GetDeviceByNameAsync(DeviceName)).ReturnsAsync(device);
-    //
-    //     var activateMsg = new ControlChangeMessage { Address = 1, Value = 1 };
-    //     var revertMsg = new ControlChangeMessage { Address = 1, Value = 0 };
-    //
-    //     dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(DeviceName, effect.Name, true)).ReturnsAsync(activateMsg);
-    //     dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(DeviceName, effect.Name, false)).ReturnsAsync(revertMsg);
-    //
-    //     deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceNameAsync(DeviceName, activateMsg)).ReturnsAsync(activateMsg);
-    //     deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceNameAsync(DeviceName, revertMsg)).ThrowsAsync(new Exception("Device revert failed"));
-    //
-    //     dataServiceMock.Setup(m => m.UpdateDeviceEffectActiveStateAsync(DeviceName, effect.Name, true)).ThrowsAsync(new Exception("DB failure"));
-    //
-    //     // Act
-    //     var result = await InvokeResetDeviceAsync(loggerMock.Object, deviceServiceMock.Object, dataServiceMock.Object);
-    //     var (status, body) = await ExecuteResultAsync(result);
-    //
-    //     // Assert
-    //     Assert.Equal(500, status);
-    //     Assert.Contains("Failed to revert effect", body);
-    //
-    //     deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceNameAsync(DeviceName, revertMsg), Times.Once);
-    //     dataServiceMock.Verify(m => m.UpdateDeviceEffectActiveStateAsync(DeviceName, effect.Name, true), Times.Once);
-    // }
+    [Fact]
+    public async Task ResetDevice_UpdateFails_RevertSucceeds_Returns500()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger>();
+        var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        dataServiceMock.Setup(m => m.GetDeviceByNameAsync(TestDeviceName)).ReturnsAsync(TestDevice);
+
+        var activateMsg = new ControlChangeMessage { Address = 1, Value = 1 };
+        var revertMsg = new ControlChangeMessage { Address = 1, Value = 0 };
+
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(TestDeviceName, TestEffectName, true)).ReturnsAsync(activateMsg);
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(TestDeviceName, TestEffectName, false)).ReturnsAsync(revertMsg);
+
+        // Capture sent messages to assert later
+        ControlChangeMessage? capturedSent = null;
+        deviceServiceMock
+            .Setup(m => m.SendControlChangeMessageByDeviceNameAsync(It.IsAny<string>(), It.IsAny<ControlChangeMessage>()))
+            .Callback<string, ControlChangeMessage>((_, msg) => capturedSent = msg)
+            .ReturnsAsync((string _, ControlChangeMessage m) => m);
+
+        // Simulate DB update failure so revert path is executed
+        dataServiceMock.Setup(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true)).ThrowsAsync(new Exception("DB failure"));
+
+        // Act
+        var result = await InvokeResetDeviceAsync(loggerMock.Object, deviceServiceMock.Object, dataServiceMock.Object);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(500, status);
+        Assert.Contains("Device reset completed with errors", body);
+
+        // Revert should have been attempted (device service called at least once for revert)
+        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceNameAsync(TestDeviceName, It.IsAny<ControlChangeMessage>()), Times.AtLeastOnce);
+        Assert.NotNull(capturedSent);
+        dataServiceMock.Verify(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true), Times.Once);
+    }
+
+    [Fact]
+    public async Task ResetDevice_UpdateFails_RevertFails_Returns500WithDetail()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger>();
+        var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        var device = new MidiDevice
+        {
+            Name = TestDeviceName,
+            Description = "desc",
+            Active = true,
+            MidiImplementation = new List<MidiConfiguration>(),
+            DeviceEffects = new List<DeviceEffect>
+            {
+                new()
+                {
+                    Name = TestEffectName,
+                    Active = false,
+                    DefaultActive = true,
+                    DeviceEffectSettings = new List<DeviceEffectSetting>()
+                }
+            }
+        };
+
+        dataServiceMock.Setup(m => m.GetDeviceByNameAsync(TestDeviceName)).ReturnsAsync(device);
+
+        var activateMsg = new ControlChangeMessage { Address = 1, Value = 1 };
+        var revertMsg = new ControlChangeMessage { Address = 1, Value = 0 };
+
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(TestDeviceName, TestEffectName, true)).ReturnsAsync(activateMsg);
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(TestDeviceName, TestEffectName, false)).ReturnsAsync(revertMsg);
+
+        // Simulate sending activate succeeds but sending revert throws
+        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceNameAsync(TestDeviceName, It.Is<ControlChangeMessage>(c => c.Value == activateMsg.Value))).ReturnsAsync(activateMsg);
+        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceNameAsync(TestDeviceName, It.Is<ControlChangeMessage>(c => c.Value == revertMsg.Value))).ThrowsAsync(new Exception("Device revert failed"));
+
+        // Simulate DB update failure so revert path is executed
+        dataServiceMock.Setup(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true)).ThrowsAsync(new Exception("DB failure"));
+
+        // Act
+        var result = await InvokeResetDeviceAsync(loggerMock.Object, deviceServiceMock.Object, dataServiceMock.Object);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(500, status);
+        Assert.Contains("Failed to revert effect", body);
+
+        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceNameAsync(TestDeviceName, It.IsAny<ControlChangeMessage>()), Times.AtLeastOnce);
+        dataServiceMock.Verify(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true), Times.Once);
+    }
 }
