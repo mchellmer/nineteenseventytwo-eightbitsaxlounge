@@ -29,6 +29,7 @@ package gofiles
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -97,6 +98,42 @@ func TestUpdateDocumentByDatabaseNameAndDocumentId_Success(t *testing.T) {
 	err := svc.UpdateDocumentByDatabaseNameAndDocumentId("testdb", "123", doc)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestUpdateDocumentByDatabaseNameAndDocumentId_FetchRevWhenMissing(t *testing.T) {
+	// First GET returns existing document with _rev
+	getBody := io.NopCloser(bytes.NewReader([]byte(`{"_id":"123","_rev":"5-abc"}`)))
+	getResp := &http.Response{StatusCode: 200, Body: getBody}
+	// Then PUT succeeds (200)
+	putBody := io.NopCloser(bytes.NewReader([]byte(`{"ok":true,"id":"123","rev":"6-def"}`)))
+	putResp := &http.Response{StatusCode: 200, Body: putBody}
+
+	call := 0
+	httpClient = &http.Client{Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		call++
+		if call == 1 && req.Method == http.MethodGet {
+			return getResp, nil
+		}
+		if call == 2 && req.Method == http.MethodPut {
+			// Assert that the request body now includes fetched _rev
+			b, _ := io.ReadAll(req.Body)
+			if !bytes.Contains(b, []byte("5-abc")) {
+				t.Fatalf("expected fetched _rev in PUT body, got: %s", string(b))
+			}
+			return putResp, nil
+		}
+		return nil, fmt.Errorf("unexpected call %d %s", call, req.Method)
+	})}
+
+	// Document without _rev triggers fetch
+	doc := map[string]interface{}{"_id": "123", "foo": "updated"}
+	err := svc.UpdateDocumentByDatabaseNameAndDocumentId("testdb", "123", doc)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if call != 2 {
+		t.Fatalf("expected 2 HTTP calls (GET then PUT), got %d", call)
 	}
 }
 

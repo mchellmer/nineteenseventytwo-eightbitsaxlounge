@@ -6,5 +6,6 @@ public class MidiDevice
     public required string Description { get; set; }
     public bool Active { get; set; } = false;
     public required List<MidiConfiguration> MidiImplementation { get; set; }
+    public required string MidiConnectName { get; set; }
     public required List<DeviceEffect> DeviceEffects { get; set; }
 }
