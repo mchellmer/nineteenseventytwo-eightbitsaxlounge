@@ -30,12 +30,13 @@ public class MidiEndpointsHandler
                 _logger.LogInformation("Resetting effect default active state {DefaultActive} for effect {Effect} on device {Device}", effect.DefaultActive, effect.Name, deviceName);
 
                 var activateMessage = await _midiDataService.GetControlChangeMessageToActivateDeviceEffectAsync(deviceName, effect.Name, true);
-                await _midiDeviceService.SendControlChangeMessageByDeviceNameAsync(deviceName, activateMessage);
+                await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(midiDevice.MidiConnectName, activateMessage);
                 _logger.LogInformation("Effect default state reset on device");
 
                 try
                 {
                     _logger.LogInformation("Resetting active state data for device");
+                    //TODO: needs to handle _rev and _id
                     await _midiDataService.UpdateDeviceEffectActiveStateAsync(deviceName, effect.Name, true);
                     _logger.LogInformation("Effect active state data updated");
                 }
@@ -47,7 +48,7 @@ public class MidiEndpointsHandler
                         _logger.LogInformation("Reverting effect active state for effect {Effect} on device {Device}", effect.Name, deviceName);
                         errorResettingDevice = true;
                         var revertMessage = await _midiDataService.GetControlChangeMessageToActivateDeviceEffectAsync(deviceName, effect.Name, effect.Active);
-                        await _midiDeviceService.SendControlChangeMessageByDeviceNameAsync(deviceName, revertMessage);
+                        await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(midiDevice.MidiConnectName, revertMessage);
                         _logger.LogInformation("Effect active state reverted on device");
                     }
                     catch (Exception exception)
@@ -74,6 +75,7 @@ public class MidiEndpointsHandler
                 try
                 {
                     await _midiDataService.GetControlChangeMessageToSetDeviceEffectSettingAsync(deviceName, effect.Name, setting.Name, setting.Value);
+                    //TODO: Send the setting message to the device
                 }
                 catch (Exception e)
                 {
