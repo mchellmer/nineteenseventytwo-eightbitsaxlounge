@@ -7,18 +7,11 @@ namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
 /// </summary>
 public class MidiOutDevice : MidiDevice
 {
-    private const UInt32 ControlChangeMessageMask = 0x0101B0u;
-    
     /// <summary>
     /// The identifier of the MIDI output device.
     /// </summary>
     internal UInt32 DeviceId;
-    
-    /// <summary>
-    /// The name of the MIDI output device.
-    /// </summary>
-    public string? DeviceName { get; set; }
-    
+
     /// <summary>
     /// A handle to reference the device port in communications.
     /// </summary>
@@ -150,7 +143,6 @@ public class MidiOutDevice : MidiDevice
                 devName.StartsWith(midiConnectName, StringComparison.OrdinalIgnoreCase))
             {
                 DeviceId = dev;
-                DeviceName = devName;
             }
         }
     }
@@ -185,7 +177,7 @@ public class MidiOutDevice : MidiDevice
                 return false;
 
             var msg = (value << 16) | (address << 8) | 0xB0u;
-            MmResult result = MmResult.NoError;
+            MmResult result;
 
             for (int attempt = 0; attempt < maxRetries; attempt++)
             {
