@@ -88,7 +88,6 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         }
     }
     
-    //TODO: couchdb device will return id and rev, need to handle that in update
     public async Task UpdateDeviceEffectActiveStateAsync(string deviceName, string effectName, bool activate)
     {
         _logger.LogInformation(
@@ -121,9 +120,40 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         throw new NotImplementedException();
     }
 
-    public Task<Effect> GetEffectByNameAsync(string effectName)
+    public async Task<Effect> GetEffectByNameAsync(string effectName)
     {
-        throw new NotImplementedException();
+        _logger.LogInformation($"Retrieving effect by name: {effectName}");
+        try
+        {
+            var effectsReturned =
+                await _eightBitSaxLoungeMidiDataAccess.LoadDataAsync<Effect, EightBitSaxLoungeDataRequest>(
+                    "GET",
+                    new EightBitSaxLoungeDataRequest
+                    {
+                        RequestRoute = $"effects/{effectName}",
+                        RequestBody = null
+                    },
+                    DataLayerConnectionStringName);
+            if (effectsReturned.Count == 0)
+            {
+                var msg = $"Effect with name {effectName} does not exist.";
+                _logger.LogError(msg);
+                throw new Exception(msg);
+            }
+            if (effectsReturned.Count > 1)
+            {
+                var msg = $"Multiple effects found with name {effectName}.";
+                _logger.LogError(msg);
+                throw new Exception(msg);
+            }
+            _logger.LogInformation($"Effect with name {effectName} retrieved successfully.");
+            return effectsReturned.First();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error retrieving effect {effectName}: {e.Message}");
+            throw new Exception($"Error retrieving effect {effectName}: {e.Message}");
+        }
     }
 
     public Task UpdateEffectByNameAsync(string effectName, Effect updatedEffect)
@@ -141,9 +171,40 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         throw new NotImplementedException();
     }
 
-    public Task<Selector> GetSelectorByNameAsync(string selectorName)
+    public async Task<Selector> GetSelectorByNameAsync(string selectorName)
     {
-        throw new NotImplementedException();
+        _logger.LogInformation($"Retrieving selector by name: {selectorName}");
+        try
+        {
+            var selectorsReturned =
+                await _eightBitSaxLoungeMidiDataAccess.LoadDataAsync<Selector, EightBitSaxLoungeDataRequest>(
+                    "GET",
+                    new EightBitSaxLoungeDataRequest
+                    {
+                        RequestRoute = $"selectors/{selectorName}",
+                        RequestBody = null
+                    },
+                    DataLayerConnectionStringName);
+            if (selectorsReturned.Count == 0)
+            {
+                var msg = $"Selector with name {selectorName} does not exist.";
+                _logger.LogError(msg);
+                throw new Exception(msg);
+            }
+            if (selectorsReturned.Count > 1)
+            {
+                var msg = $"Multiple selectors found with name {selectorName}.";
+                _logger.LogError(msg);
+                throw new Exception(msg);
+            }
+            _logger.LogInformation($"Selector with name {selectorName} retrieved successfully.");
+            return selectorsReturned.First();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error retrieving selector {selectorName}: {e.Message}");
+            throw new Exception($"Error retrieving selector {selectorName}: {e.Message}");
+        }
     }
 
     public Task UpdateSelectorByNameAsync(string selectorName, Selector updatedSelector)
@@ -188,10 +249,100 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             throw new InvalidOperationException(err, ex);
         }
     }
-
-    public Task<ControlChangeMessage> GetControlChangeMessageToSetDeviceEffectSettingAsync(
+    
+    public async Task<ControlChangeMessage> GetControlChangeMessageToSetDeviceEffectSettingAsync(
         string deviceName, string effectName, string settingName, int settingValue)
     {
-        throw new NotImplementedException();
+        var device = await GetDeviceByNameAsync(deviceName);
+        var deviceEffect = device.DeviceEffects.FirstOrDefault(de => de.Name == effectName);
+        if (deviceEffect == null)
+        {
+            var msg = $"No effect named '{effectName}' found in device '{deviceName}'.";
+            _logger.LogError(msg);
+            throw new InvalidOperationException(msg);
+        }
+        
+        var deviceEffectSetting = deviceEffect.DeviceEffectSettings
+            .FirstOrDefault(des => des.Name == settingName);
+        if (deviceEffectSetting == null)
+        {
+            var msg = $"No setting named '{settingName}' found for effect '{effectName}' in device '{deviceName}'.";
+            _logger.LogError(msg);
+            throw new InvalidOperationException(msg);
+        }
+        
+        string settingMidiImplementationName;
+        
+        // Some settings are dependent on others e.g. if a reverb engine is 'Room' then Control1 is 'Bass'
+        // If the EffectSetting has a DeviceEffectSettingDependencyName, get that effect's ControlChangeAddress instead
+        var deviceEffectSettingDependency = deviceEffect.DeviceEffectSettings.FirstOrDefault(setting => setting.Name == deviceEffectSetting.Name);
+        if (deviceEffectSettingDependency != null)
+        {
+            // Get the effect keyed to the dependentSetting from selectors
+            var dependentSettingSelector = await GetSelectorByNameAsync(deviceEffectSettingDependency.Name);
+            var dependentEffectName = dependentSettingSelector.Selections.FirstOrDefault(
+                selection => selection.ControlChangeMessageValue == deviceEffectSettingDependency.Value)?.Name;
+            if (string.IsNullOrEmpty(dependentEffectName))
+            {
+                var msg = $"No dependent effect found for setting '{settingName}' in device '{deviceName}'.";
+                _logger.LogError(msg);
+                throw new InvalidOperationException(msg);
+            }
+            
+            var dependentEffect = await GetEffectByNameAsync(dependentEffectName);
+            if (dependentEffect.DeviceSettings == null)
+            {
+                var msg = $"No device settings found for dependent effect '{dependentEffectName}' in device '{deviceName}'.";
+                _logger.LogError(msg);
+                throw new InvalidOperationException(msg);
+            }
+            
+            var effectDeviceSetting = dependentEffect.DeviceSettings.FirstOrDefault(
+                setting => setting.DeviceName == deviceName && setting.Name == settingName);
+            if (effectDeviceSetting == null)
+            {
+                var msg = $"No device setting found for dependent effect '{dependentEffectName}' in device '{deviceName}' with setting name '{settingName}'.";
+                _logger.LogError(msg);
+                throw new InvalidOperationException(msg);
+            }
+            
+            settingMidiImplementationName = effectDeviceSetting.DeviceMidiImplementationName;
+        }
+        else
+        {
+            settingMidiImplementationName = settingName;
+        }
+        
+        // The device has a list of midi implementations mapping effects to midi addresses
+        // Get the midi implementation whose name matches settingName
+        var settingMidiImplementation = device.MidiImplementation
+            .FirstOrDefault(configuration => configuration.Name == settingMidiImplementationName);
+        if (settingMidiImplementation == null)
+        {
+            var msg = $"No MIDI implementation found for setting '{settingName}' in device '{deviceName}'.";
+            _logger.LogError(msg);
+            throw new InvalidOperationException(msg);
+        }
+
+        // Get the ControlChangeAddress from that implementation where Name == effectName
+        var settingAddress = 
+            (settingMidiImplementation.ControlChangeAddresses ?? throw new InvalidOperationException
+            ($"No MIDI implementation found for setting '{settingName}' in device '{deviceName}'."))
+            .FirstOrDefault(address => address.Name == effectName);
+        
+        
+        if (settingAddress == null)
+        {
+            var msg = $"No ControlChangeAddress found for effect '{effectName}' in setting '{settingName}' for device '{deviceName}'.";
+            _logger.LogError(msg);
+            throw new InvalidOperationException(msg);
+        }
+        
+        //TODO: handle when settingValue is a selector value rather than direct CC value
+        return new ControlChangeMessage
+        {
+            Address = settingAddress.Value,
+            Value = settingValue
+        };
     }
 }

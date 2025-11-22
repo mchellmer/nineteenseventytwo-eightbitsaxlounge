@@ -87,15 +87,16 @@ Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
             DefaultActive: true
             EffectSettings: # dynamic values set by app
               Name: ReverbEngine
+              DefaultValue: 0
               Value: 8 # for Echoverb
 
               Name: PreDelay
               Value: 0
-
               Name: Time
               Value: 0
 
               Name: Control1
+              DeviceEffectSettingDependencyName: ReverbEngine
               Value: 0 # 0-127 or selector dependent
 
               Name: Control2
@@ -112,13 +113,17 @@ Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
             etc
 
       - effects
+        - Name: ReverbEngine ????????????
+          Descriptoin: text
+          DeviceSettings:
+            
         - Name: EchoVerb
           Description: text
           DeviceSettings:
             Name: Control1
             DeviceName: VentrisDualReverb
             EffectName: PreDelayFeedback 
-            DeviceMidiImplementationName: PreDelayFeedback # Effect with specific midi config, effect is either engine specific i.e. parameter = EngineParam1-5 or engine agnostic i.e. parameter = Name
+            DeviceMidiImplementationName: EngineParam1-5 or engine agnostic i.e. this.EffectName
             
             DeviceName: VentrisDualReverb
             Name: Control2

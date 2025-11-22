@@ -29,7 +29,10 @@ public class MidiEndpointsTests
                 DefaultActive = true,
                 DeviceEffectSettings = new List<DeviceEffectSetting>
                 {
-                    new() { Name = "SettingA", Value = 3 }
+                    new() { 
+                        Name = "SettingA",
+                        DefaultValue = 0,
+                        Value = 3 }
                 }
             }
         }

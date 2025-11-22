@@ -106,19 +106,6 @@ public class MidiOutDevice : MidiDevice
     /// </example>
     [DllImport("winmm.dll")]
     internal static extern MmResult midiOutShortMsg(IntPtr handle, UInt32 msg);
-    
-    public override void Open() 
-    {
-        MmResult result;
-
-        if (!IsOpen)
-        {
-            result = midiOutOpen(ref Handle, DeviceId, IntPtr.Zero, 0, MidiCallbackFlags.NoCallBack);
-
-            if (result == MmResult.NoError)
-                IsOpen = true;
-        }
-    }
 
     /// <summary>
     /// Initializes a new instance of the MidiOutDevice class with the specified MIDI connection name.
@@ -147,6 +134,9 @@ public class MidiOutDevice : MidiDevice
         }
     }
     
+    /// <summary>
+    /// Closes the MIDI output device.
+    /// </summary>
     public override void Close() 
     {
         MmResult result;
@@ -157,6 +147,22 @@ public class MidiOutDevice : MidiDevice
 
             if (result == MmResult.NoError)
                 IsOpen = false;
+        }
+    }
+    
+    /// <summary>
+    /// Opens the MIDI output device.
+    /// </summary>
+    public override void Open() 
+    {
+        MmResult result;
+
+        if (!IsOpen)
+        {
+            result = midiOutOpen(ref Handle, DeviceId, IntPtr.Zero, 0, MidiCallbackFlags.NoCallBack);
+
+            if (result == MmResult.NoError)
+                IsOpen = true;
         }
     }
 

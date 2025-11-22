@@ -29,15 +29,14 @@ public class MidiEndpointsHandler
             {
                 _logger.LogInformation("Resetting effect default active state {DefaultActive} for effect {Effect} on device {Device}", effect.DefaultActive, effect.Name, deviceName);
 
-                var activateMessage = await _midiDataService.GetControlChangeMessageToActivateDeviceEffectAsync(deviceName, effect.Name, true);
+                var activateMessage = await _midiDataService.GetControlChangeMessageToActivateDeviceEffectAsync(deviceName, effect.Name, effect.DefaultActive);
                 await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(midiDevice.MidiConnectName, activateMessage);
                 _logger.LogInformation("Effect default state reset on device");
 
                 try
                 {
                     _logger.LogInformation("Resetting active state data for device");
-                    //TODO: needs to handle _rev and _id
-                    await _midiDataService.UpdateDeviceEffectActiveStateAsync(deviceName, effect.Name, true);
+                    await _midiDataService.UpdateDeviceEffectActiveStateAsync(deviceName, effect.Name, effect.DefaultActive);
                     _logger.LogInformation("Effect active state data updated");
                 }
                 catch (Exception e)
@@ -45,15 +44,23 @@ public class MidiEndpointsHandler
                     _logger.LogError(e, "Error updating active state data for device {Device}", deviceName);
                     try
                     {
-                        _logger.LogInformation("Reverting effect active state for effect {Effect} on device {Device}", effect.Name, deviceName);
+                        _logger.LogInformation("Reverting effect active state for effect {Effect} on device {Device}", 
+                            effect.Name, 
+                            deviceName);
                         errorResettingDevice = true;
-                        var revertMessage = await _midiDataService.GetControlChangeMessageToActivateDeviceEffectAsync(deviceName, effect.Name, effect.Active);
-                        await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(midiDevice.MidiConnectName, revertMessage);
+                        var revertMessage = await _midiDataService.GetControlChangeMessageToActivateDeviceEffectAsync(
+                            deviceName, effect.Name, effect.Active);
+                        await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(
+                            midiDevice.MidiConnectName, revertMessage);
                         _logger.LogInformation("Effect active state reverted on device");
                     }
                     catch (Exception exception)
                     {
-                        _logger.LogError(exception, "Error reverting effect active state for effect {Effect} on device {Device}: database and device out of sync", effect.Name, deviceName);
+                        _logger.LogError(
+                            exception, 
+                            "Error reverting effect active state for effect {Effect} on device {Device}: database and device out of sync", 
+                            effect.Name, 
+                            deviceName);
 
                         var problem = Results.Problem(
                             detail: $"Failed to revert effect '{effect.Name}' active state for device '{deviceName}', suspending reset operation: {exception.Message}",
@@ -74,12 +81,15 @@ public class MidiEndpointsHandler
             {
                 try
                 {
-                    await _midiDataService.GetControlChangeMessageToSetDeviceEffectSettingAsync(deviceName, effect.Name, setting.Name, setting.Value);
+                    await _midiDataService.GetControlChangeMessageToSetDeviceEffectSettingAsync(
+                        deviceName, effect.Name, setting.Name, setting.DefaultValue);
                     //TODO: Send the setting message to the device
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, "Error getting setting message for setting {Setting} on effect {Effect} on device {Device}", setting.Name, effect.Name, deviceName);
+                    _logger.LogError(e, 
+                        "Error getting setting message for setting {Setting} on effect {Effect} on device {Device}", 
+                        setting.Name, effect.Name, deviceName);
                     errorResettingDevice = true;
                 }
             }
