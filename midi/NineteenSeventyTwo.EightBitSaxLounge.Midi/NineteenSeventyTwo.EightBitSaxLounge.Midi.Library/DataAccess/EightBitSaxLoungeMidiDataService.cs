@@ -271,8 +271,51 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             throw new InvalidOperationException(msg);
         }
         
-        string settingMidiImplementationName;
+        var settingMidiImplementationName = await GetSettingMidiImplementationName(
+            deviceName, settingName, deviceEffect, deviceEffectSetting);
         
+        var settingMidiConfiguration = device.MidiImplementation
+            .FirstOrDefault(configuration => configuration.Name == settingMidiImplementationName);
+        if (settingMidiConfiguration == null)
+        {
+            var msg = $"No MIDI implementation found for setting '{settingName}' in device '{deviceName}'.";
+            _logger.LogError(msg);
+            throw new InvalidOperationException(msg);
+        }
+
+        var settingAddress = 
+            (settingMidiConfiguration.ControlChangeAddresses ?? throw new InvalidOperationException
+            ($"No MIDI implementation found for setting '{settingName}' in device '{deviceName}'."))
+            .FirstOrDefault(address => address.Name == effectName);
+        
+        if (settingAddress == null)
+        {
+            var msg = $"No ControlChangeAddress found for effect '{effectName}' in setting '{settingName}' for device '{deviceName}'.";
+            _logger.LogError(msg);
+            throw new InvalidOperationException(msg);
+        }
+        
+        //TODO: validate setting value
+        return new ControlChangeMessage
+        {
+            Address = settingAddress.Value,
+            Value = settingValue
+        };
+    }
+
+    /// <summary>
+    /// Gets the MIDI implementation name for a device effect setting, considering any dependencies.
+    /// </summary>
+    /// <param name="deviceName"></param>
+    /// <param name="settingName"></param>
+    /// <param name="deviceEffect"></param>
+    /// <param name="deviceEffectSetting"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    private async Task<string> GetSettingMidiImplementationName(string deviceName, string settingName, DeviceEffect deviceEffect,
+        DeviceEffectSetting deviceEffectSetting)
+    {
+        string settingMidiImplementationName;
         // Some settings are dependent on others e.g. if a reverb engine is 'Room' then Control1 is 'Bass'
         // If the EffectSetting has a DeviceEffectSettingDependencyName, get that effect's ControlChangeAddress instead
         var deviceEffectSettingDependency = deviceEffect.DeviceEffectSettings.FirstOrDefault(setting => setting.Name == deviceEffectSetting.Name);
@@ -312,37 +355,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         {
             settingMidiImplementationName = settingName;
         }
-        
-        // The device has a list of midi implementations mapping effects to midi addresses
-        // Get the midi implementation whose name matches settingName
-        var settingMidiImplementation = device.MidiImplementation
-            .FirstOrDefault(configuration => configuration.Name == settingMidiImplementationName);
-        if (settingMidiImplementation == null)
-        {
-            var msg = $"No MIDI implementation found for setting '{settingName}' in device '{deviceName}'.";
-            _logger.LogError(msg);
-            throw new InvalidOperationException(msg);
-        }
 
-        // Get the ControlChangeAddress from that implementation where Name == effectName
-        var settingAddress = 
-            (settingMidiImplementation.ControlChangeAddresses ?? throw new InvalidOperationException
-            ($"No MIDI implementation found for setting '{settingName}' in device '{deviceName}'."))
-            .FirstOrDefault(address => address.Name == effectName);
-        
-        
-        if (settingAddress == null)
-        {
-            var msg = $"No ControlChangeAddress found for effect '{effectName}' in setting '{settingName}' for device '{deviceName}'.";
-            _logger.LogError(msg);
-            throw new InvalidOperationException(msg);
-        }
-        
-        //TODO: handle when settingValue is a selector value rather than direct CC value
-        return new ControlChangeMessage
-        {
-            Address = settingAddress.Value,
-            Value = settingValue
-        };
+        return settingMidiImplementationName;
     }
 }

@@ -1,4 +1,5 @@
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 
@@ -104,6 +105,29 @@ public class MidiEndpointsHandler
         }
 
         return Results.Ok(new { Message = $"Device '{deviceName}' reset to default settings successfully." });
+    }
+    
+    public async Task<IResult> PostControlChangeMessageToDeviceByMidiConnectName(string deviceMidiConnectName, int controlChangeMessageAddress, int controlChangeMessageValue)
+    {
+        _logger.LogInformation("Received request to send Control Change Message to device {DeviceName}", deviceMidiConnectName);
+        try
+        {
+            await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(
+                deviceMidiConnectName, 
+                new() { Address = controlChangeMessageAddress, Value = controlChangeMessageValue });
+            var msg = $"Request to send Control Change Message to device '{deviceMidiConnectName}' processed successfully.";
+            _logger.LogInformation(msg);
+            return Results.Ok(new { Message = msg });
+        }
+        catch (Exception ex)
+        {
+            var msg = $"Failed to send Control Change Message '{controlChangeMessageValue}' to device '{deviceMidiConnectName}': {ex.Message}";
+            _logger.LogError(ex, msg);
+            return Results.Problem(
+                detail: msg,
+                title: "Send Control Change Message failed",
+                statusCode: 500);
+        }
     }
 }
 

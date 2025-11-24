@@ -1,11 +1,14 @@
-using System.Runtime.InteropServices;
-
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
+
 
 /// <summary>
 /// A class representing a MIDI output device.
+/// Handles opening, closing, and sending messages to a midi capable device via winmm.dll.
 /// </summary>
-public class MidiOutDevice : MidiDevice
+public class MidiOutDevice : MidiDevice, IDisposable
 {
     /// <summary>
     /// The identifier of the MIDI output device.
@@ -21,6 +24,12 @@ public class MidiOutDevice : MidiDevice
     /// A flag indicating whether the MIDI output device is open
     /// </summary>
     public bool IsOpen;
+    
+    /// <summary>
+    /// A semaphore to ensure thread-safe sending of MIDI messages.
+    /// Limit device access to one thread at a time.
+    /// </summary>
+    private readonly SemaphoreSlim _sendLock = new(1, 1);
 
     /// <summary>
     /// Closes the specified MIDI output device.
@@ -108,6 +117,24 @@ public class MidiOutDevice : MidiDevice
     internal static extern MmResult midiOutShortMsg(IntPtr handle, UInt32 msg);
 
     /// <summary>
+    /// Retrieves a textual description of the specified MIDI error code.
+    /// </summary>
+    /// <param name="mmrError">
+    /// The MIDI error code for which to retrieve the description.
+    /// </param>
+    /// <param name="text">
+    /// A StringBuilder to receive the error text.
+    /// </param>
+    /// <param name="cchText">
+    /// The size, in characters, of the text buffer.
+    /// </param>
+    /// <returns>
+    /// An MmResult value indicating the result of the operation.
+    /// </returns>
+    [DllImport("winmm.dll")]
+    private static extern MmResult midiOutGetErrorText(MmResult mmrError, StringBuilder text, uint cchText);
+
+    /// <summary>
     /// Initializes a new instance of the MidiOutDevice class with the specified MIDI connection name.
     /// </summary>
     /// <param name="midiConnectName">
@@ -116,6 +143,7 @@ public class MidiOutDevice : MidiDevice
     public MidiOutDevice(string midiConnectName)
     {
         UInt32 numDevs = midiOutGetNumDevs();
+        DeviceId = uint.MaxValue;
         MidiOutCapabilities outCapabilities = new MidiOutCapabilities();
         for (UInt32 dev = 0; dev < numDevs; ++dev)
         {
@@ -130,7 +158,13 @@ public class MidiOutDevice : MidiDevice
                 devName.StartsWith(midiConnectName, StringComparison.OrdinalIgnoreCase))
             {
                 DeviceId = dev;
+                break;
             }
+        }
+
+        if (DeviceId == uint.MaxValue)
+        {
+            throw new InvalidOperationException($"MIDI device '{midiConnectName}' not found.");
         }
     }
     
@@ -146,7 +180,10 @@ public class MidiOutDevice : MidiDevice
             result = midiOutClose(Handle);
 
             if (result == MmResult.NoError)
+            {
                 IsOpen = false;
+                Handle = IntPtr.Zero;
+            }
         }
     }
     
@@ -155,58 +192,143 @@ public class MidiOutDevice : MidiDevice
     /// </summary>
     public override void Open() 
     {
-        MmResult result;
-
-        if (!IsOpen)
-        {
-            result = midiOutOpen(ref Handle, DeviceId, IntPtr.Zero, 0, MidiCallbackFlags.NoCallBack);
-
-            if (result == MmResult.NoError)
-                IsOpen = true;
-        }
+        TryOpen();
     }
 
-    public Task<bool> TrySendControlChangeMessageAsync(
-        uint address,
-        uint value,
+    /// <summary>
+    /// Tries to send a MIDI control change message to the device asynchronously, with detailed diagnostics and retry logic.
+    /// </summary>
+    /// <param name="address">
+    /// The address of the control change message.
+    /// </param>
+    /// <param name="value">
+    /// The value of the control change message.
+    /// </param>
+    /// <param name="closeAfterSend">
+    /// Indicates whether to close the device after sending the message.
+    /// </param>
+    /// <param name="maxRetries">
+    /// The maximum number of retry attempts if sending fails.
+    /// </param>
+    /// <param name="retryDelayMs">
+    /// The delay in milliseconds between retry attempts.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to monitor for cancellation requests.
+    /// </param>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains
+    /// a tuple with three values: 
+    /// - a boolean indicating if the message was sent successfully,
+    /// - the last MmResult from the send operation,
+    /// - an optional error message.
+    /// </returns>
+    internal async Task<(bool success, MmResult lastResult, string? errorText)> TrySendControlChangeMessageDetailedAsync(
+        int address,
+        int value,
         bool closeAfterSend = false,
         int maxRetries = 3,
         int retryDelayMs = 50,
         CancellationToken cancellationToken = default)
     {
-        // Offload the synchronous WinMM calls to a background thread so callers can await.
-        return Task.Run(() =>
+        if (address is < 0 or > 127) throw new ArgumentOutOfRangeException(nameof(address));
+        if (value is < 0 or > 127) throw new ArgumentOutOfRangeException(nameof(value));
+
+        await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            Open();
-
             if (!IsOpen)
-                return false;
+            {
+                var (opened, openResult, openError) = TryOpen();
+                if (!opened)
+                {
+                    return (false, openResult, openError ?? "Device failed to open.");
+                }
+            }
 
-            var msg = (value << 16) | (address << 8) | 0xB0u;
-            MmResult result;
+            uint msg = ((uint)value << 16) | ((uint)address << 8) | 0xB0u;
+            MmResult last = MmResult.UnspecError;
 
             for (int attempt = 0; attempt < maxRetries; attempt++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                result = midiOutShortMsg(Handle, msg);
-                if (result == MmResult.NoError)
+                last = midiOutShortMsg(Handle, msg);
+                if (last == MmResult.NoError)
                 {
-                    if (closeAfterSend)
-                        Close();
-
-                    return true;
+                    if (closeAfterSend) Close();
+                    return (true, last, null);
                 }
 
-                // wait but observe cancellation
                 if (attempt < maxRetries - 1)
                 {
-                    if (cancellationToken.WaitHandle.WaitOne(retryDelayMs))
-                        throw new OperationCanceledException(cancellationToken);
+                    SafeReopen();
+                    if (!IsOpen)
+                    {
+                        var (opened, openResult, openError) = TryOpen();
+                        if (!opened)
+                        {
+                            return (false, openResult, openError ?? GetErrorText(last));
+                        }
+                    }
+                    if (retryDelayMs > 0)
+                    {
+                        await Task.Delay(retryDelayMs, cancellationToken).ConfigureAwait(false);
+                    }
                 }
             }
 
-            return false;
-        }, cancellationToken);
+            if (closeAfterSend) Close();
+            return (false, last, GetErrorText(last));
+        }
+        finally
+        {
+            _sendLock.Release();
+        }
+    }
+
+    private static string GetErrorText(MmResult result)
+    {
+        var sb = new StringBuilder(256);
+        return midiOutGetErrorText(result, sb, (uint)sb.Capacity) == MmResult.NoError ? sb.ToString() : result.ToString();
+    }
+
+    private void SafeReopen()
+    {
+        Close();
+        Handle = IntPtr.Zero;
+        IsOpen = false;
+        TryOpen();
+    }
+
+    internal (bool success, MmResult result, string? errorText) TryOpen()
+    {
+        if (IsOpen) return (true, MmResult.NoError, null);
+        MmResult result = midiOutOpen(ref Handle, DeviceId, IntPtr.Zero, 0, MidiCallbackFlags.NoCallBack);
+        if (result == MmResult.NoError)
+        {
+            IsOpen = true;
+            return (true, result, null);
+        }
+        Handle = IntPtr.Zero;
+        IsOpen = false;
+        return (false, result, GetErrorText(result));
+    }
+
+    /// <summary>
+    /// Dispose the device
+    /// </summary>
+    public void Dispose()
+    {
+        Close();
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Finalizer for the MidiOutDevice class.
+    /// </summary>
+    ~MidiOutDevice()
+    {
+        Close();
     }
 }

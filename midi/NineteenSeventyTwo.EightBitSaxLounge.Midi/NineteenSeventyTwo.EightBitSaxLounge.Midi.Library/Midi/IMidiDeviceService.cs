@@ -1,6 +1,6 @@
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
 
-namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
+namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 
 public interface IMidiDeviceService
 { 

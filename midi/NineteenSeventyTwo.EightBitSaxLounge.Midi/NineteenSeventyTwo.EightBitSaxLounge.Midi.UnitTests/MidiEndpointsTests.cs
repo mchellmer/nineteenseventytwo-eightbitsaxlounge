@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 
@@ -12,7 +13,7 @@ namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.UnitTests;
 public class MidiEndpointsTests
 {
     private const string TestDeviceName = "TestDevice";
-    
+    private const string TestMidiConnectName = "TestMidiConnect"; // added constant
     private const string TestEffectName = "ReverbEngine";
 
     private static readonly MidiDevice TestDevice = new()
@@ -21,15 +22,15 @@ public class MidiEndpointsTests
         Description = "desc",
         Active = true,
         MidiImplementation = new List<MidiConfiguration>(),
-        MidiConnectName = "TestMidiConnect",
-        DeviceEffects = new List<DeviceEffect> { new() 
+        MidiConnectName = TestMidiConnectName,
+        DeviceEffects = new List<DeviceEffect> { new()
             {
                 Name = TestEffectName,
                 Active = false,
                 DefaultActive = true,
                 DeviceEffectSettings = new List<DeviceEffectSetting>
                 {
-                    new() { 
+                    new() {
                         Name = "SettingA",
                         DefaultValue = 0,
                         Value = 3 }
@@ -43,6 +44,12 @@ public class MidiEndpointsTests
         // construct handler directly with DI-style constructor parameters (mocks in tests)
         var handler = new MidiEndpointsHandler(logger, deviceService, dataService);
         return handler.ResetDevice(TestDeviceName);
+    }
+
+    private static Task<IResult> InvokeSendCcAsync(ILogger<MidiEndpointsHandler> logger, IMidiDeviceService deviceService, IMidiDataService dataService, string midiConnectName, int address, int value)
+    {
+        var handler = new MidiEndpointsHandler(logger, deviceService, dataService);
+        return handler.PostControlChangeMessageToDeviceByMidiConnectName(midiConnectName, address, value);
     }
 
     private static async Task<(int StatusCode, string Body)> ExecuteResultAsync(IResult result)
@@ -112,9 +119,8 @@ public class MidiEndpointsTests
         dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(TestDeviceName, TestEffectName, true)).ReturnsAsync(activateMsg);
         dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(TestDeviceName, TestEffectName, false)).ReturnsAsync(revertMsg);
 
-        // Return a completed Task explicitly to avoid Moq overload inference issues
-        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestDeviceName, activateMsg)).Returns(Task.FromResult(activateMsg));
-        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestDeviceName, revertMsg)).Returns(Task.FromResult(revertMsg));
+        // Expect call using MidiConnectName
+        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, activateMsg)).Returns(Task.FromResult(activateMsg));
 
         dataServiceMock.Setup(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true)).Returns(Task.CompletedTask);
 
@@ -129,7 +135,7 @@ public class MidiEndpointsTests
         Assert.Equal(200, status);
         Assert.Contains("reset to default settings successfully.", body);
 
-        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestDeviceName, It.IsAny<ControlChangeMessage>()), Times.Once);
+        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, It.IsAny<ControlChangeMessage>()), Times.Once);
         dataServiceMock.Verify(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true), Times.Once);
     }
 
@@ -152,7 +158,7 @@ public class MidiEndpointsTests
         // Capture sent messages to assert later
         ControlChangeMessage? capturedSent = null;
         deviceServiceMock
-            .Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(It.IsAny<string>(), It.IsAny<ControlChangeMessage>()))
+            .Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(It.Is<string>(s => s == TestMidiConnectName), It.IsAny<ControlChangeMessage>()))
             .Callback<string, ControlChangeMessage>((_, msg) => capturedSent = msg)
             .Returns((string _, ControlChangeMessage m) => Task.FromResult(m));
 
@@ -167,8 +173,7 @@ public class MidiEndpointsTests
         Assert.Equal(500, status);
         Assert.Contains("Device reset completed with errors", body);
 
-        // Revert should have been attempted (device service called at least once for revert)
-        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestDeviceName, It.IsAny<ControlChangeMessage>()), Times.AtLeastOnce);
+        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, It.IsAny<ControlChangeMessage>()), Times.AtLeastOnce);
         Assert.NotNull(capturedSent);
         dataServiceMock.Verify(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true), Times.Once);
     }
@@ -186,7 +191,7 @@ public class MidiEndpointsTests
             Name = TestDeviceName,
             Description = "desc",
             Active = true,
-            MidiConnectName = "TestMidiConnect",
+            MidiConnectName = TestMidiConnectName,
             MidiImplementation = new List<MidiConfiguration>(),
             DeviceEffects = new List<DeviceEffect>
             {
@@ -209,8 +214,8 @@ public class MidiEndpointsTests
         dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(TestDeviceName, TestEffectName, false)).ReturnsAsync(revertMsg);
 
         // Simulate sending activate succeeds but sending revert throws
-        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestDeviceName, It.Is<ControlChangeMessage>(c => c.Value == activateMsg.Value))).Returns(Task.FromResult(activateMsg));
-        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestDeviceName, It.Is<ControlChangeMessage>(c => c.Value == revertMsg.Value))).ThrowsAsync(new Exception("Device revert failed"));
+        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, It.Is<ControlChangeMessage>(c => c.Value == activateMsg.Value))).Returns(Task.FromResult(activateMsg));
+        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, It.Is<ControlChangeMessage>(c => c.Value == revertMsg.Value))).ThrowsAsync(new Exception("Device revert failed"));
 
         // Simulate DB update failure so revert path is executed
         dataServiceMock.Setup(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true)).ThrowsAsync(new Exception("DB failure"));
@@ -223,7 +228,56 @@ public class MidiEndpointsTests
         Assert.Equal(500, status);
         Assert.Contains("Failed to revert effect", body);
 
-        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestDeviceName, It.IsAny<ControlChangeMessage>()), Times.AtLeastOnce);
+        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, It.IsAny<ControlChangeMessage>()), Times.AtLeastOnce);
         dataServiceMock.Verify(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendControlChangeMessage_Success_Returns200()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        ControlChangeMessage? sentMessage = null;
+        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, It.IsAny<ControlChangeMessage>()))
+            .Callback<string, ControlChangeMessage>((_, msg) => sentMessage = msg)
+            .Returns((string _, ControlChangeMessage m) => Task.FromResult(m));
+
+        int address = 10;
+        int value = 64;
+        // Act
+        var result = await InvokeSendCcAsync(loggerMock.Object, deviceServiceMock.Object, dataServiceMock.Object, TestMidiConnectName, address, value);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(200, status);
+        Assert.Contains("processed successfully", body);
+        Assert.NotNull(sentMessage);
+        Assert.Equal(address, sentMessage!.Address);
+        Assert.Equal(value, sentMessage.Value);
+        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, It.IsAny<ControlChangeMessage>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendControlChangeMessage_Failure_Returns500()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, It.IsAny<ControlChangeMessage>()))
+            .ThrowsAsync(new Exception("Native send failure"));
+
+        // Act
+        var result = await InvokeSendCcAsync(loggerMock.Object, deviceServiceMock.Object, dataServiceMock.Object, TestMidiConnectName, 7, 127);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(500, status);
+        Assert.Contains("Failed to send Control Change Message", body);
+        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, It.IsAny<ControlChangeMessage>()), Times.Once);
     }
 }

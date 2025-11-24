@@ -7,6 +7,7 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
 
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Endpoints;
 
+//TODO: dev only - replace with real auth system
 public static class AuthenticationEndpoints
 {
     public static void AddAuthenticationEndpoints(this WebApplication app)

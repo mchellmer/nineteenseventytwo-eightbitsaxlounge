@@ -1,4 +1,3 @@
-using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Enums;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
 
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
@@ -11,61 +10,57 @@ public class VentrisDualReverbActivator : IEffectActivator
 {
     // Addresses/values are example placeholders; use real mapping from device config.
     private const int ControlChangeAddress = 50;
-    private const DualSingleMode ControlChangeValueSoloReverbEngineA = DualSingleMode.ReverbEngineA;
-    private const DualSingleMode ControlChangeValueSoloReverbEngineB = DualSingleMode.ReverbEngineB;
-    private const DualSingleMode ControlChangeValueDual = DualSingleMode.DualModeParallel;
+    private const int ControlChangeValueSoloReverbEngineA = 0;
+    private const int ControlChangeValueSoloReverbEngineB = 1;
+    private const int ControlChangeValueDual = 2;
 
     public Task<ControlChangeMessage?> BuildActivationMessageAsync(MidiDevice device, string effectName, bool activate)
     {
-        // find both effects by name (case-insensitive)
-        var targetReverbEngineEffect = device.DeviceEffects.FirstOrDefault(e => string.Equals(e.Name, effectName, StringComparison.OrdinalIgnoreCase));
+        var targetReverbEngineEffect = device.DeviceEffects.FirstOrDefault(
+            e => string.Equals(e.Name, effectName, StringComparison.OrdinalIgnoreCase));
         
-        // dependent effect is DeviceEffect with name != target effect name
         var dependentReverbEngineEffect = device.DeviceEffects
             .First(e => (string.Equals(e.Name, "ReverbEngineA", StringComparison.OrdinalIgnoreCase) ||
                                   string.Equals(e.Name, "ReverbEngineB", StringComparison.OrdinalIgnoreCase)) &&
                                  !string.Equals(e.Name, effectName, StringComparison.OrdinalIgnoreCase));
         
-        // If target or dependent effect not found, return null
         if (targetReverbEngineEffect == null)
         {
             return Task.FromResult<ControlChangeMessage?>(null);
         }
 
-        // Determine new mask based on activation/deactivation logic
-        DualSingleMode newMask;
+        int activateControlChangeValue;
         if (activate)
         {
             if (dependentReverbEngineEffect.Active)
             {
-                newMask = ControlChangeValueDual; // Activate both engines
+                activateControlChangeValue = ControlChangeValueDual;
             }
             else
             {
-                newMask = string.Equals(targetReverbEngineEffect.Name, "ReverbEngineA", StringComparison.OrdinalIgnoreCase)
+                activateControlChangeValue = string.Equals(targetReverbEngineEffect.Name, "ReverbEngineA", StringComparison.OrdinalIgnoreCase)
                     ? ControlChangeValueSoloReverbEngineA
-                    : ControlChangeValueSoloReverbEngineB; // Activate only target engine
+                    : ControlChangeValueSoloReverbEngineB;
             }
         }
         else
         {
             if (dependentReverbEngineEffect.Active)
             {
-                newMask = string.Equals(dependentReverbEngineEffect.Name, "ReverbEngineA", StringComparison.OrdinalIgnoreCase)
+                activateControlChangeValue = string.Equals(dependentReverbEngineEffect.Name, "ReverbEngineA", StringComparison.OrdinalIgnoreCase)
                     ? ControlChangeValueSoloReverbEngineA
-                    : ControlChangeValueSoloReverbEngineB; // Keep dependent engine active
+                    : ControlChangeValueSoloReverbEngineB;
             }
             else
             {
-                // Both engines inactive; set to a default state (e.g., ReverbEngineA)
-                newMask = ControlChangeValueSoloReverbEngineA;
+                activateControlChangeValue = ControlChangeValueSoloReverbEngineA;
             }
         }
 
         var msg = new ControlChangeMessage
         {
             Address = ControlChangeAddress,
-            Value = (int)newMask
+            Value = activateControlChangeValue
         };
         return Task.FromResult<ControlChangeMessage?>(msg);
     }

@@ -1,9 +1,8 @@
 using Microsoft.Extensions.Logging;
-using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
 
-namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
+namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 
 public class WinmmMidiDeviceService : IMidiDeviceService
 {
@@ -20,12 +19,22 @@ public class WinmmMidiDeviceService : IMidiDeviceService
         try
         {
             _logger.LogInformation("Retrieving from available MIDI output devices");
-            var device = new MidiOutDevice(midiConnectName);
-            var sent = await device.TrySendControlChangeMessageAsync((uint)controlChangeMessage.Address, (uint)controlChangeMessage.Value);
-            if (!sent)
+            using var device = new MidiOutDevice(midiConnectName);
+            var (opened, openResult, openError) = device.TryOpen();
+            if (!opened)
             {
-                _logger.LogError("Failed to send control change message to device {DeviceName}", midiConnectName);
-                throw new Exception($"Failed to send control change message to device {midiConnectName}");
+                _logger.LogError("Failed to open device {DeviceName}: {Error} (MMResult: {Result})", midiConnectName, openError, openResult);
+                throw new Exception($"Failed to open device {midiConnectName}: {openError} (MMResult: {openResult})");
+            }
+            (var success, var mmResult, var error) =
+                await device.TrySendControlChangeMessageDetailedAsync(controlChangeMessage.Address, controlChangeMessage.Value, closeAfterSend: true).ConfigureAwait(false);
+            if (!success)
+            {
+                _logger.LogError(
+                    "Error sending control change message to device {DeviceName}: {Error} (MMResult: {MmResult})",
+                    midiConnectName, error, mmResult);
+                throw new Exception(
+                    $"Error sending control change message to device {midiConnectName}: {error} (MMResult: {mmResult})");
             }
             _logger.LogInformation("Control change message sent to device {DeviceName}", midiConnectName);
         }
