@@ -8,21 +8,24 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Endpoints;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 
 using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure logging providers and default minimum level so all typed ILogger<T> work consistently
+// Configure logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
-
-// Explicitly register logging services (CreateBuilder does this by default, but this makes it explicit)
 builder.Services.AddLogging();
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-// use localhost key and cert for development
+// Authentication
+var authOptions = builder.Configuration.GetSection("Authentication").Get<AppAuthenticationOptions>()
+                  ?? throw new InvalidOperationException("Missing 'Authentication' configuration section.");
+if (string.IsNullOrWhiteSpace(authOptions.SecretKey))
+    throw new InvalidOperationException("Missing 'Authentication:SecretKey'. Set via user-secrets or environment variable.");
+builder.Services.Configure<AppAuthenticationOptions>(builder.Configuration.GetSection("Authentication"));
 
 // Api model and SSL
 builder.Services.AddEndpointsApiExplorer();
@@ -51,7 +54,7 @@ builder.Services.AddSwaggerGen(opts =>
                     Type = ReferenceType.SecurityScheme
                 }
             },
-            new string[] { }
+            []
         }
     };
     opts.AddSecurityDefinition("Bearer", securityScheme);
@@ -74,29 +77,23 @@ builder.Services.AddAuthorization(opts =>
         .Build();
 });
 
-// Read JWT secret
-var jwtKey = builder.Configuration.GetValue<string>("Authentication:SecretKey");
-if (string.IsNullOrWhiteSpace(jwtKey))
-{
-    throw new InvalidOperationException(
-        "Missing configuration 'Authentication:SecretKey'. Set via user-secrets for Development or environment variables for production.");
-}
-
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer(opts =>
+var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authOptions.SecretKey));
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(o =>
     {
-        opts.TokenValidationParameters = new TokenValidationParameters
+        o.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration.GetValue<string>("Authentication:Issuer"),
-            ValidAudience = builder.Configuration.GetValue<string>("Authentication:Audience"),
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey))
+            ValidateLifetime = true,
+            ValidIssuer = authOptions.Issuer,
+            ValidAudience = authOptions.Audience,
+            IssuerSigningKey = signingKey
         };
     });
 
+// Build app
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
