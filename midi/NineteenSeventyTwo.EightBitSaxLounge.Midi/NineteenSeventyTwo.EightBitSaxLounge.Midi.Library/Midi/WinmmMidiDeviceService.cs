@@ -7,10 +7,12 @@ namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 public class WinmmMidiDeviceService : IMidiDeviceService
 {
     private readonly ILogger<WinmmMidiDeviceService> _logger;
+    private readonly IMidiOutDeviceFactory _deviceFactory;
     
-    public WinmmMidiDeviceService(ILogger<WinmmMidiDeviceService> logger)
+    public WinmmMidiDeviceService(ILogger<WinmmMidiDeviceService> logger, IMidiOutDeviceFactory deviceFactory)
     {
         _logger = logger;
+        _deviceFactory = deviceFactory;
     }
     
     public async Task SendControlChangeMessageByDeviceMidiConnectNameAsync(string midiConnectName, ControlChangeMessage controlChangeMessage)
@@ -19,7 +21,7 @@ public class WinmmMidiDeviceService : IMidiDeviceService
         try
         {
             _logger.LogInformation("Retrieving from available MIDI output devices");
-            using var device = new MidiOutDevice(midiConnectName);
+            using var device = _deviceFactory.Create(midiConnectName);
             var (opened, openResult, openError) = device.TryOpen();
             if (!opened)
             {

@@ -8,7 +8,7 @@ using System.Threading;
 /// A class representing a MIDI output device.
 /// Handles opening, closing, and sending messages to a midi capable device via winmm.dll.
 /// </summary>
-public class MidiOutDevice : MidiDevice, IDisposable
+public class MidiOutDevice : MidiDevice, IMidiOutDevice
 {
     /// <summary>
     /// The identifier of the MIDI output device.
@@ -223,7 +223,7 @@ public class MidiOutDevice : MidiDevice, IDisposable
     /// - the last MmResult from the send operation,
     /// - an optional error message.
     /// </returns>
-    internal async Task<(bool success, MmResult lastResult, string? errorText)> TrySendControlChangeMessageDetailedAsync(
+    public async Task<(bool success, MmResult lastResult, string? errorText)> TrySendControlChangeMessageDetailedAsync(
         int address,
         int value,
         bool closeAfterSend = false,
@@ -301,7 +301,7 @@ public class MidiOutDevice : MidiDevice, IDisposable
         TryOpen();
     }
 
-    internal (bool success, MmResult result, string? errorText) TryOpen()
+    public (bool success, MmResult result, string? errorText) TryOpen()
     {
         if (IsOpen) return (true, MmResult.NoError, null);
         MmResult result = midiOutOpen(ref Handle, DeviceId, IntPtr.Zero, 0, MidiCallbackFlags.NoCallBack);

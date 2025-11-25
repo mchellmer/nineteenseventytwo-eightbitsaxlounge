@@ -6,6 +6,7 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Endpoints;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
 
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -65,6 +66,7 @@ builder.Services.AddSwaggerGen(opts =>
 builder.Services.AddSingleton<IDataAccess, EightbitSaxLoungeDataAccess>();
 builder.Services.AddSingleton<IEffectActivatorFactory, EffectActivatorFactory>();
 builder.Services.AddSingleton<IEffectActivator, VentrisDualReverbActivator>();
+builder.Services.AddSingleton<IMidiOutDeviceFactory, MidiOutDeviceFactory>(); // register factory for MIDI out devices
 builder.Services.AddSingleton<IMidiDeviceService, WinmmMidiDeviceService>();
 builder.Services.AddSingleton<IMidiDataService, EightBitSaxLoungeMidiDataService>();
 builder.Services.AddTransient<MidiEndpointsHandler>();

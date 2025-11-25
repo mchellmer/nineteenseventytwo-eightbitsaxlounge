@@ -4,27 +4,30 @@ The midi layer interacts with midi devices sending midi messages to set a desire
 # PC Implementation
 Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
 
+# Scope
+- midi layer hosted on separate machine as data layer (currently case)
+  - device midi implimentation handled prior to request
+  - midi layer recieves information required to interact with midi device
+    - send control change message to named device
+- midi layer co-hosted with data layer (future case)
+  - minimal device specific logic - layer should get most details to perform midi commands via requests to data layer
+    - maintain device specific activation logic e.g. turn on device A or turn off effect A on device A
+  - handle requests to set some effect for some device to a provided value
+    - value validation
+      - min/max midi values smooth effects e.g. volume 0-127
+      - min/max midi values for selector effects e.g. reverbEngine on device A has 13 options
+
 ## Minimal API
 - standard web api dotnet template -> ASP.Net minimal api project
 - define endpoints
   - authentication
-  - dev environment
-  - api service
+    - POST to retrieve temporary jwt token per authorised client
   - midi
-    - PUT {deviceName}: sets db and device to provided config
-      - db exists ? -> : create
-      - relevant document(s) exist(s) ? -> : create
-      - create instance of MidiDevice object from document
-      - update object with provided config
-      - set midi device to provided config
-      - success ? update db : throw error
-    - PUT {deviceName}/reset: sets db and device to defaults
-      - db exists ? -> : create
-      - relevant document(s) exist(s) ? -> : create
-      - set midi device to default config
+    - POST to send midi control change message
+    - PUT {deviceName}/reset: sets db and device to defaults (scaffolded, but outside of current scope)
 
 ## Library
-- midi device data model
+- midi device data model (scaffolded, but outside current scope)
   - the data model must store device and effect details to be used by the 8 bit sax lounge app (CRUD implemented via data layer)
     - UI gets effect details and values to display
     - midi app gets/puts device/effect midi details
@@ -81,6 +84,9 @@ Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
             Name: EngineParam5
             etc
 
+            Name: Size
+            ControlChangeValueSelector: Size
+
           DeviceEffects:
             Name: ReverbEngineA
             Active: true
@@ -92,6 +98,7 @@ Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
 
               Name: PreDelay
               Value: 0
+
               Name: Time
               Value: 0
 
@@ -136,22 +143,23 @@ Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
         - Name: DelayReverbCrossfade
           Description: text
 
-- data access service? e.g. in sql stored procedures manage access i.e. save/load operations in a standard way
-  - use couchdb design doc/ view as db operation
-  - use CouchDB.Net package
-- implement IMidiDeviceService reset, put
-- implement IMidiDataService reset, put
+- Application level logic (scaffolded, but outside of current scope)
+  - Activators - each device has effects that activate in complicated ways, add activator logic per device
+  - Validation
+    - requests to set effect values should be validated/modifed to conform to device midi implimentation
+      - validate: request
 
 ## Tests
-- test project
+- endpoint handler unit tests
+- data service unit tests
+- winmm device service unit tests
 
 # Development
-- new dotnet solution with class library to hold data models
-  - couchdb data access via data layer
-  - midi device config via winmm.dll
-- minimal api project
-- integrate with data layer
-  - REST methods to manage documents
-- methods defined to maintain data in db e.g. seed db with static midi info
-- methods defined to manage midi device state e.g. set 'enginea' to 'Hall'
 - ci/cd managed release of some sort
+  - version text
+  - build host access via ansible to PC
+  - new action pipeline
+    - run dotnet tests
+    - package app to dll
+    - store in github
+    - install service on PC via ansible (makefile)

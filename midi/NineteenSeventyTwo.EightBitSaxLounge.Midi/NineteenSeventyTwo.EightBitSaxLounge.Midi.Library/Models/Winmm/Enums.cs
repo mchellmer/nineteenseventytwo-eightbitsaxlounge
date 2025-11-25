@@ -3,7 +3,7 @@ namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
 /// <summary>
 /// An enum representing the callback flags for MIDI operations.
 /// </summary>
-internal enum MidiCallbackFlags
+public enum MidiCallbackFlags
 {
     /// <summary>
     /// No callback is used.
@@ -40,7 +40,7 @@ internal enum MidiCallbackFlags
 /// An enum representing possible results for a midi message.
 /// </summary>
 /// <remarks>See mmresult winmm.dll documentation</remarks>
-internal enum MmResult
+public enum MmResult
 {
     NoError = 0,
     UnspecError = 1,
