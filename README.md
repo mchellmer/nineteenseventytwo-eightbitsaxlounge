@@ -2,12 +2,12 @@
 Midi Layer
 - seed db operation to init midi config in db
 
-Bot Layer
+UI Layer
 - integrate with Twitch channel
 - respond to commands
 - read/update actual and requested midi device state
 
-State Layer
+State Layer?
 - unified state to ensure consistent: UI and db match midi and chat states
 - default state stored and applied as needed
 - enforce db as true state of UI and midi device
@@ -34,6 +34,7 @@ CI/CD
 Security
 - end to end review
 - security scanning and monitoring integrated with pipelines
+- secrets managed by ci/cd service vs ansible secrets?
 
 Cloud replication
 - capability to spin-up/down infrastructure outside of midi layer in AWS/Azure/gcp

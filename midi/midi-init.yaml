@@ -1,0 +1,185 @@
+---
+- name: Initialize Windows PC for MIDI API hosting
+  hosts: midi-host
+  gather_facts: true
+  vars:
+    deploy_base: "C:\\Services\\Midi"
+    ssh_key_name: "pi-to-midi-host"
+    dotnet_version: "9.0"
+    nssm_version: "2.24"
+    nssm_url: "https://nssm.cc/release/nssm-{{ nssm_version }}.zip"
+
+  tasks:
+    # ========== SSH Key Setup ==========
+    - name: Generate SSH key pair on Pi (if not exists)
+      delegate_to: localhost
+      ansible.builtin.command:
+        cmd: ssh-keygen -t ed25519 -f ~/.ssh/{{ ssh_key_name }} -N "" -C "ansible-pi-to-midi"
+        creates: "~/.ssh/{{ ssh_key_name }}"
+      register: ssh_key_created
+
+    - name: Read public key from Pi
+      delegate_to: localhost
+      ansible.builtin.slurp:
+        src: "~/.ssh/{{ ssh_key_name }}.pub"
+      register: ssh_pubkey
+
+    - name: Ensure .ssh directory exists on Windows PC
+      ansible.windows.win_file:
+        path: "C:\\Users\\{{ ansible_user }}\\.ssh"
+        state: directory
+
+    - name: Add Pi's public key to authorized_keys on Windows PC
+      ansible.windows.win_lineinfile:
+        path: "C:\\Users\\{{ ansible_user }}\\.ssh\\authorized_keys"
+        line: "{{ ssh_pubkey.content | b64decode | trim }}"
+        create: true
+
+    - name: Set correct permissions on authorized_keys (Windows ACL)
+      ansible.windows.win_shell: |
+        $path = "C:\Users\{{ ansible_user }}\.ssh\authorized_keys"
+        icacls $path /inheritance:r
+        icacls $path /grant:r "{{ ansible_user }}:(F)"
+        icacls $path /grant:r "SYSTEM:(F)"
+
+    - name: Test passwordless SSH connection
+      delegate_to: localhost
+      ansible.builtin.command:
+        cmd: ssh -i ~/.ssh/{{ ssh_key_name }} -o StrictHostKeyChecking=no {{ ansible_user }}@{{ ansible_host }} "echo SSH key auth working"
+      register: ssh_test
+      changed_when: false
+
+    - name: Print SSH test result
+      ansible.builtin.debug:
+        msg: "{{ ssh_test.stdout }}"
+
+    # ========== Deployment Directory Structure ==========
+    - name: Create deployment base directory
+      ansible.windows.win_file:
+        path: "{{ deploy_base }}"
+        state: directory
+
+    - name: Create dev environment directory
+      ansible.windows.win_file:
+        path: "{{ deploy_base }}\\dev"
+        state: directory
+
+    - name: Create prod environment directory
+      ansible.windows.win_file:
+        path: "{{ deploy_base }}\\prod"
+        state: directory
+
+    - name: Create logs directory
+      ansible.windows.win_file:
+        path: "{{ deploy_base }}\\logs"
+        state: directory
+
+    # ========== .NET Runtime Installation ==========
+    - name: Check if .NET {{ dotnet_version }} runtime is installed
+      ansible.windows.win_shell: |
+        dotnet --list-runtimes | Select-String "Microsoft.NETCore.App {{ dotnet_version }}"
+      register: dotnet_check
+      failed_when: false
+      changed_when: false
+
+    - name: Download .NET {{ dotnet_version }} installer (if needed)
+      ansible.windows.win_get_url:
+        url: "https://download.visualstudio.microsoft.com/download/pr/{{ dotnet_version }}/dotnet-runtime-{{ dotnet_version }}-win-x64.exe"
+        dest: "C:\\Temp\\dotnet-runtime-installer.exe"
+      when: dotnet_check.rc != 0
+      register: dotnet_download
+
+    - name: Install .NET {{ dotnet_version }} runtime
+      ansible.windows.win_package:
+        path: "C:\\Temp\\dotnet-runtime-installer.exe"
+        arguments: "/quiet /norestart"
+        state: present
+      when: dotnet_check.rc != 0
+
+    - name: Verify .NET installation
+      ansible.windows.win_shell: dotnet --list-runtimes
+      register: dotnet_runtimes
+
+    - name: Print installed .NET runtimes
+      ansible.builtin.debug:
+        msg: "{{ dotnet_runtimes.stdout_lines }}"
+
+    # ========== NSSM (Service Manager) Installation ==========
+    - name: Check if NSSM is installed
+      ansible.windows.win_stat:
+        path: "C:\\Tools\\nssm\\nssm.exe"
+      register: nssm_check
+
+    - name: Create NSSM directory
+      ansible.windows.win_file:
+        path: "C:\\Tools\\nssm"
+        state: directory
+      when: not nssm_check.stat.exists
+
+    - name: Download NSSM
+      ansible.windows.win_get_url:
+        url: "{{ nssm_url }}"
+        dest: "C:\\Temp\\nssm.zip"
+      when: not nssm_check.stat.exists
+
+    - name: Extract NSSM
+      community.windows.win_unzip:
+        src: "C:\\Temp\\nssm.zip"
+        dest: "C:\\Temp\\nssm-extracted"
+      when: not nssm_check.stat.exists
+
+    - name: Copy NSSM executable to Tools
+      ansible.windows.win_copy:
+        src: "C:\\Temp\\nssm-extracted\\nssm-{{ nssm_version }}\\win64\\nssm.exe"
+        dest: "C:\\Tools\\nssm\\nssm.exe"
+        remote_src: true
+      when: not nssm_check.stat.exists
+
+    - name: Add NSSM to PATH
+      ansible.windows.win_path:
+        elements: "C:\\Tools\\nssm"
+        scope: machine
+
+    - name: Verify NSSM installation
+      ansible.windows.win_shell: nssm version
+      register: nssm_version_check
+      changed_when: false
+
+    - name: Print NSSM version
+      ansible.builtin.debug:
+        msg: "{{ nssm_version_check.stdout }}"
+
+    # ========== Firewall Rules ==========
+    - name: Allow MIDI API dev port (5000)
+      community.windows.win_firewall_rule:
+        name: "MIDI API Dev"
+        localport: 5000
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: true
+
+    - name: Allow MIDI API prod port (5001)
+      community.windows.win_firewall_rule:
+        name: "MIDI API Prod"
+        localport: 5001
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: true
+
+    # ========== Summary ==========
+    - name: Print setup summary
+      ansible.builtin.debug:
+        msg:
+          - "========== Setup Complete =========="
+          - "Deployment base: {{ deploy_base }}"
+          - "Dev directory: {{ deploy_base }}\\dev"
+          - "Prod directory: {{ deploy_base }}\\prod"
+          - "SSH key: ~/.ssh/{{ ssh_key_name }}"
+          - "NSSM: C:\\Tools\\nssm\\nssm.exe"
+          - ".NET runtimes installed"
+          - "Firewall: Ports 5000 (dev) and 5001 (prod) open"
+          - "===================================="
