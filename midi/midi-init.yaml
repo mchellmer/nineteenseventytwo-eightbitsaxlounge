@@ -43,6 +43,19 @@
         icacls $path /inheritance:r
         icacls $path /grant:r "{{ midi_host.user }}:(F)"
         icacls $path /grant:r "SYSTEM:(F)"
+  
+    - name: Restart SSH service to apply authorized_keys changes
+      ansible.windows.win_service:
+        name: sshd
+        state: restarted
+
+    - name: Wait for SSH to be ready
+      ansible.builtin.wait_for:
+        host: "{{ midi_host.ip }}"
+        port: 22
+        delay: 2
+        timeout: 30
+      delegate_to: localhost
 
     - name: Test passwordless SSH connection
       delegate_to: localhost
@@ -83,6 +96,11 @@
       register: dotnet_check
       failed_when: false
       changed_when: false
+
+    - name: Ensure Temp directory exists
+      ansible.windows.win_file:
+        path: "C:\\Temp"
+        state: directory
 
     - name: Download .NET {{ dotnet_version }} installer (if needed)
       ansible.windows.win_get_url:
