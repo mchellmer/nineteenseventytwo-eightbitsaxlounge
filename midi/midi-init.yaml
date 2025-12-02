@@ -161,11 +161,11 @@
         scope: machine
 
     - name: Verify NSSM installation
-      ansible.windows.win_shell: nssm version
+      ansible.windows.win_shell: C:\Tools\nssm\nssm.exe
       register: nssm_version_check
       changed_when: false
 
-    - name: Print NSSM version
+    - name: Print NSSM.exe output
       ansible.builtin.debug:
         msg: "{{ nssm_version_check.stdout }}"
 
