@@ -159,16 +159,6 @@
       ansible.windows.win_path:
         elements: "C:\\Tools\\nssm"
         scope: machine
-      
-    - name: Verify NSSM installation
-      ansible.windows.win_shell: C:\Tools\nssm\nssm.exe
-      register: nssm_output
-      changed_when: false
-      failed_when: false
-
-    - name: Print NSSM version
-      ansible.builtin.debug:
-        msg: "NSSM command output: {{ nssm_output }}"
 
     # ========== Firewall Rules ==========
     - name: Allow MIDI API dev port (5000)
