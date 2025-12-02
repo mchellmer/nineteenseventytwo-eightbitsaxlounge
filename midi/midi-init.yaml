@@ -6,6 +6,9 @@
     deploy_base: "C:\\Services\\Midi"
     ssh_key_name: "pi-to-midi-host"
     dotnet_version: "9.0"
+    midi_host:
+      user: mchel
+      ip: 192.168.68.50
     nssm_version: "2.24"
     nssm_url: "https://nssm.cc/release/nssm-{{ nssm_version }}.zip"
 
