@@ -30,10 +30,9 @@
         state: directory
 
     - name: Add Pi's public key to authorized_keys on Windows PC
-      ansible.windows.win_lineinfile:
-        path: "C:\\Users\\{{ midi_host.user }}\\.ssh\\authorized_keys"
-        line: "{{ ssh_pubkey.content | b64decode | trim }}"
-        create: true
+      ansible.windows.win_copy:
+        content: "{{ ssh_pubkey.content | b64decode | trim }}\n"
+        dest: "C:\\Users\\{{ midi_host.user }}\\.ssh\\authorized_keys"
 
     - name: Set correct permissions on authorized_keys (Windows ACL)
       ansible.windows.win_shell: |
