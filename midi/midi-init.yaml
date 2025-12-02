@@ -26,26 +26,26 @@
 
     - name: Ensure .ssh directory exists on Windows PC
       ansible.windows.win_file:
-        path: "C:\\Users\\{{ ansible_user }}\\.ssh"
+        path: "C:\\Users\\{{ midi_host.user }}\\.ssh"
         state: directory
 
     - name: Add Pi's public key to authorized_keys on Windows PC
       ansible.windows.win_lineinfile:
-        path: "C:\\Users\\{{ ansible_user }}\\.ssh\\authorized_keys"
+        path: "C:\\Users\\{{ midi_host.user }}\\.ssh\\authorized_keys"
         line: "{{ ssh_pubkey.content | b64decode | trim }}"
         create: true
 
     - name: Set correct permissions on authorized_keys (Windows ACL)
       ansible.windows.win_shell: |
-        $path = "C:\Users\{{ ansible_user }}\.ssh\authorized_keys"
+        $path = "C:\Users\{{ midi_host.user }}\.ssh\authorized_keys"
         icacls $path /inheritance:r
-        icacls $path /grant:r "{{ ansible_user }}:(F)"
+        icacls $path /grant:r "{{ midi_host.user }}:(F)"
         icacls $path /grant:r "SYSTEM:(F)"
 
     - name: Test passwordless SSH connection
       delegate_to: localhost
       ansible.builtin.command:
-        cmd: ssh -i ~/.ssh/{{ ssh_key_name }} -o StrictHostKeyChecking=no {{ ansible_user }}@{{ ansible_host }} "echo SSH key auth working"
+        cmd: ssh -i ~/.ssh/{{ ssh_key_name }} -o StrictHostKeyChecking=no {{ midi_host.user }}@{{ midi_host.ip }} "echo SSH key auth working"
       register: ssh_test
       changed_when: false
 
@@ -159,6 +159,7 @@
         protocol: tcp
         state: present
         enabled: true
+        remoteip: 192.168.68.0/22
 
     - name: Allow MIDI API prod port (5001)
       community.windows.win_firewall_rule:
@@ -169,6 +170,7 @@
         protocol: tcp
         state: present
         enabled: true
+        remoteip: 192.168.68.0/22
 
     # ========== Summary ==========
     - name: Print setup summary
