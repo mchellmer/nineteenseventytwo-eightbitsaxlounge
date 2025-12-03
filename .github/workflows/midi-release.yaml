@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - midiinit
     paths:
       - 'midi/version.txt'
 
@@ -16,6 +15,13 @@ jobs:
     defaults:
       run:
         working-directory: ./midi/NineteenSeventyTwo.EightBitSaxLounge.Midi
+    env:
+      # Dummy configuration for tests
+      Authentication__SecretKey: "dummySecretKeyForTestingOnly1234567890123456789012"
+      Authentication__Issuer: "Test"
+      Authentication__Audience: "Test"
+      Authentication__TokenExpiryInMinutes: "5"
+      ConnectionStrings__EightBitSaxLoungeDataLayer: "http://localhost:5000"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
