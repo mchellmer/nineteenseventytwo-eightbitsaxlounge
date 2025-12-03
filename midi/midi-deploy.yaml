@@ -70,38 +70,59 @@
     # ========== Configure Service ==========
     - name: Install/update service with NSSM
       ansible.windows.win_shell: |
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
         $nssm = "C:\Tools\nssm\nssm.exe"
         $service = "{{ service_name }}"
         $exe = "{{ target_dir }}\current\NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.exe"
+        
+        # Build environment variables array
+        $envVars = @(
+          "ASPNETCORE_URLS=http://0.0.0.0:{{ service_port }}"
+          "ASPNETCORE_ENVIRONMENT={{ lookup('env', 'ENVIRONMENT') | upper }}"
+          "ConnectionStrings__EightBitSaxLoungeDataLayer={{ lookup('env', 'CONNECTIONSTRINGS__EIGHTBITSAXLOUNGEDATALAYER') }}"
+          "Authentication__TokenExpiryInMinutes={{ lookup('env', 'AUTHENTICATION__TOKENEXPIRYINMINUTES') }}"
+          "Authentication__SecretKey={{ lookup('env', 'AUTHENTICATION__SECRETKEY') }}"
+          "Authentication__Issuer={{ lookup('env', 'AUTHENTICATION__ISSUER') }}"
+          "Authentication__Audience={{ lookup('env', 'AUTHENTICATION__AUDIENCE') }}"
+          "Authentication__Clients__0__ClientId={{ lookup('env', 'AUTHENTICATION__CLIENTS__0__CLIENTID') }}"
+          "Authentication__Clients__0__ClientSecret={{ lookup('env', 'AUTHENTICATION__CLIENTS__0__CLIENTSECRET') }}"
+          "Authentication__Clients__1__ClientId={{ lookup('env', 'AUTHENTICATION__CLIENTS__1__CLIENTID') }}"
+          "Authentication__Clients__1__ClientSecret={{ lookup('env', 'AUTHENTICATION__CLIENTS__1__CLIENTSECRET') }}"
+        )
         
         # Check if service exists
         $exists = & $nssm status $service 2>$null
         
         if ($LASTEXITCODE -ne 0) {
           # Install new service
-          & $nssm install $service $exe
-          & $nssm set $service AppDirectory "{{ target_dir }}\current"
-          & $nssm set $service DisplayName "MIDI API ({{ lookup('env', 'ENVIRONMENT') | upper }})"
-          & $nssm set $service Description "NineteenSeventyTwo MIDI API - {{ lookup('env', 'ENVIRONMENT') }} environment"
-          & $nssm set $service Start SERVICE_AUTO_START
-          & $nssm set $service AppStdout "{{ deploy_base }}\logs\{{ service_name }}-stdout.log"
-          & $nssm set $service AppStderr "{{ deploy_base }}\logs\{{ service_name }}-stderr.log"
-          & $nssm set $service AppEnvironmentExtra "ASPNETCORE_URLS=http://0.0.0.0:{{ service_port }}"
-          & $nssm set $service AppEnvironmentExtra "ASPNETCORE_ENVIRONMENT={{ lookup('env', 'ENVIRONMENT') | upper }}"
-          Write-Output "Service installed"
+          & $nssm install $service $exe | Out-Null
+          & $nssm set $service AppDirectory "{{ target_dir }}\current" | Out-Null
+          & $nssm set $service DisplayName "MIDI API ({{ lookup('env', 'ENVIRONMENT') | upper }})" | Out-Null
+          & $nssm set $service Description "NineteenSeventyTwo MIDI API - {{ lookup('env', 'ENVIRONMENT') }} environment" | Out-Null
+          & $nssm set $service Start SERVICE_AUTO_START | Out-Null
+          & $nssm set $service AppStdout "{{ deploy_base }}\logs\{{ service_name }}-stdout.log" | Out-Null
+          & $nssm set $service AppStderr "{{ deploy_base }}\logs\{{ service_name }}-stderr.log" | Out-Null
+          
+          # Set environment variables
+          & $nssm set $service AppEnvironmentExtra ($envVars -join "`r`n") | Out-Null
+          
+          Write-Output "Service installed successfully"
         } else {
           # Update existing service
-          & $nssm set $service Application $exe
-          & $nssm set $service AppDirectory "{{ target_dir }}\current"
-          & $nssm set $service AppEnvironmentExtra "ASPNETCORE_URLS=http://0.0.0.0:{{ service_port }}"
-          & $nssm set $service AppEnvironmentExtra "ASPNETCORE_ENVIRONMENT={{ lookup('env', 'ENVIRONMENT') | upper }}"
-          Write-Output "Service updated"
+          & $nssm set $service Application $exe | Out-Null
+          & $nssm set $service AppDirectory "{{ target_dir }}\current" | Out-Null
+          
+          # Reset and set environment variables
+          & $nssm reset $service AppEnvironmentExtra | Out-Null
+          & $nssm set $service AppEnvironmentExtra ($envVars -join "`r`n") | Out-Null
+          
+          Write-Output "Service updated successfully"
         }
       register: nssm_result
 
     - name: Print NSSM result
       ansible.builtin.debug:
-        msg: "{{ nssm_result.stdout_lines }}"
+        msg: "{{ nssm_result.stdout | trim }}"
 
     # ========== Start Service ==========
     - name: Start service
