@@ -62,10 +62,12 @@
 
     - name: Update current symlink
       ansible.windows.win_shell: |
-        if (Test-Path "{{ target_dir }}\current") {
-          Remove-Item "{{ target_dir }}\current" -Force
+        $linkPath = "{{ target_dir }}\current"
+        if (Test-Path $linkPath) {
+          Remove-Item $linkPath -Force -Recurse -Confirm:$false
         }
-        New-Item -ItemType SymbolicLink -Path "{{ target_dir }}\current" -Target "{{ target_dir }}\{{ version }}"
+        New-Item -ItemType SymbolicLink -Path $linkPath -Target "{{ target_dir }}\{{ version }}" -Force | Out-Null
+        Write-Output "Symlink updated to version {{ version }}"
 
     # ========== Configure Service ==========
     - name: Install/update service with NSSM
