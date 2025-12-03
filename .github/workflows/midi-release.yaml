@@ -1,4 +1,4 @@
-name: Midi Release
+name: MIDI API Release
 
 on:
   workflow_dispatch:
@@ -11,17 +11,124 @@ on:
 
 jobs:
   test:
+    name: Run .NET Tests
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: ./midi/NineteenSeventyTwo.EightBitSaxLounge.Midi
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+  build-and-package:
+    name: Build and Package Minimal API
+    needs: test
     runs-on: self-hosted
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      - name: Debug environment info
-        run: |
-          echo "Workflow: ${{ github.workflow }}"
-          echo "Job: ${{ github.job }}"
-          echo "Runner OS: ${{ runner.os }}"
-          echo "Runner Name: ${{ runner.name }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Actor: ${{ github.actor }}"
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Read version
+      id: version
+      run: |
+        VERSION=$(cat midi/version.txt)
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Publish self-contained application
+      working-directory: ./midi/NineteenSeventyTwo.EightBitSaxLounge.Midi
+      run: |
+        dotnet publish NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi/NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.csproj \
+          --configuration Release \
+          --runtime win-x64 \
+          --self-contained true \
+          -p:PublishSingleFile=false \
+          -p:Version=${{ steps.version.outputs.version }} \
+          --output ${{ github.workspace }}/publish
+
+    - name: Create artifact archive
+      run: |
+        cd ${{ github.workspace }}/publish
+        tar -czf midi-api-${{ steps.version.outputs.version }}.tar.gz *
+
+    - name: Upload artifact to GitHub
+      uses: actions/upload-artifact@v3
+      with:
+        name: midi-api-${{ steps.version.outputs.version }}
+        path: ${{ github.workspace }}/publish/midi-api-${{ steps.version.outputs.version }}.tar.gz
+        retention-days: 90
+
+    - name: Create GitHub Release (prod only)
+      if: github.ref_name == 'main'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: midi-api-v${{ steps.version.outputs.version }}
+        name: MIDI API v${{ steps.version.outputs.version }}
+        files: ${{ github.workspace }}/publish/midi-api-${{ steps.version.outputs.version }}.tar.gz
+        body: |
+          ## MIDI API Release v${{ steps.version.outputs.version }}
+          
+          **Production deployment**
+          - Self-contained Windows x64 binary
+          - Deployed to: C:\Services\Midi\prod
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    name: Deploy MIDI API to Windows PC
+    needs: build-and-package
+    runs-on: self-hosted
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Read version
+      id: version
+      run: |
+        VERSION=$(cat midi/version.txt)
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Set environment based on branch
+      id: set-env
+      run: |
+        if [[ "${{ github.ref_name }}" == "main" ]]; then
+          echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+        else
+          echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+        fi
+
+    - name: Download artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: midi-api-${{ steps.version.outputs.version }}
+        path: ${{ github.workspace }}/artifacts
+
+    - name: Deploy MIDI API
+      working-directory: ./midi
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
+        ENVIRONMENT: ${{ env.ENVIRONMENT }}
+        ARTIFACT_PATH: ${{ github.workspace }}/artifacts/midi-api-${{ steps.version.outputs.version }}.tar.gz
+      run: make deploy-midi-api

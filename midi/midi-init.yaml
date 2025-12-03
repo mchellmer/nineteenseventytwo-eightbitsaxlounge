@@ -43,6 +43,26 @@
         icacls $path /inheritance:r
         icacls $path /grant:r "{{ midi_host.user }}:(F)"
         icacls $path /grant:r "SYSTEM:(F)"
+
+    - name: Check if user is in Administrators group
+      ansible.windows.win_shell: |
+        net localgroup administrators | Select-String "{{ midi_host.user }}"
+      register: is_admin
+      failed_when: false
+      changed_when: false
+
+    - name: Add public key to administrators_authorized_keys (if admin)
+      ansible.windows.win_copy:
+        content: "{{ ssh_pubkey.content | b64decode | trim }}\n"
+        dest: "C:\\ProgramData\\ssh\\administrators_authorized_keys"
+      when: is_admin.rc == 0
+
+    - name: Set permissions on administrators_authorized_keys (if admin)
+      ansible.windows.win_shell: |
+        icacls C:\ProgramData\ssh\administrators_authorized_keys /inheritance:r
+        icacls C:\ProgramData\ssh\administrators_authorized_keys /grant "BUILTIN\Administrators:(F)"
+        icacls C:\ProgramData\ssh\administrators_authorized_keys /grant "SYSTEM:(F)"
+      when: is_admin.rc == 0
   
     - name: Restart SSH service to apply authorized_keys changes
       ansible.windows.win_service:

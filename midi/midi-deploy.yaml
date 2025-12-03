@@ -1,0 +1,148 @@
+---
+- name: Deploy MIDI API to Windows PC
+  hosts: midi-host
+  gather_facts: true
+  vars:
+    deploy_base: "C:\\Services\\Midi"
+    service_name_dev: "MidiApi-Dev"
+    service_name_prod: "MidiApi-Prod"
+
+  tasks:
+    - name: Set deployment variables based on environment
+      ansible.builtin.set_fact:
+        target_dir: "{{ deploy_base }}\\{{ lookup('env', 'ENVIRONMENT') }}"
+        service_name: "{{ service_name_dev if lookup('env', 'ENVIRONMENT') == 'dev' else service_name_prod }}"
+        service_port: "{{ '5000' if lookup('env', 'ENVIRONMENT') == 'dev' else '5001' }}"
+        version: "{{ lookup('env', 'VERSION') }}"
+        artifact_path: "{{ lookup('env', 'ARTIFACT_PATH') }}"
+
+    - name: Display deployment info
+      ansible.builtin.debug:
+        msg:
+          - "Deploying MIDI API version {{ version }}"
+          - "Environment: {{ lookup('env', 'ENVIRONMENT') }}"
+          - "Target directory: {{ target_dir }}"
+          - "Service name: {{ service_name }}"
+          - "Service port: {{ service_port }}"
+
+    # ========== Stop Service ==========
+    - name: Check if service exists
+      ansible.windows.win_shell: |
+        $nssm = "C:\Tools\nssm\nssm.exe"
+        & $nssm status "{{ service_name }}" 2>$null
+        exit $LASTEXITCODE
+      register: service_exists
+      failed_when: false
+      changed_when: false
+
+    - name: Stop service if it exists
+      ansible.windows.win_service:
+        name: "{{ service_name }}"
+        state: stopped
+      when: service_exists.rc == 0
+      register: service_stop
+      failed_when: false
+
+    # ========== Deploy Artifact ==========
+    - name: Create version-specific directory
+      ansible.windows.win_file:
+        path: "{{ target_dir }}\\{{ version }}"
+        state: directory
+
+    - name: Copy artifact to Windows PC
+      ansible.windows.win_copy:
+        src: "{{ artifact_path }}"
+        dest: "{{ target_dir }}\\midi-api-{{ version }}.tar.gz"
+
+    - name: Extract artifact
+      ansible.windows.win_shell: |
+        tar -xzf "{{ target_dir }}\midi-api-{{ version }}.tar.gz" -C "{{ target_dir }}\{{ version }}"
+      args:
+        creates: "{{ target_dir }}\\{{ version }}\\NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.exe"
+
+    - name: Update current symlink
+      ansible.windows.win_shell: |
+        if (Test-Path "{{ target_dir }}\current") {
+          Remove-Item "{{ target_dir }}\current" -Force
+        }
+        New-Item -ItemType SymbolicLink -Path "{{ target_dir }}\current" -Target "{{ target_dir }}\{{ version }}"
+
+    # ========== Configure Service ==========
+    - name: Install/update service with NSSM
+      ansible.windows.win_shell: |
+        $nssm = "C:\Tools\nssm\nssm.exe"
+        $service = "{{ service_name }}"
+        $exe = "{{ target_dir }}\current\NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.exe"
+        
+        # Check if service exists
+        $exists = & $nssm status $service 2>$null
+        
+        if ($LASTEXITCODE -ne 0) {
+          # Install new service
+          & $nssm install $service $exe
+          & $nssm set $service AppDirectory "{{ target_dir }}\current"
+          & $nssm set $service DisplayName "MIDI API ({{ lookup('env', 'ENVIRONMENT') | upper }})"
+          & $nssm set $service Description "NineteenSeventyTwo MIDI API - {{ lookup('env', 'ENVIRONMENT') }} environment"
+          & $nssm set $service Start SERVICE_AUTO_START
+          & $nssm set $service AppStdout "{{ deploy_base }}\logs\{{ service_name }}-stdout.log"
+          & $nssm set $service AppStderr "{{ deploy_base }}\logs\{{ service_name }}-stderr.log"
+          & $nssm set $service AppEnvironmentExtra "ASPNETCORE_URLS=http://0.0.0.0:{{ service_port }}"
+          & $nssm set $service AppEnvironmentExtra "ASPNETCORE_ENVIRONMENT={{ lookup('env', 'ENVIRONMENT') | upper }}"
+          Write-Output "Service installed"
+        } else {
+          # Update existing service
+          & $nssm set $service Application $exe
+          & $nssm set $service AppDirectory "{{ target_dir }}\current"
+          & $nssm set $service AppEnvironmentExtra "ASPNETCORE_URLS=http://0.0.0.0:{{ service_port }}"
+          & $nssm set $service AppEnvironmentExtra "ASPNETCORE_ENVIRONMENT={{ lookup('env', 'ENVIRONMENT') | upper }}"
+          Write-Output "Service updated"
+        }
+      register: nssm_result
+
+    - name: Print NSSM result
+      ansible.builtin.debug:
+        msg: "{{ nssm_result.stdout_lines }}"
+
+    # ========== Start Service ==========
+    - name: Start service
+      ansible.windows.win_service:
+        name: "{{ service_name }}"
+        state: started
+
+    - name: Wait for service to be ready
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ service_port }}"
+        delay: 5
+        timeout: 60
+      delegate_to: localhost
+
+    # ========== Verify Deployment ==========
+    - name: Check service status
+      ansible.windows.win_service:
+        name: "{{ service_name }}"
+      register: final_service_check
+
+    - name: Verify API is responding
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:{{ service_port }}/"
+        method: OPTIONS
+        status_code: [200, 204]
+        timeout: 10
+      delegate_to: localhost
+      register: health_check
+      failed_when: false
+
+    # ========== Summary ==========
+    - name: Print deployment summary
+      ansible.builtin.debug:
+        msg:
+          - "========== Deployment Complete =========="
+          - "Version: {{ version }}"
+          - "Environment: {{ lookup('env', 'ENVIRONMENT') }}"
+          - "Service: {{ service_name }}"
+          - "Status: {{ final_service_check.state }}"
+          - "Port: {{ service_port }}"
+          - "Health check: {{ 'PASSED' if health_check.status in [200, 204] else 'FAILED' }}"
+          - "URL: http://{{ ansible_host }}:{{ service_port }}"
+          - "========================================"
