@@ -1,0 +1,44 @@
+# .NET / Visual Studio / Rider ignores for MIDI solution
+
+# Build artifacts
+[Bb]in/
+[Oo]bj/
+**/bin/
+**/obj/
+artifacts/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# JetBrains Rider / IntelliJ
+.idea/
+*.DotSettings.user
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+.nuget/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editors / tooling
+.vscode/
+*.swp

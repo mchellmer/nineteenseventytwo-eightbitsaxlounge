@@ -84,6 +84,20 @@ func (s *ProdCouchService) CreateDocumentByDatabaseName(dbname string, doc map[s
 // success. The caller should include the correct _rev within the document if
 // using CouchDB's MVCC (not enforced here).
 func (s *ProdCouchService) UpdateDocumentByDatabaseNameAndDocumentId(dbname string, id string, doc map[string]interface{}) error {
+	// If caller did not supply a _rev we need to fetch current revision first.
+	rev, hasRev := doc["_rev"].(string)
+	if !hasRev || rev == "" {
+		existing, err := s.GetDocumentByDatabaseNameAndDocumentId(dbname, id)
+		if err != nil {
+			return fmt.Errorf("missing _rev and failed to retrieve existing document: %w", err)
+		}
+		existingRev, ok := existing["_rev"].(string)
+		if !ok || existingRev == "" {
+			return fmt.Errorf("existing document does not contain a valid _rev")
+		}
+		doc["_rev"] = existingRev
+	}
+
 	b, err := json.Marshal(doc)
 	if err != nil {
 		return fmt.Errorf("failed to marshal document: %w", err)

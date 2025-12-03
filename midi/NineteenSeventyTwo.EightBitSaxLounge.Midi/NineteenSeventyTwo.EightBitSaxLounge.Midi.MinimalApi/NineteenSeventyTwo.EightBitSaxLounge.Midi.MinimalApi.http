@@ -1,0 +1,6 @@
+@NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi_HostAddress = http://localhost:5071
+
+GET {{NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
