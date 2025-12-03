@@ -77,11 +77,12 @@ jobs:
         tar -czf midi-api-${{ steps.version.outputs.version }}.tar.gz *
 
     - name: Upload artifact to GitHub
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: midi-api-${{ steps.version.outputs.version }}
         path: ${{ github.workspace }}/publish/midi-api-${{ steps.version.outputs.version }}.tar.gz
         retention-days: 90
+        compression-level: 0
 
     - name: Create GitHub Release (prod only)
       if: github.ref_name == 'main'
@@ -126,7 +127,7 @@ jobs:
         fi
 
     - name: Download artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: midi-api-${{ steps.version.outputs.version }}
         path: ${{ github.workspace }}/artifacts
