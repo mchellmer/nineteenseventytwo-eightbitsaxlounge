@@ -1,32 +1,53 @@
 <mxfile host="65bd71144e">
     <diagram id="BxJHugW711QlZ-G65Gp-" name="Page-1">
-        <mxGraphModel dx="722" dy="292" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="722" dy="659" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
                 <mxCell id="2" value="kubernetes" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="40" width="470" height="250" as="geometry"/>
+                    <mxGeometry x="40" y="120" width="470" height="370" as="geometry"/>
                 </mxCell>
                 <mxCell id="3" value="db layer" style="rounded=0;whiteSpace=wrap;html=1;horizontal=1;verticalAlign=top;" parent="1" vertex="1">
-                    <mxGeometry x="60" y="70" width="430" height="120" as="geometry"/>
+                    <mxGeometry x="60" y="150" width="430" height="190" as="geometry"/>
                 </mxCell>
-                <mxCell id="4" value="Container&lt;div&gt;couchdb&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="110" width="120" height="60" as="geometry"/>
+                <mxCell id="4" value="Container&lt;div&gt;db&lt;/div&gt;&lt;div&gt;couchdb&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="190" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="6" style="edgeStyle=none;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="5" target="4">
+                <mxCell id="6" style="edgeStyle=none;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="5" target="4" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="5" value="&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;Service&lt;/font&gt;&lt;/div&gt;&lt;div&gt;ClusterIp&lt;/div&gt;&lt;div&gt;5984 &amp;gt; 5984&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-                    <mxGeometry x="220" y="110" width="120" height="60" as="geometry"/>
+                <mxCell id="5" value="&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;Service&lt;/font&gt;&lt;/div&gt;&lt;div&gt;ClusterIp&lt;/div&gt;&lt;div&gt;5984 &amp;gt; 5984&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="190" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="8" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="7" target="5">
+                <mxCell id="8" value="" style="edgeStyle=none;html=1;" parent="1" source="7" target="5" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="7" value="data layer&lt;div&gt;crud service&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-                    <mxGeometry x="220" y="210" width="120" height="60" as="geometry"/>
+                <mxCell id="7" value="data layer&lt;div&gt;crud service&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="370" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="9" value="&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;Secret&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;couchdb admin pass&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;secret-db-couchdb&lt;/font&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-                    <mxGeometry x="354" y="110" width="120" height="60" as="geometry"/>
+                <mxCell id="9" value="&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;Secret&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;couchdb admin pass&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;secret-db-couchdb&lt;/font&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="270" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" style="edgeStyle=none;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="10" target="5">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="&lt;div&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;&lt;font color=&quot;#000000&quot;&gt;Ingress&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;&lt;font color=&quot;#000000&quot;&gt;nginx&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&amp;lt;db endpoint&amp;gt;/&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="360" y="190" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="" style="edgeStyle=none;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="12" target="10">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;service layer&lt;/font&gt;&lt;/div&gt;&lt;div&gt;metallb&lt;/div&gt;&lt;div&gt;loadbalaancer ip&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="360" y="370" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="13" target="12">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;REST Client&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;http&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;couchdb admin ui&lt;/font&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="540" y="370" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="The db layer persists an instance of a couchdb database. The data layer is configured to make standard CRUD changes to data, an ingress is setup to allow access to the couchdb admin ui." style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+                    <mxGeometry x="40" y="10" width="680" height="50" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
