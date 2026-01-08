@@ -1,6 +1,9 @@
+"""Application configuration settings loaded from environment variables."""
+
 import os
 from typing import Optional
 from pydantic import BaseSettings
+
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
@@ -30,6 +33,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+
 
 # Global settings instance
 settings = Settings()

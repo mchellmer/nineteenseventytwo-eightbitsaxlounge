@@ -1,7 +1,7 @@
 import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock, patch
-from src.config import Settings
+from src.config.settings import Settings
 
 @pytest.fixture
 def event_loop():

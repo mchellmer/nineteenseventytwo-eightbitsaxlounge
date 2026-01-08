@@ -7,7 +7,8 @@ import asyncio
 import aiohttp
 import sys
 from aiohttp import web
-from .config import settings
+from ..config.settings import settings
+
 
 async def health_check(request):
     """Health check endpoint."""
@@ -38,6 +39,7 @@ async def health_check(request):
             status=503
         )
 
+
 async def startup_health_server():
     """Start the health check server."""
     app = web.Application()
@@ -51,23 +53,25 @@ async def startup_health_server():
     site = web.TCPSite(runner, '0.0.0.0', settings.health_check_port)
     await site.start()
     
+    print(f"Health check server running on port {settings.health_check_port}")
     return runner
 
-async def main():
-    """Main function for standalone health check."""
-    try:
+
+async def shutdown_health_server(runner):
+    """Shutdown the health check server."""
+    await runner.cleanup()
+
+
+if __name__ == "__main__":
+    async def main():
         runner = await startup_health_server()
-        print(f"Health check server running on port {settings.health_check_port}")
         
         # Keep running
-        while True:
-            await asyncio.sleep(3600)
+        try:
+            while True:
+                await asyncio.sleep(3600)
+        except KeyboardInterrupt:
+            print("Shutting down health server...")
+            await shutdown_health_server(runner)
     
-    except KeyboardInterrupt:
-        print("Shutting down health check server...")
-    finally:
-        if 'runner' in locals():
-            await runner.cleanup()
-
-if __name__ == '__main__':
     asyncio.run(main())

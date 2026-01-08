@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, AsyncMock, patch
-from src.main import EightBitSaxBot
-from src.config import Settings
+from src.bots.twitch_bot import EightBitSaxBot
+from src.config.settings import Settings
 
 
 class TestEightBitSaxBot:

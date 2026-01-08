@@ -8,8 +8,8 @@ import logging
 import signal
 import sys
 
-from .config import settings
-from .interfaces import BotFactory
+from .config.settings import settings
+from .bots.factory import BotFactory
 
 # Configure logging
 logging.basicConfig(
@@ -17,6 +17,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
 
 async def main():
     """Main function to run the bot."""
@@ -42,6 +43,7 @@ async def main():
         sys.exit(1)
     finally:
         await bot.shutdown()
+
 
 if __name__ == '__main__':
     asyncio.run(main())

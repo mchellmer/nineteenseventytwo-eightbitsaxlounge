@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, Mock
-from src.config import Settings
+from src.config.settings import Settings
 
 
 class TestSettings:

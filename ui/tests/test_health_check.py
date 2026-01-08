@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, AsyncMock, Mock
 from aiohttp import web
-from src.health_check import health_check, startup_health_server
+from src.utils.health_check import health_check, startup_health_server
 
 
 class TestHealthCheck:
@@ -107,7 +107,7 @@ class TestHealthCheckIntegration:
     @pytest.mark.asyncio
     async def test_health_endpoints_routing(self):
         """Test that all health endpoints are properly routed."""
-        from src.health_check import startup_health_server
+        from src.utils.health_check import startup_health_server
         
         with patch('aiohttp.web.AppRunner') as mock_runner, \
              patch('aiohttp.web.TCPSite'):

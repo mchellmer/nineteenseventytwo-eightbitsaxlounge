@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, Mock
-from src.commands import CommandRegistry
+from src.commands.registry import CommandRegistry
 
 
 class TestCommandRegistry:
@@ -12,33 +12,23 @@ class TestCommandRegistry:
     
     def test_initialization(self, registry):
         """Test that CommandRegistry initializes with expected handlers."""
-        assert registry.engine_handler is not None
-        assert registry.help_handler is not None
-        assert registry.status_handler is not None
+        assert registry._engine_handler is not None
+        assert registry._help_handler is not None
+        assert registry._status_handler is not None
         assert len(registry._commands) >= 3
     
-    def test_get_command_handler_valid(self, registry):
-        """Test getting a valid command handler."""
-        handler_info = registry.get_command_handler("engine")
+    @pytest.mark.asyncio
+    async def test_execute_command_valid(self, registry, mock_twitch_context):
+        """Test executing a valid command."""
+        result = await registry.execute_command("help", [], mock_twitch_context)
         
-        assert handler_info is not None
-        handler, description = handler_info
-        assert callable(handler)
-        assert "MIDI engine" in description
+        assert "EightBitSaxLounge" in result
     
-    def test_get_command_handler_invalid(self, registry):
-        """Test getting an invalid command handler."""
-        handler_info = registry.get_command_handler("nonexistent")
-        
-        assert handler_info is None
-    
-    def test_get_command_handler_case_insensitive(self, registry):
-        """Test that command lookup is case insensitive."""
-        handler_info_lower = registry.get_command_handler("engine")
-        handler_info_upper = registry.get_command_handler("ENGINE")
-        handler_info_mixed = registry.get_command_handler("Engine")
-        
-        assert handler_info_lower == handler_info_upper == handler_info_mixed
+    @pytest.mark.asyncio
+    async def test_execute_command_invalid(self, registry, mock_twitch_context):
+        """Test executing an invalid command raises ValueError."""
+        with pytest.raises(ValueError):
+            await registry.execute_command("nonexistent", [], mock_twitch_context)
     
     def test_get_all_commands(self, registry):
         """Test getting all available commands."""

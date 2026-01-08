@@ -8,16 +8,11 @@ import logging
 from typing import Optional
 import twitchio
 from twitchio.ext import commands
-from prometheus_client import start_http_server, Counter, Histogram
 
-from .config import settings
-from .commands import CommandRegistry
-from .interfaces import StreamingBot
-
-# Metrics
-COMMANDS_PROCESSED = Counter('bot_commands_processed_total', 'Total commands processed', ['command', 'status'])
-COMMAND_DURATION = Histogram('bot_command_duration_seconds', 'Command execution time', ['command'])
-MESSAGES_RECEIVED = Counter('bot_messages_received_total', 'Total messages received')
+from ..config.settings import settings
+from ..commands.registry import CommandRegistry
+from ..interfaces.streaming_bot import StreamingBot
+from ..utils.metrics import COMMANDS_PROCESSED, COMMAND_DURATION, MESSAGES_RECEIVED, start_metrics_server
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +41,7 @@ class TwitchBot(StreamingBot, commands.Bot):
         
         # Start metrics server if enabled
         if settings.metrics_enabled:
-            start_http_server(settings.metrics_port)
+            start_metrics_server(settings.metrics_port)
             logger.info(f'Metrics server started on port {settings.metrics_port}')
     
     # StreamingBot interface implementation
