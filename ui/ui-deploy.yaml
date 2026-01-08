@@ -1,0 +1,133 @@
+---
+- name: Deploy EightBitSaxLounge UI Chatbot
+  hosts: k8s_masters
+  gather_facts: false
+  vars:
+    namespace: eightbitsaxlounge
+    app_name: ui
+    image_tag: "{{ version | default('latest') }}"
+    twitch_token: "{{ vault_twitch_token }}"
+    twitch_client_id: "{{ vault_twitch_client_id }}"
+    twitch_channel: "{{ twitch_channel_name | default('your_channel') }}"
+    
+  tasks:
+    - name: Ensure namespace exists
+      kubernetes.core.k8s:
+        name: "{{ namespace }}"
+        api_version: v1
+        kind: Namespace
+        state: present
+    
+    - name: Create Twitch secrets
+      kubernetes.core.k8s:
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: twitch-secrets
+            namespace: "{{ namespace }}"
+          type: Opaque
+          data:
+            token: "{{ twitch_token | b64encode }}"
+            client_id: "{{ twitch_client_id | b64encode }}"
+        state: present
+    
+    - name: Apply ConfigMap
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: ui-config
+            namespace: "{{ namespace }}"
+          data:
+            twitch_channel: "{{ twitch_channel }}"
+            midi_api_url: "http://midi-service:8080"
+            log_level: "INFO"
+            bot_name: "EightBitSaxBot"
+    
+    - name: Apply Service
+      kubernetes.core.k8s:
+        state: present
+        src: k8s/service.yaml
+        namespace: "{{ namespace }}"
+    
+    - name: Apply Deployment
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('file', 'k8s/deployment.yaml') | from_yaml }}"
+        namespace: "{{ namespace }}"
+      vars:
+        image_with_tag: "nineteenseventytwo/eightbitsaxlounge-ui:{{ image_tag }}"
+    
+    - name: Apply Ingress (optional)
+      kubernetes.core.k8s:
+        state: present
+        src: k8s/ingress.yaml
+        namespace: "{{ namespace }}"
+      when: enable_ingress | default(false) | bool
+    
+    - name: Wait for deployment to be ready
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: ui-deployment
+        namespace: "{{ namespace }}"
+        wait_condition:
+          type: Progressing
+          status: "True"
+          reason: NewReplicaSetAvailable
+        wait_timeout: 300
+    
+    - name: Get pod status
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Pod
+        namespace: "{{ namespace }}"
+        label_selectors:
+          - app=ui
+      register: ui_pods
+    
+    - name: Display deployment status
+      debug:
+        msg: "UI Chatbot deployed successfully. Pod status: {{ ui_pods.resources[0].status.phase if ui_pods.resources else 'No pods found' }}"
+
+- name: Build and push Docker image
+  hosts: localhost
+  gather_facts: false
+  vars:
+    image_name: nineteenseventytwo/eightbitsaxlounge-ui
+    version: "{{ lookup('file', 'version.txt') | trim }}"
+    
+  tasks:
+    - name: Build Docker image
+      community.docker.docker_image:
+        build:
+          path: .
+        name: "{{ image_name }}"
+        tag: "{{ version }}"
+        source: build
+        force_source: true
+    
+    - name: Tag as latest
+      community.docker.docker_image:
+        name: "{{ image_name }}:{{ version }}"
+        repository: "{{ image_name }}:latest"
+        source: local
+    
+    - name: Push version tag
+      community.docker.docker_image:
+        name: "{{ image_name }}"
+        tag: "{{ version }}"
+        push: true
+        source: local
+      when: push_images | default(true) | bool
+    
+    - name: Push latest tag
+      community.docker.docker_image:
+        name: "{{ image_name }}"
+        tag: latest
+        push: true
+        source: local
+      when: push_images | default(true) | bool

@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui-deployment
+  namespace: eightbitsaxlounge
+  labels:
+    app: ui
+    component: chatbot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      labels:
+        app: ui
+        component: chatbot
+    spec:
+      containers:
+      - name: twitch-bot
+        image: nineteenseventytwo/eightbitsaxlounge-ui:1.0.0
+        ports:
+        - containerPort: 8080
+          name: health
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: TWITCH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: twitch-secrets
+              key: token
+        - name: TWITCH_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: twitch-secrets
+              key: client_id
+        - name: TWITCH_CHANNEL
+          valueFrom:
+            configMapKeyRef:
+              name: ui-config
+              key: twitch_channel
+        - name: MIDI_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ui-config
+              key: midi_api_url
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: ui-config
+              key: log_level
+        - name: METRICS_ENABLED
+          value: "true"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+      restartPolicy: Always
