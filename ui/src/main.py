@@ -1,5 +1,5 @@
 """
-Main entry point for the streaming chatbot.
+Main entry point for a streaming chatbot.
 Handles application startup, signal handling, and bot lifecycle management.
 """
 
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 async def main():
     """Main function to run the bot."""
-    # Create bot using factory (defaults to Twitch)
+    # Create bot (defaults to Twitch)
     streaming_service = getattr(settings, 'streaming_service', 'twitch')
     bot = BotFactory.create_bot(streaming_service)
     
@@ -30,7 +30,9 @@ async def main():
         logger.info(f'Received signal {signum}, shutting down...')
         asyncio.create_task(bot.shutdown())
     
+    # Shutdown on interrupt e.g. ctrl+c
     signal.signal(signal.SIGINT, signal_handler)
+    # Shutdown on termination signal e.g. docker stop
     signal.signal(signal.SIGTERM, signal_handler)
     
     try:

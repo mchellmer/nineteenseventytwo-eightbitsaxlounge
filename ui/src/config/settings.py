@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # Bot Configuration
     bot_name: str = "EightBitSaxBot"
     log_level: str = "INFO"
-    streaming_service: str = "twitch"  # twitch, discord, youtube
+    streaming_service: str = "twitch"
     
     # Health Check Configuration
     health_check_port: int = 8080
