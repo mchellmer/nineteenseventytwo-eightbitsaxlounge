@@ -14,9 +14,9 @@ class CommandRegistry:
     
     def __init__(self):
         """Initialize the command registry with all available commands."""
-        from ..commands.handlers.engine import EngineHandler
-        from ..commands.handlers.help import HelpHandler
-        from ..commands.handlers.status import StatusHandler
+        from .handlers.engine import EngineHandler
+        from .handlers.help import HelpHandler
+        from .handlers.status import StatusHandler
         
         self._engine_handler = EngineHandler()
         self._help_handler = HelpHandler()

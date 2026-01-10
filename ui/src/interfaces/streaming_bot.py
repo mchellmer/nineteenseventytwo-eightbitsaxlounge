@@ -1,6 +1,5 @@
 """
 Abstract bot interface for streaming services.
-Defines the contract that any streaming bot implementation must follow.
 """
 
 from abc import ABC, abstractmethod
@@ -40,4 +39,10 @@ class StreamingBot(ABC):
     @abstractmethod
     def primary_channel(self) -> str:
         """Get the primary channel the bot is monitoring."""
+        pass
+    
+    @property
+    @abstractmethod
+    def service_name(self) -> str:
+        """Get the name of the streaming service."""
         pass

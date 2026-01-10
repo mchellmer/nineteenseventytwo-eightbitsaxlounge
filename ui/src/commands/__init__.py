@@ -1,5 +1,5 @@
 """Commands package for bot command handling."""
 
-from .registry import CommandRegistry
+from .command_registry import CommandRegistry
 
 __all__ = ['CommandRegistry']

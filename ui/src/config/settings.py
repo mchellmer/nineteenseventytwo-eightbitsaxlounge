@@ -21,14 +21,6 @@ class Settings(BaseSettings):
     # Bot Configuration
     bot_name: str = "EightBitSaxBot"
     log_level: str = "INFO"
-    streaming_service: str = "twitch"
-    
-    # Health Check Configuration
-    health_check_port: int = 8080
-    
-    # Metrics Configuration
-    metrics_enabled: bool = True
-    metrics_port: int = 9090
     
     class Config:
         env_file = ".env"

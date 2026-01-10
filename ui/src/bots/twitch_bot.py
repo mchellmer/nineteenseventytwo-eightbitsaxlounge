@@ -1,6 +1,7 @@
 """
 Twitch bot implementation for EightBitSaxLounge.
-Contains the Twitch-specific bot implementation using TwitchIO.
+Uses TwitchIO to interact with Twitch chat.
+Implements StreamingBot interface.
 """
 
 import asyncio
@@ -10,19 +11,18 @@ import twitchio
 from twitchio.ext import commands
 
 from ..config.settings import settings
-from ..commands.registry import CommandRegistry
+from ..commands.command_registry import CommandRegistry
 from ..interfaces.streaming_bot import StreamingBot
-from ..utils.metrics import COMMANDS_PROCESSED, COMMAND_DURATION, MESSAGES_RECEIVED, start_metrics_server
 
 logger = logging.getLogger(__name__)
 
 
-class TwitchBot(StreamingBot, commands.Bot):
+class TwitchBot(StreamingBot):
     """Twitch-specific bot implementation using TwitchIO."""
     
     def __init__(self):
-        commands.Bot.__init__(
-            self,
+        # TwitchIO Bot instance
+        self.twitchio = commands.Bot(
             token=settings.twitch_token,
             client_id=settings.twitch_client_id,
             nick=settings.bot_name.lower(),
@@ -30,32 +30,55 @@ class TwitchBot(StreamingBot, commands.Bot):
             initial_channels=[settings.twitch_channel]
         )
         
+        # Set registry of configured commands
         self.command_registry = CommandRegistry()
+
+        # Internal state
         self._shutdown = False
         self._connected = False
-    
-    async def event_ready(self):
-        """Called when the bot is ready."""
-        self._connected = True
-        logger.info(f'Bot {self.nick} is online and connected to #{settings.twitch_channel}!')
         
-        # Start metrics server if enabled
-        if settings.metrics_enabled:
-            start_metrics_server(settings.metrics_port)
-            logger.info(f'Metrics server started on port {settings.metrics_port}')
+        # Wire up TwitchIO event handlers to bot methods
+        self.twitchio.event(self._on_ready)
+        self.twitchio.event(self._on_message)
+        self.twitchio.event(self._on_command_error)
+        
+        # Register 8bsl channel commands with TwitchIO
+        self.twitchio.add_command(commands.Command(name='engine', func=self.engine_command))
+        self.twitchio.add_command(commands.Command(name='help', func=self.help_command))
+        self.twitchio.add_command(commands.Command(name='status', func=self.status_command))
     
     # StreamingBot interface implementation
     async def start(self) -> None:
         """Start the bot and connect to Twitch."""
-        await commands.Bot.start(self)
+        await self.twitchio.start()
     
     async def send_message(self, channel: str, message: str) -> None:
         """Send a message to the specified channel."""
-        channel_obj = self.get_channel(channel)
+        channel_obj = self.twitchio.get_channel(channel)
         if channel_obj:
             await channel_obj.send(message)
         else:
             logger.warning(f"Channel {channel} not found or not connected")
+    
+    async def shutdown(self):
+        """Graceful shutdown."""
+        logger.info('Shutting down bot...')
+        self._shutdown = True
+        self._connected = False
+        await self.twitchio.close()
+    
+    # Command handlers (called by TwitchIO when commands are used)
+    async def engine_command(self, ctx, *args):
+        """Handle !engine commands."""
+        await self._execute_command('engine', list(args), ctx)
+    
+    async def help_command(self, ctx, *args):
+        """Handle !help commands."""
+        await self._execute_command('help', list(args), ctx)
+    
+    async def status_command(self, ctx, *args):
+        """Handle !status commands."""
+        await self._execute_command('status', list(args), ctx)
     
     @property
     def is_connected(self) -> bool:
@@ -65,67 +88,43 @@ class TwitchBot(StreamingBot, commands.Bot):
     @property
     def bot_name(self) -> str:
         """Get the bot's username/nickname."""
-        return self.nick
+        return self.twitchio.nick
     
     @property
     def primary_channel(self) -> str:
         """Get the primary channel the bot is monitoring."""
         return settings.twitch_channel
     
-    async def event_message(self, message):
-        """Called when a message is received."""
-        # Ignore messages from the bot itself
-        if message.echo:
-            return
-        
-        MESSAGES_RECEIVED.inc()
-        
-        # Log the message for debugging
-        logger.debug(f'Message from {message.author.name}: {message.content}')
-        
-        # Handle commands
-        await self.handle_commands(message)
-    
-    async def event_command_error(self, context, error):
-        """Called when a command raises an error."""
-        logger.error(f'Command error in {context.command}: {error}')
-        await context.send(f'❌ An error occurred while processing your command.')
-    
-    @commands.command(name='engine')
-    async def engine_command(self, ctx, *args):
-        """Handle !engine commands."""
-        await self._execute_command('engine', list(args), ctx)
-    
-    @commands.command(name='help')
-    async def help_command(self, ctx, *args):
-        """Handle !help commands."""
-        await self._execute_command('help', list(args), ctx)
-    
-    @commands.command(name='status')
-    async def status_command(self, ctx, *args):
-        """Handle !status commands."""
-        await self._execute_command('status', list(args), ctx)
+    @property
+    def service_name(self) -> str:
+        """Get the name of the streaming service."""
+        return "Twitch"
     
     async def _execute_command(self, command: str, args: list, ctx):
         """Execute a command through the command registry."""
-        with COMMAND_DURATION.labels(command=command).time():
-            try:
-                response = await self.command_registry.execute_command(command, args, ctx)
-                await ctx.send(response)
-                COMMANDS_PROCESSED.labels(command=command, status='success').inc()
-                
-            except Exception as e:
-                logger.error(f'Error executing command {command}: {e}')
-                await ctx.send(f'❌ An error occurred while processing your command.')
-                COMMANDS_PROCESSED.labels(command=command, status='error').inc()
+        try:
+            response = await self.command_registry.execute_command(command, args, ctx)
+            await ctx.send(response)
+            
+        except Exception as e:
+            logger.error(f'Error executing command {command}: {e}')
+            await ctx.send(f'❌ An error occurred while processing your command.')
+
+    async def _on_ready(self):
+        """Called when the bot is ready."""
+        self._connected = True
+        logger.info(f'Bot {self.twitchio.nick} is online and connected to #{settings.twitch_channel}!')
     
-    async def shutdown(self):
-        """Graceful shutdown."""
-        logger.info('Shutting down bot...')
-        self._shutdown = True
-        self._connected = False
-        await self.close()
-
-
-# Backward compatibility alias
-EightBitSaxBot = TwitchBot
+    async def _on_message(self, message):
+        """Called when a message is received."""
+        if message.echo:
+            return
+        
+        logger.debug(f'Message from {message.author.name}: {message.content}')
+        
+        await self.twitchio.handle_commands(message)
+    
+    async def _on_command_error(self, context, error):
+        """Called when a command raises an error."""
+        logger.error(f'Command error in {context.command}: {error}')
+        await context.send(f'❌ An error occurred while processing your command.')
