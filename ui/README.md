@@ -1,23 +1,46 @@
-# Twitch Chatbot for EightBitSaxLounge
+# UI Layer for EightBitSaxLounge
 
-A Python-based Twitch chatbot that monitors channels and responds to commands, integrating with the MIDI layer to control audio equipment.
+The UI is the viewer facing interface for the 8bsl. Viewers have the ability to alter elements on the UI in ways that trigger requests handled here.
 
-## Features
+## Chatbot
 
-- Monitors Twitch chat for commands
-- Responds to !engine commands to control MIDI settings
-- Extensible command system for easy addition of new commands
-- Kubernetes-ready deployment
+A Python-based chatbot that monitors channels and responds to commands, integrating with the MIDI layer to control audio equipment.
 
-## Commands
+Configured for Twitch, but flexible to build bots for other streaming services.
 
-- `!engine room` - Sets MIDI engine to 'room' setting
-- `!engine jazz` - Sets MIDI engine to 'jazz' setting
-- `!help` - Shows available commands
+### Development
 
-## Development
+#### Streaming Service
 
-### Local Development
+The app runs an implementation of StreamingBot, currently set to a TwitchIO based Twitch chat bot.
+
+To change to another service create a new impelementation in ./src/bots and update ./src/main.py.
+
+#### UI Element Response
+
+UI elements viewers can interact with are mapped to elements defined in ./src/commands. E.g. a viewer in Twitch types in chat !engine room -> the engine command updates the UI and the 8bsl to the 'room' reverb engine.
+
+Register a new command in ./src/commands/command_registry.py and create a handler in ./src/commands/handlers that implements BaseHandler
+
+Configured commands:
+- General
+    - `help` - Shows available commands
+- Ventris Dual Reverb
+    - `engine <engine name>` - Sets reverb engine A
+
+#### App Services
+
+The 8bsl has several services that handle updating music hardware, state data, etc. Integration with these services is defined in ./src/services.
+
+Configured services:
+- midi_data_client - this handles requests to update midi data inline with UI element state
+- midi_device_client - this handles requests to update midi devices inline with UI element state
+
+#### App config
+
+The streaming bot requires config e.g. channel details, bot account details and these are set in ./src/config
+
+#### Local Development
 
 ```bash
 # Install dependencies

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class TwitchBot(StreamingBot):
-    """Twitch-specific bot implementation using TwitchIO."""
+    """TwitchIO StreamingBot"""
     
     def __init__(self):
         # TwitchIO Bot instance
@@ -37,7 +37,7 @@ class TwitchBot(StreamingBot):
         self._shutdown = False
         self._connected = False
         
-        # Wire up TwitchIO event handlers to bot methods
+        # Wire up TwitchIO event handlers to TwitchBot methods
         self.twitchio.event(self._on_ready)
         self.twitchio.event(self._on_message)
         self.twitchio.event(self._on_command_error)
@@ -67,17 +67,17 @@ class TwitchBot(StreamingBot):
         self._connected = False
         await self.twitchio.close()
     
-    # Command handlers (called by TwitchIO when commands are used)
+    # Command handlers
     async def engine_command(self, ctx, *args):
         """Handle !engine commands."""
         await self._execute_command('engine', list(args), ctx)
     
     async def help_command(self, ctx, *args):
-        """Handle !help commands."""
+        """Handle !help command."""
         await self._execute_command('help', list(args), ctx)
     
     async def status_command(self, ctx, *args):
-        """Handle !status commands."""
+        """Handle !status command."""
         await self._execute_command('status', list(args), ctx)
     
     @property
