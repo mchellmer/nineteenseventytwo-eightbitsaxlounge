@@ -6,6 +6,9 @@ Maps command names to their handler methods.
 import logging
 from typing import Dict, Tuple, Callable, List, Any
 
+from ..config.settings import settings
+from ..services.midi_client import MidiClient
+
 logger = logging.getLogger(__name__)
 
 
@@ -18,9 +21,17 @@ class CommandRegistry:
         from .handlers.help import HelpHandler
         from .handlers.status import StatusHandler
         
-        self._engine_handler = EngineHandler()
+        self._midi_client = MidiClient(
+            device_base_url=settings.midi_device_url,
+            data_base_url=settings.midi_data_url,
+            client_id=settings.midi_client_id,
+            client_secret=settings.midi_client_secret,
+            timeout=settings.midi_api_timeout
+        )
+        
+        self._engine_handler = EngineHandler(self._midi_client)
         self._help_handler = HelpHandler()
-        self._status_handler = StatusHandler()
+        self._status_handler = StatusHandler(self._midi_client)
         
         self._commands: Dict[str, Tuple[Callable, str]] = {
             'engine': (

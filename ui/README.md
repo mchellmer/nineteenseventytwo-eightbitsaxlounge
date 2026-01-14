@@ -20,7 +20,7 @@ To change to another service create a new impelementation in ./src/bots and upda
 
 UI elements viewers can interact with are mapped to elements defined in ./src/commands. E.g. a viewer in Twitch types in chat !engine room -> the engine command updates the UI and the 8bsl to the 'room' reverb engine.
 
-Register a new command in ./src/commands/command_registry.py and create a handler in ./src/commands/handlers that implements BaseHandler
+Register a new command in ./src/commands/command_registry.py and create a handler in ./src/commands/handlers that implements CommandHandler.
 
 Configured commands:
 - General

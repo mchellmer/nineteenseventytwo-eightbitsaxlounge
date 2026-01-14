@@ -30,5 +30,5 @@ class CommandHandler(ABC):
     @property
     @abstractmethod
     def description(self) -> str:
-        """Get a brief description of what this command does."""
+        """Get a description of what this command does."""
         pass

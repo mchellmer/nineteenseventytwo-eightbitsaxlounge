@@ -3,12 +3,12 @@
 import logging
 from typing import Any
 
-from .base import BaseHandler
+from .command_handler import CommandHandler
 
 logger = logging.getLogger(__name__)
 
 
-class HelpHandler(BaseHandler):
+class HelpHandler(CommandHandler):
     """Handler for help commands."""
     
     @property

@@ -15,8 +15,16 @@ class Settings(BaseSettings):
     twitch_prefix: str = "!"
     
     # MIDI API Configuration
-    midi_api_url: str = "http://midi-service:8080"
+    midi_device_url: str = "http://midi-device-service:5000"
+    midi_data_url: Optional[str] = None  # Defaults to midi_device_url if not set
     midi_api_timeout: int = 30
+    
+    # MIDI Authentication
+    midi_client_id: str
+    midi_client_secret: str
+    
+    # MIDI Device Configuration
+    midi_device_name: str = "One Series Ventris Reverb"
     
     # Bot Configuration
     bot_name: str = "EightBitSaxBot"

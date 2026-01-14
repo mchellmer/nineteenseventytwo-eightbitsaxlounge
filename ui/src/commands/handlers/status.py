@@ -3,14 +3,23 @@
 import logging
 from typing import Any
 
-from .base import BaseHandler
+from .midi_base import MidiBaseHandler
 from ...config.settings import settings
+from ...services.midi_client import MidiClient
 
 logger = logging.getLogger(__name__)
 
 
-class StatusHandler(BaseHandler):
+class StatusHandler(MidiBaseHandler):
     """Handler for status commands."""
+    
+    def __init__(self, midi_client: MidiClient):
+        """Initialize status handler with MIDI client.
+        
+        Args:
+            midi_client: Shared MidiClient instance for API requests
+        """
+        super().__init__(midi_client)
     
     @property
     def command_name(self) -> str:

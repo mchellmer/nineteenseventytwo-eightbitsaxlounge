@@ -3,16 +3,25 @@
 import logging
 from typing import Any
 
-from .base import BaseHandler
+from .midi_base import MidiBaseHandler
 from ...config.settings import settings
+from ...services.midi_client import MidiClient
 
 logger = logging.getLogger(__name__)
 
 
-class EngineHandler(BaseHandler):
+class EngineHandler(MidiBaseHandler):
     """Handler for engine-related commands."""
     
-    VALID_ENGINES = ["room", "jazz", "ambient", "rock", "electronic"]
+    VALID_ENGINES = ["room"]
+    
+    def __init__(self, midi_client: MidiClient):
+        """Initialize engine handler with MIDI client.
+        
+        Args:
+            midi_client: Shared MidiClient instance for API requests
+        """
+        super().__init__(midi_client)
     
     @property
     def command_name(self) -> str:
@@ -44,14 +53,24 @@ class EngineHandler(BaseHandler):
             return f"Invalid engine type: {engine_type}. Available engines: {', '.join(self.VALID_ENGINES)}"
         
         try:
-            # Make request to MIDI service to change engine
             requester = context.author.name if hasattr(context, 'author') else "chatbot"
-            response = await self.midi_client.post("api/engine", {
-                "engine_type": engine_type,
-                "requester": requester
-            })
             
-            logger.info(f"Engine changed to {engine_type} by {requester}")
+            # Map engine types to MIDI control values
+            # For now, "room" engine sends control change: address=1, value=8
+            engine_midi_values = {
+                "room": (1, 8)
+            }
+            
+            address, value = engine_midi_values[engine_type]
+            
+            # Send MIDI control change message (will auto-authenticate if needed)
+            await self.midi_client.send_control_change_message(
+                device_midi_connect_name=settings.midi_device_name,
+                address=address,
+                value=value
+            )
+            
+            logger.info(f"Engine changed to {engine_type} by {requester} (CC {address}={value})")
             return f"🎵 Engine set to '{engine_type}' mode! 🎵"
             
         except Exception as e:

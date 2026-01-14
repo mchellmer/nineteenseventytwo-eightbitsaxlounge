@@ -1,8 +1,8 @@
 """Command handlers package."""
 
-from .base import BaseHandler
+from .midi_base import MidiBaseHandler
 from .engine import EngineHandler
 from .help import HelpHandler
 from .status import StatusHandler
 
-__all__ = ['BaseHandler', 'EngineHandler', 'HelpHandler', 'StatusHandler']
+__all__ = ['MidiBaseHandler', 'EngineHandler', 'HelpHandler', 'StatusHandler']

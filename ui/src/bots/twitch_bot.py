@@ -12,7 +12,7 @@ from twitchio.ext import commands
 
 from ..config.settings import settings
 from ..commands.command_registry import CommandRegistry
-from ..interfaces.streaming_bot import StreamingBot
+from .streaming_bot import StreamingBot
 
 logger = logging.getLogger(__name__)
 
