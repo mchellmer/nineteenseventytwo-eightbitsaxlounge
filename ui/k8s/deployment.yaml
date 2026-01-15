@@ -26,21 +26,33 @@ spec:
         - containerPort: 9090
           name: metrics
         env:
+        # Twitch Configuration
+        - name: TWITCH_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: twitch-secrets
+              key: client-id
         - name: TWITCH_TOKEN
           valueFrom:
             secretKeyRef:
               name: twitch-secrets
               key: token
-        - name: TWITCH_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              name: twitch-secrets
-              key: client_id
         - name: TWITCH_CHANNEL
           valueFrom:
             configMapKeyRef:
               name: ui-config
               key: twitch_channel
+        # MIDI Configuration
+        - name: MIDI_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: twitch-secrets
+              key: midi-client-id
+        - name: MIDI_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: twitch-secrets
+              key: midi-client-secret
         - name: MIDI_API_URL
           valueFrom:
             configMapKeyRef:

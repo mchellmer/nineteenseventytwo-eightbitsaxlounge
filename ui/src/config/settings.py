@@ -9,9 +9,9 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
     # Twitch Configuration
-    twitch_token: str
-    twitch_client_id: str
-    twitch_channel: str
+    twitch_token: str  # Access token with 'oauth:' prefix
+    twitch_client_id: str  # Your app's Client ID from dev.twitch.tv
+    twitch_channel: str  # Channel name to connect to
     twitch_prefix: str = "!"
     
     # MIDI API Configuration

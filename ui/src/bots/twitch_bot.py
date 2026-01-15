@@ -12,6 +12,7 @@ from twitchio.ext import commands
 
 from ..config.settings import settings
 from ..commands.command_registry import CommandRegistry
+from ..services.twitch_client import TwitchClient
 from .streaming_bot import StreamingBot
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,9 @@ class TwitchBot(StreamingBot):
         self._shutdown = False
         self._connected = False
         
+        # Token validator for expiry warnings
+        self.token_validator = TwitchClient(settings.twitch_client_id)
+        
         # Wire up TwitchIO event handlers to TwitchBot methods
         self.twitchio.event(self._on_ready)
         self.twitchio.event(self._on_message)
@@ -50,6 +54,11 @@ class TwitchBot(StreamingBot):
     # StreamingBot interface implementation
     async def start(self) -> None:
         """Start the bot and connect to Twitch."""
+        try:
+            await self.token_validator.validate_and_warn(settings.twitch_token.replace('oauth:', ''))
+        except Exception as e:
+            logger.warning(f"Token validation failed: {e}")
+        
         await self.twitchio.start()
     
     async def send_message(self, channel: str, message: str) -> None:
