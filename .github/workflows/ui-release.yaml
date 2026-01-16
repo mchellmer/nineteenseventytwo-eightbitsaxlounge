@@ -1,0 +1,28 @@
+name: UI Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - uiinit
+    paths:
+      - 'ui/version.txt' 
+
+jobs:
+  deploy:
+    name: Deploy CouchDB to Kubernetes
+    runs-on: self-hosted
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Debug environment info
+      run: |
+        echo "Workflow: ${{ github.workflow }}"
+        echo "Job: ${{ github.job }}"
+        echo "Runner OS: ${{ runner.os }}"
+        echo "Runner Name: ${{ runner.name }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${{ github.ref_name }}"
+        echo "Actor: ${{ github.actor }}"
