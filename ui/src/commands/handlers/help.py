@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from .command_handler import CommandHandler
+from commands.handlers.command_handler import CommandHandler
 
 logger = logging.getLogger(__name__)
 

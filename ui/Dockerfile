@@ -11,6 +11,8 @@ RUN useradd --create-home --shell /bin/bash app \
     && chown -R app:app /app
 USER app
 
+ENV PYTHONPATH=/app/src
+
 EXPOSE 8080
 
-CMD ["python", "src/main.py"]
+CMD ["python", "-m", "main"]

@@ -3,8 +3,8 @@
 import logging
 from typing import Any
 
-from ...services.midi_client import MidiClient
-from .command_handler import CommandHandler
+from services.midi_client import MidiClient
+from commands.handlers.command_handler import CommandHandler
 
 logger = logging.getLogger(__name__)
 

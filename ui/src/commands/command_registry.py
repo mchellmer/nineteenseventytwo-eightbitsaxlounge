@@ -6,8 +6,8 @@ Maps command names to their handler methods.
 import logging
 from typing import Dict, Tuple, Callable, List, Any
 
-from ..config.settings import settings
-from ..services.midi_client import MidiClient
+from config.settings import settings
+from services.midi_client import MidiClient
 
 logger = logging.getLogger(__name__)
 

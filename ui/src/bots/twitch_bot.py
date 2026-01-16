@@ -10,10 +10,10 @@ from typing import Optional
 import twitchio
 from twitchio.ext import commands
 
-from ..config.settings import settings
-from ..commands.command_registry import CommandRegistry
-from ..services.twitch_client import TwitchClient
-from .streaming_bot import StreamingBot
+from config.settings import settings
+from commands.command_registry import CommandRegistry
+from services.twitch_client import TwitchClient
+from bots.streaming_bot import StreamingBot
 
 logger = logging.getLogger(__name__)
 

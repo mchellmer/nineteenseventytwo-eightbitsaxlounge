@@ -3,9 +3,9 @@
 import logging
 from typing import Any
 
-from .midi_base import MidiBaseHandler
-from ...config.settings import settings
-from ...services.midi_client import MidiClient
+from commands.handlers.midi_base import MidiBaseHandler
+from config.settings import settings
+from services.midi_client import MidiClient
 
 logger = logging.getLogger(__name__)
 

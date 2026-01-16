@@ -10,8 +10,8 @@ import logging
 import signal
 import sys
 
-from .config.settings import settings
-from .bots.twitch_bot import TwitchBot
+from config.settings import settings
+from bots.twitch_bot import TwitchBot
 
 # Configure logging
 logging.basicConfig(
