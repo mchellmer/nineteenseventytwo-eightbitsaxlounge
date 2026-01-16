@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 class TwitchClient:
     """
     Simple Twitch token validator.
-    
     Validates access tokens and provides warnings when they're approaching expiry.
     """
     

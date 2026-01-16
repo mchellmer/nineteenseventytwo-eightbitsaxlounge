@@ -1,6 +1,5 @@
 """Application configuration settings loaded from environment variables."""
 
-import os
 from typing import Optional
 from pydantic import BaseSettings
 
