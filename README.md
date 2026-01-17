@@ -29,6 +29,7 @@ Server layer
 
 Monitoring layer
 - grafana configured to show health of app end to end
+- console runner
 
 CI/CD
 - linting and scanning
