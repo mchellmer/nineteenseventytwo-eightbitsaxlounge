@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: eightbitsaxlounge-ui
-  namespace: ${NAMESPACE}
   labels:
     app: eightbitsaxlounge
     component: ui
