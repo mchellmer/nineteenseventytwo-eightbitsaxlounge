@@ -49,7 +49,6 @@ class TwitchBot(StreamingBot):
         # Register 8bsl channel commands with TwitchIO
         self.twitchio.add_command(commands.Command(name='engine', func=self.engine_command))
         self.twitchio.add_command(commands.Command(name='help', func=self.help_command))
-        self.twitchio.add_command(commands.Command(name='status', func=self.status_command))
     
     # StreamingBot interface implementation
     async def start(self) -> None:
@@ -84,10 +83,6 @@ class TwitchBot(StreamingBot):
     async def help_command(self, ctx, *args):
         """Handle !help command."""
         await self._execute_command('help', list(args), ctx)
-    
-    async def status_command(self, ctx, *args):
-        """Handle !status command."""
-        await self._execute_command('status', list(args), ctx)
     
     @property
     def is_connected(self) -> bool:

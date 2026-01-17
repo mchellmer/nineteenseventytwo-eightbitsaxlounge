@@ -19,7 +19,6 @@ class CommandRegistry:
         """Initialize the command registry with all available commands."""
         from .handlers.engine import EngineHandler
         from .handlers.help import HelpHandler
-        from .handlers.status import StatusHandler
         
         self._midi_client = MidiClient(
             device_base_url=settings.midi_device_url,
@@ -31,7 +30,6 @@ class CommandRegistry:
         
         self._engine_handler = EngineHandler(self._midi_client)
         self._help_handler = HelpHandler()
-        self._status_handler = StatusHandler(self._midi_client)
         
         self._commands: Dict[str, Tuple[Callable, str]] = {
             'engine': (
@@ -41,10 +39,6 @@ class CommandRegistry:
             'help': (
                 self._help_handler.handle,
                 self._help_handler.description
-            ),
-            'status': (
-                self._status_handler.handle,
-                self._status_handler.description
             ),
         }
     

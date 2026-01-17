@@ -2,10 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ui-deployment
-  namespace: eightbitsaxlounge
+  namespace: ${NAMESPACE}
   labels:
     app: ui
     component: chatbot
+    environment: ${ENVIRONMENT}
 spec:
   replicas: 1
   selector:
@@ -16,10 +17,11 @@ spec:
       labels:
         app: ui
         component: chatbot
+        environment: ${ENVIRONMENT}
     spec:
       containers:
       - name: twitch-bot
-        image: nineteenseventytwo/eightbitsaxlounge-ui:1.0.0
+        image: ${IMAGE}
         ports:
         - containerPort: 8080
           name: health

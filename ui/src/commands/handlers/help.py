@@ -35,7 +35,6 @@ class HelpHandler(CommandHandler):
         help_text = [
             "🎵 EightBitSaxLounge Bot Commands 🎵",
             "!engine <type> - Change MIDI engine (room, jazz, ambient, rock, electronic)",
-            "!status - Show bot and system status", 
             "!help - Show this help message"
         ]
         return " | ".join(help_text)

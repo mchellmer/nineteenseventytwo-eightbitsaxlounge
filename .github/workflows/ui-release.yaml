@@ -7,22 +7,139 @@ on:
       - main
       - uiinit
     paths:
-      - 'ui/version.txt' 
+      - 'ui/version.txt'
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
+  test:
+    name: Run Python Tests
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: ./ui
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        run: |
+          python3 --version
+          pip3 --version
+
+      - name: Install dependencies
+        run: |
+          pip3 install -r requirements.txt
+          pip3 install -r requirements-dev.txt
+
+      - name: Run tests
+        run: |
+          python3 -m pytest tests/ --cov=src --cov-report=xml --cov-report=term --junitxml=test-results.xml
+
+  build-and-push:
+    name: Build and Push UI Image
+    needs: test
+    runs-on: self-hosted
+    permissions:
+      packages: write
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and Push Docker Image
+      working-directory: ./ui
+      run: |
+        VERSION=$(cat version.txt)
+        IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-ui
+        docker build -t "$IMAGE_BASE:$VERSION" -t "$IMAGE_BASE:latest" .
+        docker push "$IMAGE_BASE:$VERSION"
+        docker push "$IMAGE_BASE:latest"
+        echo "IMAGE_VERSION=$VERSION" >> $GITHUB_ENV
+
   deploy:
-    name: Deploy CouchDB to Kubernetes
+    name: Deploy UI to Kubernetes
+    needs: build-and-push
     runs-on: self-hosted
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-    - name: Debug environment info
+    - name: Set Environment Based on Branch
+      id: set-env
       run: |
-        echo "Workflow: ${{ github.workflow }}"
-        echo "Job: ${{ github.job }}"
-        echo "Runner OS: ${{ runner.os }}"
-        echo "Runner Name: ${{ runner.name }}"
-        echo "Repository: ${{ github.repository }}"
-        echo "Branch: ${{ github.ref_name }}"
-        echo "Actor: ${{ github.actor }}"
+        if [[ "${{ github.ref_name }}" == "main" ]]; then
+          echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
+          echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+        else
+          echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
+          echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+        fi
+
+    - name: Read Version
+      run: |
+        echo "VERSION=$(cat ui/version.txt)" >> $GITHUB_ENV
+
+    - name: Create/Update Namespace
+      run: |
+        kubectl create namespace ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Update Secrets
+      run: |
+        kubectl create secret generic twitch-secrets \
+          --namespace=${{ env.NAMESPACE }} \
+          --from-literal=client-id="${{ secrets.TWITCH_CLIENT_ID }}" \
+          --from-literal=token="${{ secrets.TWITCH_BOT_TOKEN }}" \
+          --from-literal=midi-client-id="${{ secrets.MIDI_CLIENT_ID }}" \
+          --from-literal=midi-client-secret="${{ secrets.MIDI_CLIENT_SECRET }}" \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Update ConfigMap
+      run: |
+        kubectl create configmap ui-config \
+          --namespace=${{ env.NAMESPACE }} \
+          --from-literal=twitch_channel="${{ secrets.TWITCH_CHANNEL }}" \
+          --from-literal=midi_api_url="http://midi-service.${{ env.NAMESPACE }}.svc.cluster.local:8080" \
+          --from-literal=log_level="INFO" \
+          --from-literal=bot_name="${{ secrets.TWITCH_BOT_USERNAME }}" \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Deploy Kubernetes Manifests
+      working-directory: ./ui
+      env:
+        VERSION: ${{ env.VERSION }}
+        NAMESPACE: ${{ env.NAMESPACE }}
+        IMAGE: ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-ui:${{ env.VERSION }}
+      run: |
+        # Process deployment with environment substitution
+        envsubst < k8s/deployment.yaml | kubectl apply -f -
+        
+        # Apply service
+        kubectl apply -f k8s/service.yaml -n ${{ env.NAMESPACE }}
+        
+        # Apply ingress if exists
+        if [ -f k8s/ingress.yaml ]; then
+          kubectl apply -f k8s/ingress.yaml -n ${{ env.NAMESPACE }}
+        fi
+
+    - name: Wait for Rollout
+      run: |
+        kubectl rollout status deployment/ui-deployment \
+          --namespace=${{ env.NAMESPACE }} \
+          --timeout=5m
+
+    - name: Verify Deployment
+      run: |
+        echo "Pods in ${{ env.NAMESPACE }}:"
+        kubectl get pods -n ${{ env.NAMESPACE }} -l app=ui
+        echo ""
+        echo "Recent logs:"
+        kubectl logs -n ${{ env.NAMESPACE }} -l app=ui --tail=50

@@ -1,11 +1,17 @@
 """Application configuration settings loaded from environment variables."""
 
 from typing import Optional
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
+    
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=False
+    )
     
     # Twitch Configuration
     twitch_token: str  # Access token with 'oauth:' prefix
@@ -28,10 +34,6 @@ class Settings(BaseSettings):
     # Bot Configuration
     bot_name: str = "EightBitSaxBot"
     log_level: str = "INFO"
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
 
 
 # Global settings instance
