@@ -13,7 +13,6 @@ import sys
 from config.settings import settings
 from bots.twitch_bot import TwitchBot
 
-# Configure logging
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper()),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -25,12 +24,10 @@ async def main():
     """Main function to run the bot."""
     bot = TwitchBot()
     
-    # Setup signal handlers for graceful shutdown
     def signal_handler(signum, frame):
         logger.info(f'Received signal {signum}, shutting down...')
         asyncio.create_task(bot.shutdown())
     
-    # Shutdown on interrupt e.g. ctrl+c or termination e.g. docker stop
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     

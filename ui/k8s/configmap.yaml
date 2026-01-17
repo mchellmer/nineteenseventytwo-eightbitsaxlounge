@@ -1,12 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ui-config
+  name: eightbitsaxlounge-ui-config
   namespace: eightbitsaxlounge
   labels:
-    app: ui
+    app: eightbitsaxlounge
+    component: ui
 data:
-  twitch_channel: "your_channel_name"
-  midi_api_url: "http://midi-service:8080"
+  twitch_channel: "placeholder"
+  midi_device_url: "http://midi-device-service:5000"
   log_level: "INFO"
   bot_name: "EightBitSaxBot"

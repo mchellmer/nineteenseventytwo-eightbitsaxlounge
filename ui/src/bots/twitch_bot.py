@@ -4,10 +4,7 @@ Uses TwitchIO to interact with Twitch chat.
 Implements StreamingBot interface.
 """
 
-import asyncio
 import logging
-from typing import Optional
-import twitchio
 from twitchio.ext import commands
 
 from config.settings import settings
@@ -22,7 +19,6 @@ class TwitchBot(StreamingBot):
     """TwitchIO StreamingBot"""
     
     def __init__(self):
-        # TwitchIO Bot instance
         self.twitchio = commands.Bot(
             token=settings.twitch_token,
             client_id=settings.twitch_client_id,
@@ -31,14 +27,9 @@ class TwitchBot(StreamingBot):
             initial_channels=[settings.twitch_channel]
         )
         
-        # Set registry of configured commands
         self.command_registry = CommandRegistry()
-
-        # Internal state
         self._shutdown = False
         self._connected = False
-        
-        # Token validator for expiry warnings
         self.token_validator = TwitchClient(settings.twitch_client_id)
         
         # Wire up TwitchIO event handlers to TwitchBot methods
@@ -75,7 +66,6 @@ class TwitchBot(StreamingBot):
         self._connected = False
         await self.twitchio.close()
     
-    # Command handlers
     async def engine_command(self, ctx, *args):
         """Handle !engine commands."""
         await self._execute_command('engine', list(args), ctx)

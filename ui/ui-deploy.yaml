@@ -1,103 +1,121 @@
 ---
-- name: Deploy EightBitSaxLounge UI Chatbot
-  hosts: k8s_masters
-  gather_facts: false
-  vars:
-    namespace: eightbitsaxlounge
-    app_name: ui
-    image_tag: "{{ version | default('latest') }}"
-    twitch_token: "{{ vault_twitch_token }}"
-    twitch_client_id: "{{ vault_twitch_client_id }}"
-    twitch_channel: "{{ twitch_channel_name | default('your_channel') }}"
-    
+- name: Deploy Eightbitsaxlounge UI Chatbot on Kubernetes
+  hosts: master
   tasks:
-    - name: Ensure namespace exists
-      kubernetes.core.k8s:
-        name: "{{ namespace }}"
-        api_version: v1
-        kind: Namespace
-        state: present
-    
-    - name: Create Twitch secrets
-      kubernetes.core.k8s:
-        definition:
-          apiVersion: v1
-          kind: Secret
-          metadata:
-            name: twitch-secrets
-            namespace: "{{ namespace }}"
-          type: Opaque
-          data:
-            token: "{{ twitch_token | b64encode }}"
-            client_id: "{{ twitch_client_id | b64encode }}"
-        state: present
-    
-    - name: Apply ConfigMap
-      kubernetes.core.k8s:
-        state: present
-        definition:
-          apiVersion: v1
-          kind: ConfigMap
-          metadata:
-            name: ui-config
-            namespace: "{{ namespace }}"
-          data:
-            twitch_channel: "{{ twitch_channel }}"
-            midi_api_url: "http://midi-service:8080"
-            log_level: "INFO"
-            bot_name: "EightBitSaxBot"
-    
-    - name: Apply Service
-      kubernetes.core.k8s:
-        state: present
-        src: k8s/service.yaml
-        namespace: "{{ namespace }}"
-    
-    - name: Apply Deployment
-      kubernetes.core.k8s:
-        state: present
-        definition: "{{ lookup('file', 'k8s/deployment.yaml') | from_yaml }}"
-        namespace: "{{ namespace }}"
-      vars:
-        image_with_tag: "nineteenseventytwo/eightbitsaxlounge-ui:{{ image_tag }}"
-    
-    - name: Apply Ingress (optional)
-      kubernetes.core.k8s:
-        state: present
-        src: k8s/ingress.yaml
-        namespace: "{{ namespace }}"
-      when: enable_ingress | default(false) | bool
-    
-    - name: Wait for deployment to be ready
-      kubernetes.core.k8s_info:
-        api_version: apps/v1
-        kind: Deployment
-        name: ui-deployment
-        namespace: "{{ namespace }}"
-        wait_condition:
-          type: Progressing
-          status: "True"
-          reason: NewReplicaSetAvailable
-        wait_timeout: 300
-    
-    - name: Get pod status
-      kubernetes.core.k8s_info:
-        api_version: v1
-        kind: Pod
-        namespace: "{{ namespace }}"
-        label_selectors:
-          - app=ui
-      register: ui_pods
-    
-    - name: Display deployment status
-      debug:
-        msg: "UI Chatbot deployed successfully. Pod status: {{ ui_pods.resources[0].status.phase if ui_pods.resources else 'No pods found' }}"
+    - name: Ensure required environment variables are provided
+      ansible.builtin.assert:
+        that:
+          - lookup('env','NAMESPACE') | length > 0
+          - lookup('env','VERSION') | length > 0
+          - lookup('env','TWITCH_CLIENT_ID') | length > 0
+          - lookup('env','TWITCH_BOT_TOKEN') | length > 0
+          - lookup('env','TWITCH_CHANNEL') | length > 0
+          - lookup('env','MIDI_CLIENT_ID') | length > 0
+          - lookup('env','MIDI_CLIENT_SECRET') | length > 0
+        fail_msg: "Missing required environment variables. Ensure the workflow passes all required secrets."
 
-- name: Build and push Docker image
-  hosts: localhost
-  gather_facts: false
-  vars:
-    image_name: nineteenseventytwo/eightbitsaxlounge-ui
+    - name: Create a temporary directory for manifests
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: ui-k8s
+      register: tempdir
+
+    - name: Copy deployment manifest to temp directory
+      ansible.builtin.copy:
+        src: k8s/deployment.yaml
+        dest: "{{ tempdir.path }}/deployment.yaml"
+
+    - name: Create UI Secrets
+      ansible.builtin.shell: |
+        kubectl create secret generic eightbitsaxlounge-ui-secrets \
+          --from-literal=client-id="$TWITCH_CLIENT_ID" \
+          --from-literal=token="$TWITCH_BOT_TOKEN" \
+          --from-literal=midi-client-id="$MIDI_CLIENT_ID" \
+          --from-literal=midi-client-secret="$MIDI_CLIENT_SECRET" \
+          --namespace $NAMESPACE \
+          --dry-run=client -o yaml | kubectl apply -f -
+      environment:
+        TWITCH_CLIENT_ID: "{{ lookup('env', 'TWITCH_CLIENT_ID') }}"
+        TWITCH_BOT_TOKEN: "{{ lookup('env', 'TWITCH_BOT_TOKEN') }}"
+        MIDI_CLIENT_ID: "{{ lookup('env', 'MIDI_CLIENT_ID') }}"
+        MIDI_CLIENT_SECRET: "{{ lookup('env', 'MIDI_CLIENT_SECRET') }}"
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Create UI ConfigMap
+      ansible.builtin.shell: |
+        kubectl create configmap eightbitsaxlounge-ui-config \
+          --from-literal=twitch_channel="$TWITCH_CHANNEL" \
+          --from-literal=midi_device_url="$MIDI_DEVICE_URL" \
+          --from-literal=log_level="$LOG_LEVEL" \
+          --from-literal=bot_name="$BOT_NAME" \
+          --namespace $NAMESPACE \
+          --dry-run=client -o yaml | kubectl apply -f -
+      environment:
+        TWITCH_CHANNEL: "{{ lookup('env', 'TWITCH_CHANNEL') }}"
+        MIDI_DEVICE_URL: "{{ lookup('env', 'MIDI_DEVICE_URL') | default('http://midi-device-service.' ~ lookup('env', 'NAMESPACE') ~ '.svc.cluster.local:5000', true) }}"
+        LOG_LEVEL: "{{ lookup('env', 'LOG_LEVEL') | default('INFO', true) }}"
+        BOT_NAME: "{{ lookup('env', 'BOT_NAME') | default('', true) }}"
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Deploy UI Deployment
+      ansible.builtin.shell: |
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/deployment.yaml
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Patch Deployment image to versioned tag
+      ansible.builtin.shell: |
+        IMAGE_BASE=${IMAGE_BASE:-ghcr.io/${GITHUB_REPOSITORY_OWNER}/eightbitsaxlounge-ui}
+        kubectl -n "$NAMESPACE" set image deploy/eightbitsaxlounge-ui \
+          twitch-bot="${IMAGE_BASE}:${VERSION}"
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+        VERSION: "{{ lookup('env', 'VERSION') }}"
+        GITHUB_REPOSITORY_OWNER: "{{ lookup('env', 'GITHUB_REPOSITORY_OWNER') | default('', true) }}"
+        IMAGE_BASE: "{{ lookup('env', 'IMAGE_BASE') | default('', true) }}"
+
+    - name: Annotate Deployment with change cause
+      ansible.builtin.shell: |
+        kubectl -n "$NAMESPACE" annotate deploy/eightbitsaxlounge-ui \
+          kubernetes.io/change-cause="ui-chatbot ${VERSION}" --overwrite
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+        VERSION: "{{ lookup('env', 'VERSION') }}"
+
+    - name: Wait for rollout to complete
+      ansible.builtin.shell: |
+        kubectl -n "$NAMESPACE" rollout status deploy/eightbitsaxlounge-ui --timeout=180s
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Verify running image
+      ansible.builtin.shell: |
+        kubectl -n "$NAMESPACE" get deploy eightbitsaxlounge-ui -o jsonpath='{.spec.template.spec.containers[0].image}'
+      register: deploy_image
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Print running image
+      ansible.builtin.debug:
+        msg: "Deployment image: {{ deploy_image.stdout }}"
+
+    - name: Get recent pod logs
+      ansible.builtin.shell: |
+        kubectl logs -n "$NAMESPACE" -l app=eightbitsaxlounge,component=ui --tail=20
+      register: pod_logs
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+      ignore_errors: yes
+
+    - name: Display recent logs
+      ansible.builtin.debug:
+        msg: "{{ pod_logs.stdout_lines }}"
+      when: pod_logs.rc == 0
+
+    - name: Remove temporary directory
+      ansible.builtin.file:
+        path: "{{ tempdir.path }}"
+        state: absent
     version: "{{ lookup('file', 'version.txt') | trim }}"
     
   tasks:

@@ -45,7 +45,7 @@ class MidiClient:
         self._token: Optional[str] = None
         self._client_id = client_id
         self._client_secret = client_secret
-        self._authenticating = False  # Prevent concurrent auth attempts
+        self._authenticating = False
     
     async def get(self, endpoint: str, authenticated: bool = False, _retry: bool = True) -> Dict[str, Any]:
         """

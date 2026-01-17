@@ -1,94 +1,88 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ui-deployment
+  name: eightbitsaxlounge-ui
   namespace: ${NAMESPACE}
   labels:
-    app: ui
-    component: chatbot
-    environment: ${ENVIRONMENT}
+    app: eightbitsaxlounge
+    component: ui
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ui
+      app: eightbitsaxlounge
+      component: ui
   template:
     metadata:
       labels:
-        app: ui
-        component: chatbot
-        environment: ${ENVIRONMENT}
+        app: eightbitsaxlounge
+        component: ui
     spec:
       containers:
       - name: twitch-bot
         image: ${IMAGE}
-        ports:
-        - containerPort: 8080
-          name: health
-        - containerPort: 9090
-          name: metrics
         env:
         # Twitch Configuration
         - name: TWITCH_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: twitch-secrets
+              name: eightbitsaxlounge-ui-secrets
               key: client-id
         - name: TWITCH_TOKEN
           valueFrom:
             secretKeyRef:
-              name: twitch-secrets
+              name: eightbitsaxlounge-ui-secrets
               key: token
         - name: TWITCH_CHANNEL
           valueFrom:
             configMapKeyRef:
-              name: ui-config
+              name: eightbitsaxlounge-ui-config
               key: twitch_channel
+        - name: TWITCH_PREFIX
+          value: "!"
         # MIDI Configuration
         - name: MIDI_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: twitch-secrets
+              name: eightbitsaxlounge-ui-secrets
               key: midi-client-id
         - name: MIDI_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: twitch-secrets
+              name: eightbitsaxlounge-ui-secrets
               key: midi-client-secret
-        - name: MIDI_API_URL
+        - name: MIDI_DEVICE_URL
           valueFrom:
             configMapKeyRef:
               name: ui-config
-              key: midi_api_url
+              key: midi_device_url
+        - name: MIDI_API_TIMEOUT
+          value: "30"
+        - name: MIDI_DEVICE_NAME
+          value: "One Series Ventris Reverb"
+        # Bot Configuration
+        - name: BOT_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: ui-config
+              key: bot_name
         - name: LOG_LEVEL
           valueFrom:
             configMapKeyRef:
               name: ui-config
               key: log_level
-        - name: METRICS_ENABLED
-          value: "true"
         resources:
           requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
             memory: "128Mi"
             cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 5
         securityContext:
           runAsNonRoot: true
           runAsUser: 1000
           allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
       restartPolicy: Always

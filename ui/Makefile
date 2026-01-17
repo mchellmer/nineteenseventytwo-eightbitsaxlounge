@@ -1,7 +1,7 @@
 # Simple Makefile for local development
 # CI/CD handled by GitHub Actions
 
-.PHONY: help install install-dev dev test test-ci clean docker-build docker-run
+.PHONY: help install install-dev dev test test-ci clean docker-build docker-run deploy-ui
 
 help:
 	@echo "Available targets:"
@@ -13,6 +13,7 @@ help:
 	@echo "  clean        - Clean test artifacts"
 	@echo "  docker-build - Build Docker image locally"
 	@echo "  docker-run   - Run Docker image locally"
+	@echo "  deploy-ui    - Deploy UI to Kubernetes via Ansible"
 
 install:
 	pip3 install -r requirements.txt
@@ -44,3 +45,6 @@ docker-build:
 
 docker-run:
 	docker run --rm -it --env-file .env eightbitsaxlounge-ui:local
+
+deploy-ui:
+	ansible-playbook ui-deploy.yaml
