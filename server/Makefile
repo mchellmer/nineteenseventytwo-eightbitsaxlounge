@@ -31,6 +31,14 @@ deploy-monitoring:
 deploy-namespaces:
 	ansible-playbook k8s-namespaces.yaml
 
+clean-cicd:
+	@echo "Cleaning up GitHub Actions Runner..."
+	ssh -t master 'cd ~/actions-runner && sudo ./svc.sh stop || true'
+	ssh -t master 'cd ~/actions-runner && sudo ./svc.sh uninstall || true'
+	ssh -t master 'cd ~/actions-runner && rm -f .credentials .credentials_rsaparams .runner .runner_migrated'
+	ssh -t master 'cd ~/actions-runner && rm -rf _diag'
+	@echo "Cleanup complete. Run 'make init-cicd' to reconfigure."
+
 init-cicd: scripts/github-runner.sh
 	@read -p "Enter the GitHub Actions Runner token: " TOKEN; \
 	bash scripts/github-runner.sh $$TOKEN
