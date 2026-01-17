@@ -19,7 +19,8 @@ spec:
     spec:
       containers:
       - name: twitch-bot
-        image: ${IMAGE}
+        image: ghcr.io/mchellmer/eightbitsaxlounge-ui:latest
+        imagePullPolicy: Always
         env:
         # Twitch Configuration
         - name: TWITCH_CLIENT_ID
@@ -53,7 +54,7 @@ spec:
         - name: MIDI_DEVICE_URL
           valueFrom:
             configMapKeyRef:
-              name: ui-config
+              name: eightbitsaxlounge-ui-config
               key: midi_device_url
         - name: MIDI_API_TIMEOUT
           value: "30"
@@ -63,12 +64,12 @@ spec:
         - name: BOT_NAME
           valueFrom:
             configMapKeyRef:
-              name: ui-config
+              name: eightbitsaxlounge-ui-config
               key: bot_name
         - name: LOG_LEVEL
           valueFrom:
             configMapKeyRef:
-              name: ui-config
+              name: eightbitsaxlounge-ui-config
               key: log_level
         resources:
           requests:
