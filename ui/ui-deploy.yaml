@@ -51,7 +51,7 @@
           --namespace $NAMESPACE \
           --dry-run=client -o yaml | kubectl apply -f -
       environment:
-        TWITCH_CHANNEL: "{{ lookup('env', 'TWITCH_CHANNEL') | default('eightbitsaxlounge', true) }}"
+        TWITCH_CHANNEL: "{{ lookup('env', 'TWITCH_CHANNEL') | default('the8bitsaxlounge', true) }}"
         MIDI_DEVICE_URL: "{{ lookup('env', 'MIDI_DEVICE_URL') }}"
         LOG_LEVEL: "{{ lookup('env', 'LOG_LEVEL') | default('INFO', true) }}"
         BOT_NAME: "{{ lookup('env', 'BOT_NAME') | default('EightBitSaxBot', true) }}"
