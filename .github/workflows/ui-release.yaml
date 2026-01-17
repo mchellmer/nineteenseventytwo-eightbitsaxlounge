@@ -93,9 +93,8 @@ jobs:
         VERSION: ${{ env.VERSION }}
         GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
         TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
-        TWITCH_BOT_TOKEN: ${{ secrets.TWITCH_BOT_TOKEN }}
-        TWITCH_CHANNEL: ${{ secrets.TWITCH_CHANNEL }}
+        TWITCH_TOKEN: ${{ secrets.TWITCH_TOKEN }}
         MIDI_CLIENT_ID: ${{ secrets.MIDI_CLIENT_ID }}
         MIDI_CLIENT_SECRET: ${{ secrets.MIDI_CLIENT_SECRET }}
-        BOT_NAME: ${{ secrets.TWITCH_BOT_USERNAME }}
+        MIDI_DEVICE_URL: ${{ secrets.MIDI_DEVICE_URL }}
       run: make deploy-ui

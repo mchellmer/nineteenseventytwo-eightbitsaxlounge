@@ -8,6 +8,6 @@ metadata:
     component: ui
 data:
   twitch_channel: "placeholder"
-  midi_device_url: "http://midi-device-service:5000"
+  midi_device_url: "placeholder"
   log_level: "INFO"
   bot_name: "EightBitSaxBot"
