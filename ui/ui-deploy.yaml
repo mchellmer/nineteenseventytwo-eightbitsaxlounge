@@ -116,36 +116,3 @@
       ansible.builtin.file:
         path: "{{ tempdir.path }}"
         state: absent
-    version: "{{ lookup('file', 'version.txt') | trim }}"
-    
-  tasks:
-    - name: Build Docker image
-      community.docker.docker_image:
-        build:
-          path: .
-        name: "{{ image_name }}"
-        tag: "{{ version }}"
-        source: build
-        force_source: true
-    
-    - name: Tag as latest
-      community.docker.docker_image:
-        name: "{{ image_name }}:{{ version }}"
-        repository: "{{ image_name }}:latest"
-        source: local
-    
-    - name: Push version tag
-      community.docker.docker_image:
-        name: "{{ image_name }}"
-        tag: "{{ version }}"
-        push: true
-        source: local
-      when: push_images | default(true) | bool
-    
-    - name: Push latest tag
-      community.docker.docker_image:
-        name: "{{ image_name }}"
-        tag: latest
-        push: true
-        source: local
-      when: push_images | default(true) | bool
