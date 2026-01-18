@@ -35,6 +35,7 @@ The 8bsl has several services that handle updating music hardware, state data, e
 Configured services:
 - midi_data_client - this handles requests to update midi data inline with UI element state
 - midi_device_client - this handles requests to update midi devices inline with UI element state
+- twitch_client - handles monitoring token validity
 
 #### App config
 
@@ -45,26 +46,35 @@ The streaming bot requires config e.g. channel details, bot account details and 
 ```bash
 # Install dependencies
 pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
-# Run the bot
+# Run tests
+make test
+
+# Run the bot locally (requires .env file with credentials)
 python src/main.py
 ```
 
-### Building and Deployment
+#### Docker (Local)
 
 ```bash
-# Build Docker image
-make build
-
-# Deploy to Kubernetes
-make deploy
+# Build and run locally
+# Create .env file with required variables first
+make docker-build
+make docker-run
 ```
 
-## Configuration
+### Deployment
 
-Set the following environment variables:
+Deployed to Kubernetes with separate dev and prod namespaces. GitHub Actions handles CI/CD on version.txt changes which triggers an ansible deployment from the cicd server to the cluster.
 
-- `TWITCH_TOKEN` - Your Twitch bot token
-- `TWITCH_CLIENT_ID` - Your Twitch application client ID
-- `TWITCH_CHANNEL` - The channel to monitor
-- `MIDI_API_URL` - URL of the MIDI service API
+**Switch Active Environment:**
+- Navigate to Actions → "UI Set Active Environment"
+- Select dev or prod from dropdown
+- Only one environment runs at a time (prevents duplicate bot messages)
+
+**Manual Deploy:**
+```bash
+# From cicd server
+make deploy-ui
+```
