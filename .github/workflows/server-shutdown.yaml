@@ -2,17 +2,11 @@ name: Server Shutdown
 
 on:
   workflow_dispatch:
-    inputs:
-      confirmation:
-        description: 'Type "SHUTDOWN" to confirm cluster shutdown'
-        required: true
-        type: string
 
 jobs:
   shutdown:
     name: Shutdown Kubernetes Cluster
     runs-on: self-hosted
-    if: github.event.inputs.confirmation == 'SHUTDOWN'
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -32,16 +26,6 @@ jobs:
 
     - name: Shutdown cluster
       working-directory: ./server
+      env:
+        SUDO_PASSWORD: ${{ secrets.ANSIBLE_SUDO_PASSWORD }}
       run: make shutdown-cluster
-
-  cancelled:
-    name: Shutdown Cancelled
-    runs-on: self-hosted
-    if: github.event.inputs.confirmation != 'SHUTDOWN'
-    steps:
-    - name: Display cancellation message
-      run: |
-        echo "❌ Shutdown cancelled: confirmation did not match"
-        echo "Expected: SHUTDOWN"
-        echo "Received: ${{ github.event.inputs.confirmation }}"
-        exit 1

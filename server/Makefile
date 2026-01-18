@@ -50,21 +50,14 @@ init-console-ansible-vault: scripts/ansible-vault-init.sh
 	bash scripts/ansible-vault-init.sh
 
 shutdown-cluster:
-	@echo "⚠️  WARNING: This will shutdown the entire Kubernetes cluster ⚠️"
-	@echo ""
-	@echo "Shutdown sequence:"
-	@echo "  1. Worker nodes"
-	@echo "  2. Master node"
-	@echo "  3. Console/Runner machine (this machine)"
-	@echo ""
-	@echo "Physical access will be required to restart the cluster."
-	@echo ""
-	@read -p "Type 'SHUTDOWN' to confirm: " CONFIRM; \
-	if [ "$$CONFIRM" = "SHUTDOWN" ]; then \
-		ansible-playbook shutdown.yaml; \
+	@echo "⚠️  Initiating cluster shutdown sequence..."
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook shutdown.yaml --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
 	else \
-		echo "Shutdown cancelled."; \
-		exit 1; \
+		ansible-playbook shutdown.yaml -K; \
 	fi
 
 init-console-config:
