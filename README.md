@@ -1,11 +1,15 @@
 # Feature roadmap
-Midi Layer
-- seed db operation to init midi config in db
-
 UI Layer
 - integrate with Twitch channel
 - respond to commands
 - read/update actual and requested midi device state
+
+Midi Layer
+- service handles midi device and data requests
+  - service running on PC: handles device requests
+  - service running on cluster: handles data requests
+- seed db operation to init midi config in db
+- remove device dependency on PC connection
 
 State Layer?
 - unified state to ensure consistent: UI and db match midi and chat states
@@ -25,6 +29,7 @@ Server layer
 
 Monitoring layer
 - grafana configured to show health of app end to end
+- console runner
 
 CI/CD
 - linting and scanning

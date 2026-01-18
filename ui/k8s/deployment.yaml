@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eightbitsaxlounge-ui
+  labels:
+    app: eightbitsaxlounge
+    component: ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eightbitsaxlounge
+      component: ui
+  template:
+    metadata:
+      labels:
+        app: eightbitsaxlounge
+        component: ui
+    spec:
+      containers:
+      - name: twitch-bot
+        image: ghcr.io/mchellmer/eightbitsaxlounge-ui:latest
+        imagePullPolicy: Always
+        env:
+        # Twitch Configuration
+        - name: TWITCH_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: eightbitsaxlounge-ui-secrets
+              key: client-id
+        - name: TWITCH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: eightbitsaxlounge-ui-secrets
+              key: token
+        - name: TWITCH_CHANNEL
+          valueFrom:
+            configMapKeyRef:
+              name: eightbitsaxlounge-ui-config
+              key: twitch_channel
+        - name: TWITCH_PREFIX
+          value: "!"
+        # MIDI Configuration
+        - name: MIDI_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: eightbitsaxlounge-ui-secrets
+              key: midi-client-id
+        - name: MIDI_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: eightbitsaxlounge-ui-secrets
+              key: midi-client-secret
+        - name: MIDI_DEVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: eightbitsaxlounge-ui-config
+              key: midi_device_url
+        - name: MIDI_API_TIMEOUT
+          value: "30"
+        - name: MIDI_DEVICE_NAME
+          value: "One Series Ventris Reverb"
+        # Bot Configuration
+        - name: BOT_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: eightbitsaxlounge-ui-config
+              key: bot_name
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: eightbitsaxlounge-ui-config
+              key: log_level
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      restartPolicy: Always

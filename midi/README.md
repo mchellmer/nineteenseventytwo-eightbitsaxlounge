@@ -201,3 +201,91 @@ Ansible Access to PC
     - package app to dll
     - store in github
     - install service on PC via ansible (makefile)
+# API Endpoints
+
+The MIDI service exposes the following REST API endpoints:
+
+## Base URL
+- **Development**: `http://localhost:5000`
+- **Production**: `http://localhost:5001` (HTTPS)
+
+## Authentication
+
+### POST `/api/token`
+Obtain a JWT bearer token for authenticated API access.
+
+**Request:**
+```bash
+curl -X POST http://localhost:5000/api/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientId": "your-client-id",
+    "clientSecret": "your-client-secret"
+  }'
+```
+
+**Response:**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer"
+}
+```
+
+## MIDI Operations
+
+### POST `/api/Midi/SendControlChangeMessage`
+Send a MIDI Control Change message to a connected device.
+
+**Authentication:** Required (Bearer token)
+
+**Request Parameters:**
+- `deviceMidiConnectName` (string): Name of the MIDI device as configured in Windows
+- `address` (int): MIDI Control Change address (0-127)
+- `value` (int): MIDI Control Change value (0-127)
+- `channel` (int, optional): MIDI channel (default: 0)
+
+**Example:**
+```bash
+# First, get the authentication token
+TOKEN=$(curl -X POST http://localhost:5000/api/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientId": "your-client-id",
+    "clientSecret": "your-client-secret"
+  }' | jq -r '.access_token')
+
+# Send MIDI control change message
+curl -X POST http://localhost:5000/api/Midi/SendControlChangeMessage \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "deviceMidiConnectName": "One Series Ventris Reverb",
+    "address": 1,
+    "value": 8,
+    "channel": 0
+  }'
+```
+
+**Response Codes:**
+- `200 OK`: Message sent successfully
+- `401 Unauthorized`: Missing or invalid authentication token
+- `400 Bad Request`: Invalid parameters
+- `500 Internal Server Error`: Device communication error
+
+## Windows Service Deployment
+
+The MIDI service runs as a Windows Service on the PC with connected MIDI devices.
+
+**Service Configuration:**
+- Service Name: `EightBitSaxLoungeMidiService`
+- Port: 5000 (dev) or 5001 (production)
+- Install Location: `C:\Services\EightBitSaxLoungeMidi`
+
+**Testing:**
+```bash
+# Test authentication endpoint
+curl http://localhost:5000/api/token \
+  -H "Content-Type: application/json" \
+  -d '{"clientId":"test","clientSecret":"test"}'
+```

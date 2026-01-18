@@ -4,11 +4,11 @@
 #  in this case run: sudo ./svc.sh uninstall && ./config.sh uninstall && rm -rf $HOME/actions-runner
 
 # Variables
-RUNNER_VERSION="2.325.0"
+RUNNER_VERSION="2.331.0"
 RUNNER_URL="https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-arm64-${RUNNER_VERSION}.tar.gz"
 RUNNER_FOLDER="$HOME/actions-runner"
 REPO_URL="https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge"
-HASH="0e916ad0d354089d320011c132d46bdbe3353c8b925a2e1056c7c8e85d2f2490"
+HASH="f5863a211241436186723159a111f352f25d5d22711639761ea24c98caef1a9a"
 
 # Check if the token is provided as an argument
 if [ -z "$1" ]; then
