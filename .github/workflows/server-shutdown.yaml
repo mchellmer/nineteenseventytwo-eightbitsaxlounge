@@ -26,4 +26,6 @@ jobs:
 
     - name: Shutdown cluster
       working-directory: ./server
+      env:
+        SUDO_PASSWORD: ${{ secrets.ANSIBLE_SUDO_PASSWORD }}
       run: make shutdown-cluster

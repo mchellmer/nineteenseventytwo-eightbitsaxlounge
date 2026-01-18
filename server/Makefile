@@ -51,7 +51,11 @@ init-console-ansible-vault: scripts/ansible-vault-init.sh
 
 shutdown-cluster:
 	@echo "⚠️  Initiating cluster shutdown sequence..."
-	ansible-playbook shutdown.yaml
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" | ansible-playbook shutdown.yaml --become-password-stdin; \
+	else \
+		ansible-playbook shutdown.yaml -K; \
+	fi
 
 init-console-config:
 	ansible-playbook k8s-console.yaml
