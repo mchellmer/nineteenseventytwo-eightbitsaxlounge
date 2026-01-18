@@ -38,13 +38,3 @@ jobs:
         INACTIVE_NAMESPACE: ${{ env.INACTIVE_NAMESPACE }}
         ACTIVE_ENV: ${{ env.ACTIVE_ENV }}
       run: make set-environment
-
-    - name: Display Active Environment
-      run: |
-        echo "✅ UI Bot is now active in: ${{ github.event.inputs.environment }}"
-        echo ""
-        echo "Active pods:"
-        kubectl get pods -n ${{ env.ACTIVE_NAMESPACE }} -l app=eightbitsaxlounge,component=ui
-        echo ""
-        echo "Inactive pods:"
-        kubectl get pods -n ${{ env.INACTIVE_NAMESPACE }} -l app=eightbitsaxlounge,component=ui
