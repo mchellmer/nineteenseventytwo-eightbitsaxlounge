@@ -6,6 +6,7 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Endpoints;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Services;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
 
 using System.Text;
@@ -66,9 +67,23 @@ builder.Services.AddSwaggerGen(opts =>
 builder.Services.AddSingleton<IDataAccess, EightbitSaxLoungeDataAccess>();
 builder.Services.AddSingleton<IEffectActivatorFactory, EffectActivatorFactory>();
 builder.Services.AddSingleton<IEffectActivator, VentrisDualReverbActivator>();
-builder.Services.AddSingleton<IMidiOutDeviceFactory, MidiOutDeviceFactory>(); // register factory for MIDI out devices
-builder.Services.AddSingleton<IMidiDeviceService, WinmmMidiDeviceService>();
 builder.Services.AddSingleton<IMidiDataService, EightBitSaxLoungeMidiDataService>();
+
+// HTTP Client for device proxy (conditionally registered)
+var deviceServiceUrl = builder.Configuration["MidiDeviceService:Url"];
+if (!string.IsNullOrWhiteSpace(deviceServiceUrl))
+{
+    builder.Services.AddHttpClient<MidiDeviceProxyService>();
+    builder.Services.AddSingleton<MidiDeviceProxyService>();
+}
+else
+{
+    // Local Windows service with direct device access
+    builder.Services.AddSingleton<IMidiOutDeviceFactory, MidiOutDeviceFactory>();
+    builder.Services.AddSingleton<IMidiDeviceService, WinmmMidiDeviceService>();
+}
+
+// Register handlers that depend on IMidiDeviceService
 builder.Services.AddTransient<MidiEndpointsHandler>();
 
 // Auth
@@ -110,6 +125,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.AddHealthEndpoints();
 app.AddAuthenticationEndpoints();
 app.AddMidiEndpoints();
 
