@@ -1,41 +1,43 @@
 <mxfile host="65bd71144e">
     <diagram id="_AM15bitoc1FmoLZ1Xtb" name="Page-1">
-        <mxGraphModel dx="722" dy="659" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="1934" dy="749" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="21" value="PC" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
-                    <mxGeometry x="234" y="290" width="180" height="310" as="geometry"/>
+                <mxCell id="21" value="PC" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="234" y="320" width="180" height="150" as="geometry"/>
                 </mxCell>
                 <mxCell id="2" value="Kubernetes" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="290" width="180" height="310" as="geometry"/>
-                </mxCell>
-                <mxCell id="22" value="" style="edgeStyle=none;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="3" target="12">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry x="40" y="160" width="180" height="310" as="geometry"/>
                 </mxCell>
                 <mxCell id="17" value="ui layer" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-                    <mxGeometry x="60" y="320" width="140" height="100" as="geometry"/>
+                    <mxGeometry x="60" y="190" width="140" height="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="19" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="3" target="18">
-                    <mxGeometry relative="1" as="geometry"/>
+                <mxCell id="19" value="" style="edgeStyle=none;html=1;exitX=0.992;exitY=0.367;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="3" target="18" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="130" y="190" as="sourcePoint"/>
+                    </mxGeometry>
                 </mxCell>
-                <mxCell id="20" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="3" target="8">
+                <mxCell id="25" value="" style="edgeStyle=none;html=1;entryX=0.22;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="3" target="24">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="3" value="Container&lt;div&gt;python&lt;/div&gt;&lt;div&gt;chatbot&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="70" y="350" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="70" y="220" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="8" value="midi layer&lt;div&gt;data requests&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="70" y="518" width="120" height="60" as="geometry"/>
+                <mxCell id="18" value="stream&lt;div&gt;Twitch&lt;/div&gt;&lt;div&gt;broadcasting&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="254" y="211" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="12" value="&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;midi layer&lt;/font&gt;&lt;/div&gt;&lt;div&gt;device requests&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="254" y="350" width="140" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="18" value="stream&lt;div&gt;Twitch&lt;/div&gt;&lt;div&gt;broadcasting&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-                    <mxGeometry x="70" y="180" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="23" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                <mxCell id="23" value="The UI layer consists of a chatbot. It joins a channel on Twitch and responds to mapped commands. The bot makes requests to the midi layer to set the state of audio equipment devices and associated data.&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;E.g. a viewer wants to change the reverb engine to &#39;room&#39; to get an echoy sound so they type &#39;!engine room&#39; in the chat, the bot responds and sends a request to the midi layer which updates the db and sends a midi cc message to an effects pedal&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;" parent="1" vertex="1">
                     <mxGeometry x="70" y="20" width="640" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" value="&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;midi layer&lt;/font&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" vertex="1" parent="1">
+                    <mxGeometry x="52" y="360" width="354" height="98" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;device requests&lt;/font&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="254" y="388" width="140" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="&lt;div&gt;data requests&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="388" width="120" height="60" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
