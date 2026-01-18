@@ -50,22 +50,8 @@ init-console-ansible-vault: scripts/ansible-vault-init.sh
 	bash scripts/ansible-vault-init.sh
 
 shutdown-cluster:
-	@echo "⚠️  WARNING: This will shutdown the entire Kubernetes cluster ⚠️"
-	@echo ""
-	@echo "Shutdown sequence:"
-	@echo "  1. Worker nodes"
-	@echo "  2. Master node"
-	@echo "  3. Console/Runner machine (this machine)"
-	@echo ""
-	@echo "Physical access will be required to restart the cluster."
-	@echo ""
-	@read -p "Type 'SHUTDOWN' to confirm: " CONFIRM; \
-	if [ "$$CONFIRM" = "SHUTDOWN" ]; then \
-		ansible-playbook shutdown.yaml; \
-	else \
-		echo "Shutdown cancelled."; \
-		exit 1; \
-	fi
+	@echo "⚠️  Initiating cluster shutdown sequence..."
+	ansible-playbook shutdown.yaml
 
 init-console-config:
 	ansible-playbook k8s-console.yaml
