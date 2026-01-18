@@ -1,0 +1,50 @@
+name: UI Set Active Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Active environment (dev or prod)'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+        default: 'dev'
+
+jobs:
+  switch-environment:
+    name: Switch Active UI Environment
+    runs-on: self-hosted
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set Environment Variables
+      run: |
+        echo "ACTIVE_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+        if [[ "${{ github.event.inputs.environment }}" == "prod" ]]; then
+          echo "ACTIVE_NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
+          echo "INACTIVE_NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
+        else
+          echo "ACTIVE_NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
+          echo "INACTIVE_NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
+        fi
+
+    - name: Switch UI Environment via Ansible
+      working-directory: ./ui
+      env:
+        ACTIVE_NAMESPACE: ${{ env.ACTIVE_NAMESPACE }}
+        INACTIVE_NAMESPACE: ${{ env.INACTIVE_NAMESPACE }}
+        ACTIVE_ENV: ${{ env.ACTIVE_ENV }}
+      run: make set-environment
+
+    - name: Display Active Environment
+      run: |
+        echo "✅ UI Bot is now active in: ${{ github.event.inputs.environment }}"
+        echo ""
+        echo "Active pods:"
+        kubectl get pods -n ${{ env.ACTIVE_NAMESPACE }} -l app=eightbitsaxlounge,component=ui
+        echo ""
+        echo "Inactive pods:"
+        kubectl get pods -n ${{ env.INACTIVE_NAMESPACE }} -l app=eightbitsaxlounge,component=ui

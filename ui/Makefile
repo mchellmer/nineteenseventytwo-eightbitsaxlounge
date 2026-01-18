@@ -1,19 +1,20 @@
 # Simple Makefile for local development
 # CI/CD handled by GitHub Actions
 
-.PHONY: help install install-dev dev test test-ci clean docker-build docker-run deploy-ui
+.PHONY: help install install-dev dev test test-ci clean docker-build docker-run deploy-ui set-environment
 
 help:
 	@echo "Available targets:"
-	@echo "  install      - Install Python dependencies"
-	@echo "  install-dev  - Install dev dependencies"
-	@echo "  dev          - Run bot locally"
-	@echo "  test         - Run all tests"
-	@echo "  test-ci      - Run tests with coverage (for CI)"
-	@echo "  clean        - Clean test artifacts"
-	@echo "  docker-build - Build Docker image locally"
-	@echo "  docker-run   - Run Docker image locally"
-	@echo "  deploy-ui    - Deploy UI to Kubernetes via Ansible"
+	@echo "  install         - Install Python dependencies"
+	@echo "  install-dev     - Install dev dependencies"
+	@echo "  dev             - Run bot locally"
+	@echo "  test            - Run all tests"
+	@echo "  test-ci         - Run tests with coverage (for CI)"
+	@echo "  clean           - Clean test artifacts"
+	@echo "  docker-build    - Build Docker image locally"
+	@echo "  docker-run      - Run Docker image locally"
+	@echo "  deploy-ui       - Deploy UI to Kubernetes via Ansible"
+	@echo "  set-environment - Switch active environment (dev/prod)"
 
 install:
 	pip3 install -r requirements.txt
@@ -48,3 +49,6 @@ docker-run:
 
 deploy-ui:
 	ansible-playbook ui-deploy.yaml
+
+set-environment:
+	ansible-playbook ui-set-environment.yaml
