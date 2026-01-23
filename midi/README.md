@@ -1,10 +1,70 @@
 # Overview
-The midi layer interacts with midi devices sending midi messages to set a desired state of effects. The layer receives and responds to messages via an api. It is deployed to the machine where the midi devices are connected via USB.
+The midi layer interacts with midi devices sending midi messages to set a desired state of effects. The layer uses dual deployment: a containerized API proxy in Kubernetes and a Windows service on the PC with connected MIDI devices.
 
-# PC Implementation
-Use Winmm.dll as midi device integration in a dotnet solution with minimal api.
+**Architecture:**
+- ASP.NET Core Minimal API (.NET 8.0)
+- Kubernetes: Publicly accessible proxy service with JWT authentication
+- Windows PC: Direct device access via WinMM.dll
+- Request flow: `UI → K8s (JWT) → PC (bypass key) → WinMM → Device`
+
+**Authentication:**
+- External requests (UI, clients): JWT token authentication
+- Internal requests (K8s → PC): Bypass key via X-Bypass-Key header
+
+# Deployment
+## Kubernetes Implementation
+Containerized proxy service deployed to Kubernetes cluster. Handles authentication and forwards device operations to Windows PC service.
+
+**Deployment:**
+```bash
+make deploy-k8s-dev     # Deploy to eightbitsaxlounge-dev namespace
+make deploy-k8s-prod    # Deploy to eightbitsaxlounge-prod namespace
+```
+
+**Configuration:**
+- Image: `ghcr.io/mchellmer/eightbitsaxlounge-midi:<version>`
+- Environment: MidiDeviceService__Url points to PC service
+- Secrets: JWT keys + MidiDeviceService__BypassKey for outgoing proxy requests
+
+## PC Implementation
+Windows service deployed to PC with connected MIDI devices. Accepts bypass key from K8s or JWT tokens for direct access.
+
+**Deployment:**
+```bash
+make deploy-pc-dev      # Deploy to C:\Services\Midi\dev (port 5000)
+make deploy-pc-prod     # Deploy to C:\Services\Midi\prod (port 5001)
+```
+
+**Configuration:**
+- Uses Winmm.dll for direct device access
+- Managed by NSSM as Windows Service
+- Accepts X-Bypass-Key header (from K8s) or JWT token
 
 # CI/CD
+
+**Workflow Trigger:**
+- Changes to `midi/version.txt` on `main` branch
+- Production versions: `1.0.x`
+
+**Pipeline:**
+1. Run unit tests
+2. **Parallel builds:**
+   - Package Windows application (`dotnet publish`)
+   - Build and push Linux ARM64 container to GHCR
+3. **Conditional deployments:**
+   - Deploy to Windows PC via Ansible (environment based on version suffix)
+   - Deploy to Kubernetes via Ansible (environment based on version suffix)
+
+**Manual Deployment:**
+```bash
+make deploy-k8s-dev      # Deploy K8s proxy to dev
+make deploy-k8s-prod     # Deploy K8s proxy to prod
+make deploy-pc-dev       # Deploy PC service to dev
+make deploy-pc-prod      # Deploy PC service to prod
+```
+
+**Initial Setup:**
+
 Ansible Access to PC
 - Install OpenSSH (elevated powershell session)
   Check enabled: `Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'`
@@ -43,219 +103,45 @@ Ansible Access to PC
 - Release to PC (take artifact and install): `make deploy-midi`
 
 # Scope
-- midi layer hosted on separate machine as data layer (currently case)
-  - device midi implimentation handled prior to request
-  - midi layer recieves information required to interact with midi device
-    - send control change message to named device
-- midi layer co-hosted with data layer (future case)
-  - minimal device specific logic - layer should get most details to perform midi commands via requests to data layer
-    - maintain device specific activation logic e.g. turn on device A or turn off effect A on device A
-  - handle requests to set some effect for some device to a provided value
-    - value validation
-      - min/max midi values smooth effects e.g. volume 0-127
-      - min/max midi values for selector effects e.g. reverbEngine on device A has 13 options
+
+**Current Implementation:**
+- Dual deployment: Kubernetes proxy + Windows PC device service
+- Device MIDI implementation handled by Windows PC service
+- K8s service proxies device requests to PC using bypass key authentication
+- Send control change messages to named devices
+
+**Request Flow:**
+```
+Client → K8s MIDI API (JWT auth)
+       → Windows PC Service (bypass key)
+       → WinMM.dll
+       → USB MIDI Device
+```
+
+**Future Enhancements:**
+- Device-specific activation logic (turn on/off devices or effects)
+- Value validation (min/max ranges for continuous/selector effects)
+- Integration with data layer for effect metadata
+- PUT {deviceName}/reset endpoint to restore device defaults
 
 ## Minimal API
-- standard web api dotnet template -> ASP.Net minimal api project
-- define endpoints
-  - authentication
-    - POST to retrieve temporary jwt token per authorised client
-  - midi
-    - POST to send midi control change message
-    - PUT {deviceName}/reset: sets db and device to defaults (scaffolded, but outside of current scope)
 
-## Library
-- midi device data model (scaffolded, but outside current scope)
-  - the data model must store device and effect details to be used by the 8 bit sax lounge app (CRUD implemented via data layer)
-    - UI gets effect details and values to display
-    - midi app gets/puts device/effect midi details
-      - control change message: control change address, control change value
-  - dbs
-    - devices - details of device properties and state e.g. name/description, is it active, list of effects and states
-    - selectors - maps effects having discrete/named midi values e.g. reverb engine A set to Room is CC address 0, value 0; differs from e.g. Bass having a range of 0-127
-    - effects - name/description and device specific settings
-  - ventris dual reverb example
-    - the device model will mirror the physical device
-      - knob: set engine (e.g. room, plate, spring)
-      - knob: time - length of time to apply reverb effect
-      - knob: pre-delay - delay between dry signal and applying reverb
-      - knob: control 1 - engine epecific setting e.g. Room 1 Control 1 = Bass
-      - knob: control 2 - same
-      - knob: EngineA or B or both active
-    - the midi implementation defines midi control change message details required to adjust engine similar to knobs
-    - some knobs midi implementation depends on the active engine e.g. EchoVerb Control1 is 'PreDelayFeedback' with a static CC address for the device, EchoVerb Control2 is 'DelayReverbCrossfade' and uses midi address for EngineParam5
-    - Sample request: update VentrisDualReverb effect ReverbEngineA to EchoVerb
-      - PUT VentrisDualReverb.Effects.ReverbEngineA.EffectSettings?Name=ReverbEngine
-        - Value=EchoVerb
-      - cc message to midi device
-        - CC#=GET devices.VentrisDualReverb.MidiImplementation?Name=ReverbEngine.ControlChangeAddress?Name=ReverbEngineA.Value
-        - CCValue=GET selectors.ReverbEngine.Selections?Name=Echoverb.MidiControlChangeValue
-    - Sample request: update VentrisDualReverb effect ReverbEngineA control2 'knob' to 7
-      - PUT VentrisDualReverb.Effects.ReverbEngineA.EffectSettings?Name=Control1
-        - Value=7
-      - cc message to midi device
-        - EffectName = GET devices/VentrisDualReverb.Effects.ReverbEngineA.EffectSettings?Name=ReverbEngine.Value
-        - VentrisDualReverbMidiParam = GET effects/(EffectName).DeviceSettings?DeviceName=VentrisDualReverb.Control1.Parameter
-        CC#=GET devices.VentrisDualReverb.MidiImplementation?Name=(VentrisDualReverbMidiParam).ControlChangeAddress?Name=ReverbEngineA.Value
-
-    - Sample db documents:
-      - devices
-        - Name: VentrisDualReverb
-          Description: Reverb effects pedal with two engines.
-          Active: true
-          MidiImplementation:
-            Name: ReverbEngine
-            ControlChangeValueSelector: ReverbEngine
-            ControlChangeAddresses:
-              Name: ReverbEngineA
-              Value: 1
-              Name: ReverbEngineB
-              Value: 27
-            
-            Name: Time
-            (ControlChangeValueSelector ? db/selectors.value : value ranges from 0-127)
-            etc
-
-            Name: PreDelayFeedback
-            etc
-
-            Name: EngineParam5
-            etc
-
-            Name: Size
-            ControlChangeValueSelector: Size
-
-          DeviceEffects:
-            Name: ReverbEngineA
-            Active: true
-            DefaultActive: true
-            EffectSettings: # dynamic values set by app
-              Name: ReverbEngine
-              DefaultValue: 0
-              Value: 8 # for Echoverb
-
-              Name: PreDelay
-              Value: 0
-
-              Name: Time
-              Value: 0
-
-              Name: Control1
-              DeviceEffectSettingDependencyName: ReverbEngine
-              Value: 0 # 0-127 or selector dependent
-
-              Name: Control2
-              Value: 0
-            
-            Name: ReverbEngineB
-            etc
-          
-      - selectors (size,dual/single mode)
-        - Name: ReverbEngine
-          Selections:
-            Name: EchoVerb
-            MidiCCValue: 8
-            etc
-
-      - effects
-        - Name: ReverbEngine ????????????
-          Descriptoin: text
-          DeviceSettings:
-            
-        - Name: EchoVerb
-          Description: text
-          DeviceSettings:
-            Name: Control1
-            DeviceName: VentrisDualReverb
-            EffectName: PreDelayFeedback 
-            DeviceMidiImplementationName: EngineParam1-5 or engine agnostic i.e. this.EffectName
-            
-            DeviceName: VentrisDualReverb
-            Name: Control2
-            EffectName: DelayReverbCrossfade
-            DeviceMidiImplementationName: EngineParameter5
-        
-        - Name: PreDelayFeedback
-          Description: text
-        
-        - Name: DelayReverbCrossfade
-          Description: text
-
-- Application level logic (scaffolded, but outside of current scope)
-  - Activators - each device has effects that activate in complicated ways, add activator logic per device
-  - Validation
-    - requests to set effect values should be validated/modifed to conform to device midi implimentation
-      - validate: request
-
-## Tests
-- endpoint handler unit tests
-- data service unit tests
-- winmm device service unit tests
-
-# Development
-- ci/cd managed release of some sort
-  - version text
-  - build host access via ansible to PC
-  - new action pipeline
-    - run dotnet tests
-    - package app to dll
-    - store in github
-    - install service on PC via ansible (makefile)
-# API Endpoints
-
-The MIDI service exposes the following REST API endpoints:
-
-## Base URL
-- **Development**: `http://localhost:5000`
-- **Production**: `http://localhost:5001` (HTTPS)
-
-## Authentication
-
-### POST `/api/token`
-Obtain a JWT bearer token for authenticated API access.
-
-**Request:**
-```bash
-curl -X POST http://localhost:5000/api/token \
-  -H "Content-Type: application/json" \
-  -d '{
-    "clientId": "your-client-id",
-    "clientSecret": "your-client-secret"
-  }'
-```
-
-**Response:**
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "Bearer"
-}
-```
-
-## MIDI Operations
-
-### POST `/api/Midi/SendControlChangeMessage`
-Send a MIDI Control Change message to a connected device.
-
-**Authentication:** Required (Bearer token)
-
-**Request Parameters:**
-- `deviceMidiConnectName` (string): Name of the MIDI device as configured in Windows
-- `address` (int): MIDI Control Change address (0-127)
-- `value` (int): MIDI Control Change value (0-127)
-- `channel` (int, optional): MIDI channel (default: 0)
+**Endpoints:**
+- `POST /api/token`: Retrieve JWT token for authenticated client
+  - Request: `{ "clientId": "...", "clientSecret": "..." }`
+  - Response: `{ "access_token": "...", "token_type": "Bearer" }`
+- `POST /api/Midi/SendControlChangeMessage`: Send MIDI control change message
+  - Authentication: Required (Bearer token)
+  - Parameters: `deviceMidiConnectName`, `address` (0-127), `value` (0-127), `channel` (optional)
 
 **Example:**
 ```bash
-# First, get the authentication token
+# Get token
 TOKEN=$(curl -X POST http://localhost:5000/api/token \
   -H "Content-Type: application/json" \
-  -d '{
-    "clientId": "your-client-id",
-    "clientSecret": "your-client-secret"
-  }' | jq -r '.access_token')
+  -d '{"clientId":"...","clientSecret":"..."}' | jq -r '.access_token')
 
-# Send MIDI control change message
+# Send MIDI message
 curl -X POST http://localhost:5000/api/Midi/SendControlChangeMessage \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
@@ -267,25 +153,22 @@ curl -X POST http://localhost:5000/api/Midi/SendControlChangeMessage \
   }'
 ```
 
-**Response Codes:**
-- `200 OK`: Message sent successfully
-- `401 Unauthorized`: Missing or invalid authentication token
-- `400 Bad Request`: Invalid parameters
-- `500 Internal Server Error`: Device communication error
+## Library
 
-## Windows Service Deployment
+**WinmmMidiDeviceService:**
+- P/Invoke wrapper for WinMM.dll MIDI functions
+- Supports proxy mode (K8s) and direct mode (Windows PC)
+- Proxy mode: Forwards requests to Windows PC via HTTP with bypass key
+- Direct mode: Uses WinMM API for local device access
 
-The MIDI service runs as a Windows Service on the PC with connected MIDI devices.
+**Future Data Model:**
+- Device metadata (name, MIDI implementation, effect mappings)
+- Selector mappings (discrete MIDI values for named effects)
+- Effect settings (control change addresses, value ranges)
+- Managed via data layer CRUD operations
 
-**Service Configuration:**
-- Service Name: `EightBitSaxLoungeMidiService`
-- Port: 5000 (dev) or 5001 (production)
-- Install Location: `C:\Services\EightBitSaxLoungeMidi`
+# Tests
+- Endpoint handler unit tests
+- Data service unit tests
+- WinMM device service unit tests
 
-**Testing:**
-```bash
-# Test authentication endpoint
-curl http://localhost:5000/api/token \
-  -H "Content-Type: application/json" \
-  -d '{"clientId":"test","clientSecret":"test"}'
-```
