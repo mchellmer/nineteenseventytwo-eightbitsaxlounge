@@ -198,8 +198,10 @@ jobs:
       run: |
         if [[ "${{ github.ref_name }}" == "main" ]]; then
           echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
+          echo "DEVICE_SERVICE_URL=${{ secrets.MIDI_DEVICE_URL_PROD }}" >> $GITHUB_ENV
         else
           echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
+          echo "DEVICE_SERVICE_URL=${{ secrets.MIDI_DEVICE_URL_DEV }}" >> $GITHUB_ENV
         fi
 
     - name: Read Version
@@ -220,5 +222,5 @@ jobs:
         AUTH_CLIENT_1_ID: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTID }}
         AUTH_CLIENT_1_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTSECRET }}
         CONNECTION_STRING: ${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER }}
-        DEVICE_SERVICE_URL: ${{ secrets.MIDI_DEVICE_URL }}
+        DEVICE_SERVICE_URL: ${{ env.DEVICE_SERVICE_URL }}
       run: make deploy-midi-api
