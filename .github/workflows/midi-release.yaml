@@ -115,7 +115,7 @@ jobs:
 
   deploy:
     name: Deploy MIDI API to Windows PC
-    needs: build-and-package
+    needs: [build-and-package, build-and-push-container]
     runs-on: self-hosted
     steps:
     - name: Checkout Code
@@ -188,7 +188,7 @@ jobs:
 
   deploy-k8s:
     name: Deploy MIDI to Kubernetes
-    needs: build-and-push-container
+    needs: [build-and-package, build-and-push-container]
     runs-on: self-hosted
     steps:
     - name: Checkout Code
@@ -223,4 +223,5 @@ jobs:
         AUTH_CLIENT_1_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTSECRET }}
         CONNECTION_STRING: ${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER }}
         DEVICE_SERVICE_URL: ${{ env.DEVICE_SERVICE_URL }}
+        TOKEN_EXPIRY: ${{ secrets.AUTHENTICATION_TOKENEXPIRYINMINUTES }}
       run: make deploy-midi-api
