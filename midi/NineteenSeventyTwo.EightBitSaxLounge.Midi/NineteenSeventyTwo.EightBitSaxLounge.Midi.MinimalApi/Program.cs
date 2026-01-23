@@ -154,9 +154,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Bypass authentication middleware for requests with valid bypass key
+// Bypass authentication middleware - only enabled for device service (Windows PC), not proxy service (K8s)
+// When MidiDeviceService:Url is set, this service acts as a proxy and requires JWT auth for incoming requests
+// When MidiDeviceService:Url is NOT set, this service acts as the device service and accepts bypass key from proxy
 var bypassKey = builder.Configuration["MidiDeviceService:BypassKey"];
-if (!string.IsNullOrWhiteSpace(bypassKey))
+var isProxyMode = !string.IsNullOrWhiteSpace(deviceServiceUrl);
+
+if (!string.IsNullOrWhiteSpace(bypassKey) && !isProxyMode)
 {
     app.Use(async (context, next) =>
     {
