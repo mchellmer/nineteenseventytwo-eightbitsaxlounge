@@ -154,6 +154,23 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Bypass authentication middleware for requests with valid bypass key
+var bypassKey = builder.Configuration["MidiDeviceService:BypassKey"];
+if (!string.IsNullOrWhiteSpace(bypassKey))
+{
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Headers.TryGetValue("X-Bypass-Key", out var headerValue) &&
+            headerValue == bypassKey)
+        {
+            // Skip authentication for requests with valid bypass key
+            await next();
+            return;
+        }
+        await next();
+    });
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 

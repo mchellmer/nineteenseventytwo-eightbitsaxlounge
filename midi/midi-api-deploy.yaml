@@ -34,6 +34,7 @@
           --from-literal=client-1-id="$AUTH_CLIENT_1_ID" \
           --from-literal=client-1-secret="$AUTH_CLIENT_1_SECRET" \
           --from-literal=connection-string="$CONNECTION_STRING" \
+          --from-literal=device-bypass-key="$DEVICE_BYPASS_KEY" \
           --namespace $NAMESPACE \
           --dry-run=client -o yaml | kubectl apply -f -
       environment:
@@ -45,6 +46,7 @@
         AUTH_CLIENT_1_ID: "{{ lookup('env', 'AUTH_CLIENT_1_ID') }}"
         AUTH_CLIENT_1_SECRET: "{{ lookup('env', 'AUTH_CLIENT_1_SECRET') }}"
         CONNECTION_STRING: "{{ lookup('env', 'CONNECTION_STRING') }}"
+        DEVICE_BYPASS_KEY: "{{ lookup('env', 'DEVICE_BYPASS_KEY') }}"
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 
     - name: Create MIDI ConfigMap

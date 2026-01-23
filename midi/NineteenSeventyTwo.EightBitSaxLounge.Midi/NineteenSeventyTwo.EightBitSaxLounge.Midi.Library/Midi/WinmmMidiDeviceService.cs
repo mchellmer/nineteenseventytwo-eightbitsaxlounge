@@ -14,10 +14,12 @@ public class WinmmMidiDeviceService : IMidiDeviceService, IMidiProxyService
     private readonly HttpClient? _httpClient;
     private readonly IHttpContextAccessor? _httpContextAccessor;
     private readonly string? _proxyUrl;
+    private readonly string? _bypassKey;
     public bool IsProxyEnabled { get; }
     public string? ProxyUrl => _proxyUrl;
     
     private const string ProxyHeaderName = "X-Proxied-Request";
+    private const string BypassKeyHeaderName = "X-Bypass-Key";
     
     public WinmmMidiDeviceService(
         ILogger<WinmmMidiDeviceService> logger,
@@ -32,11 +34,18 @@ public class WinmmMidiDeviceService : IMidiDeviceService, IMidiProxyService
         _httpContextAccessor = httpContextAccessor;
         
         var configuredUrl = configuration?["MidiDeviceService:Url"];
+        _bypassKey = configuration?["MidiDeviceService:BypassKey"];
+        
         if (!string.IsNullOrWhiteSpace(configuredUrl))
         {
             _proxyUrl = configuredUrl.TrimEnd('/');
             IsProxyEnabled = true;
             _logger.LogInformation("MIDI Device Service configured to proxy to: {Url}", _proxyUrl);
+            
+            if (!string.IsNullOrWhiteSpace(_bypassKey))
+            {
+                _logger.LogInformation("Bypass authentication key configured for proxy requests");
+            }
         }
         else
         {
@@ -86,6 +95,12 @@ public class WinmmMidiDeviceService : IMidiDeviceService, IMidiProxyService
             
             // Add header to prevent infinite recursion
             request.Headers.Add(ProxyHeaderName, "true");
+            
+            // Add bypass key if configured
+            if (!string.IsNullOrWhiteSpace(_bypassKey))
+            {
+                request.Headers.Add(BypassKeyHeaderName, _bypassKey);
+            }
 
             var response = await _httpClient!.SendAsync(request);
             if (response.IsSuccessStatusCode)
