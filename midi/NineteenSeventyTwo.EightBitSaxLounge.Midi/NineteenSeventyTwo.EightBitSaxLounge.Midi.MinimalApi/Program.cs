@@ -163,9 +163,10 @@ if (!string.IsNullOrWhiteSpace(bypassKey))
         if (context.Request.Headers.TryGetValue("X-Bypass-Key", out var headerValue) &&
             headerValue == bypassKey)
         {
-            // Skip authentication for requests with valid bypass key
-            await next();
-            return;
+            // Mark request as authenticated to bypass JWT validation
+            var claims = new[] { new System.Security.Claims.Claim("bypass", "true") };
+            var identity = new System.Security.Claims.ClaimsIdentity(claims, "BypassKey");
+            context.User = new System.Security.Claims.ClaimsPrincipal(identity);
         }
         await next();
     });
