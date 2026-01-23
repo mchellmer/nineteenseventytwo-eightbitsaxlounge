@@ -6,10 +6,10 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Endpoints;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
-using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Services;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
 
 using System.Text;
+using System.Net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
 
@@ -28,9 +28,6 @@ var authOptions = builder.Configuration.GetSection("Authentication").Get<AppAuth
 if (string.IsNullOrWhiteSpace(authOptions.SecretKey))
     throw new InvalidOperationException("Missing 'Authentication:SecretKey'. Set via user-secrets or environment variable.");
 builder.Services.Configure<AppAuthenticationOptions>(builder.Configuration.GetSection("Authentication"));
-
-// Api model and SSL
-builder.Services.AddEndpointsApiExplorer();
 
 // Docs
 builder.Services.AddSwaggerGen(opts =>
@@ -69,17 +66,52 @@ builder.Services.AddSingleton<IEffectActivatorFactory, EffectActivatorFactory>()
 builder.Services.AddSingleton<IEffectActivator, VentrisDualReverbActivator>();
 builder.Services.AddSingleton<IMidiDataService, EightBitSaxLoungeMidiDataService>();
 
-// HTTP Client for device proxy (conditionally registered)
+// API and HTTP services
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddEndpointsApiExplorer();
+
+// MIDI Device Service - handles both local and remote (proxy) requests
+// If MidiDeviceService:Url is configured, it will proxy remote requests, otherwise use local devices
+builder.Services.AddSingleton<IMidiOutDeviceFactory, MidiOutDeviceFactory>();
+
 var deviceServiceUrl = builder.Configuration["MidiDeviceService:Url"];
+
 if (!string.IsNullOrWhiteSpace(deviceServiceUrl))
 {
-    builder.Services.AddHttpClient<MidiDeviceProxyService>();
-    builder.Services.AddSingleton<MidiDeviceProxyService>();
+    // Configure HttpClient for proxy with certificate validation handling
+    builder.Services.AddHttpClient<WinmmMidiDeviceService>()
+        .ConfigureHttpClient(client =>
+        {
+            client.DefaultRequestHeaders.Add("User-Agent", "NineteenSeventyTwo.EightBitSaxLounge.Midi");
+        })
+        .ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler
+            {
+                // Skip certificate validation for development/localhost
+                ServerCertificateCustomValidationCallback = (request, cert, chain, errors) =>
+                {
+                    // If development and localhost, accept any certificate
+                    if (builder.Environment.IsDevelopment())
+                    {
+                        var host = request?.RequestUri?.Host;
+                        if (host == "localhost" || host == "127.0.0.1")
+                        {
+                            return true;
+                        }
+                    }
+                    // Otherwise validate normally
+                    return errors == System.Net.Security.SslPolicyErrors.None;
+                }
+            };
+            return handler;
+        });
+    
+    builder.Services.AddSingleton<IMidiDeviceService>(sp => 
+        ActivatorUtilities.CreateInstance<WinmmMidiDeviceService>(sp, sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<IHttpContextAccessor>()));
 }
 else
 {
-    // Local Windows service with direct device access
-    builder.Services.AddSingleton<IMidiOutDeviceFactory, MidiOutDeviceFactory>();
     builder.Services.AddSingleton<IMidiDeviceService, WinmmMidiDeviceService>();
 }
 

@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
-using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Services;
 
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Endpoints;
 
@@ -10,20 +9,15 @@ public static class MidiEndpoints
 {
     public static void AddMidiEndpoints(this WebApplication app)
     {
-        // Device control endpoint - proxies to Windows PC service
+        // Device control endpoint - uses injected IMidiDeviceService (local or proxied)
         app.MapPost("api/Midi/SendControlChangeMessage",
                 async (
-                    MidiDeviceProxyService proxyService,
-                    HttpContext context,
+                    MidiEndpointsHandler handler,
                     [FromBody] SendControlChangeMessageRequest request) =>
-                {
-                    var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
-                    return await proxyService.ProxyControlChangeMessage(
+                    await handler.PostControlChangeMessageToDeviceByMidiConnectName(
                         request.DeviceMidiConnectName,
-                        request.Address.ToString(),
-                        request.Value.ToString(),
-                        authHeader);
-                })
+                        request.Address,
+                        request.Value))
             .RequireAuthorization()
             .WithName("SendControlChangeMessage")
             .WithTags("Device");

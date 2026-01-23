@@ -1,7 +1,5 @@
 # Feature roadmap
 UI Layer
-- integrate with Twitch channel
-- respond to commands
 - read/update actual and requested midi device state
 
 Midi Layer
@@ -35,6 +33,7 @@ CI/CD
 - linting and scanning
 - shared workflow logic for common tasks
 - split versioning between app and infra in layers e.g. no change in image/infra no rebuild and deploy of image/infra
+- cicd templates and standard make commands for cicd server side operations e.g. test, build, deploy etc.
 
 Security
 - end to end review
