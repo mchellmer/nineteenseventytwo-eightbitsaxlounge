@@ -90,6 +90,7 @@
           "Authentication__Clients__0__ClientSecret={{ lookup('env', 'AUTHENTICATION__CLIENTS__0__CLIENTSECRET') }}"
           "Authentication__Clients__1__ClientId={{ lookup('env', 'AUTHENTICATION__CLIENTS__1__CLIENTID') }}"
           "Authentication__Clients__1__ClientSecret={{ lookup('env', 'AUTHENTICATION__CLIENTS__1__CLIENTSECRET') }}"
+          "MidiDeviceService__BypassKey={{ lookup('env', 'MIDIDEVICESERVICE__BYPASSKEY') }}"
         )
         
         # Check if service exists
