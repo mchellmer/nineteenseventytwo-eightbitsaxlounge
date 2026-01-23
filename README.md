@@ -24,6 +24,7 @@ Server layer
 - all containers enforced probes for health monitoring
 - service mesh for finer tuned monitoring
 - shared ansible role for common work among layers
+- multiple runners for parallel build steps
 
 Monitoring layer
 - grafana configured to show health of app end to end
