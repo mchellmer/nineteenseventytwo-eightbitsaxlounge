@@ -74,6 +74,11 @@ spec:
             configMapKeyRef:
               name: eightbitsaxlounge-midi-config
               key: device_service_url
+        - name: MidiDeviceService__BypassKey
+          valueFrom:
+            secretKeyRef:
+              name: eightbitsaxlounge-midi-secrets
+              key: device-bypass-key
         - name: ConnectionStrings__EightBitSaxLoungeDataLayer
           valueFrom:
             secretKeyRef:
