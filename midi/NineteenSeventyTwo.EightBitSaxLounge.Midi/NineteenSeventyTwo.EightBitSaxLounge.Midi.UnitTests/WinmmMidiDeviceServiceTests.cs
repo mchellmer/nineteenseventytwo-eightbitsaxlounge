@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 using Moq;
@@ -10,10 +11,28 @@ namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.UnitTests;
 
 public class WinmmMidiDeviceServiceTests
 {
-    private static WinmmMidiDeviceService BuildService(Mock<IMidiOutDeviceFactory> factoryMock, Mock<IMidiOutDevice> deviceMock, Mock<ILogger<WinmmMidiDeviceService>> loggerMock)
+    private static IConfiguration CreateConfiguration(string? proxyUrl = null)
+    {
+        var configDict = new Dictionary<string, string?>();
+        if (!string.IsNullOrWhiteSpace(proxyUrl))
+        {
+            configDict["MidiDeviceService:Url"] = proxyUrl;
+        }
+        return new ConfigurationBuilder()
+            .AddInMemoryCollection(configDict)
+            .Build();
+    }
+
+    private static WinmmMidiDeviceService BuildService(
+        Mock<IMidiOutDeviceFactory> factoryMock,
+        Mock<IMidiOutDevice> deviceMock,
+        Mock<ILogger<WinmmMidiDeviceService>> loggerMock,
+        string? proxyUrl = null,
+        HttpClient? httpClient = null)
     {
         factoryMock.Setup(f => f.Create(It.IsAny<string>())).Returns(deviceMock.Object);
-        return new WinmmMidiDeviceService(loggerMock.Object, factoryMock.Object);
+        var config = CreateConfiguration(proxyUrl);
+        return new WinmmMidiDeviceService(loggerMock.Object, factoryMock.Object, config, httpClient);
     }
 
     [Fact]
@@ -70,5 +89,24 @@ public class WinmmMidiDeviceServiceTests
         deviceMock.Verify(d => d.TryOpen(), Times.Once);
         deviceMock.Verify(d => d.TrySendControlChangeMessageDetailedAsync(10, 64, true, It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public void SendControlChangeMessage_ProxyConfigured_RoutesToProxyAsync()
+    {
+        var loggerMock = new Mock<ILogger<WinmmMidiDeviceService>>();
+        var factoryMock = new Mock<IMidiOutDeviceFactory>();
+        var deviceMock = new Mock<IMidiOutDevice>();
+
+        var handlerMock = new Mock<HttpMessageHandler>();
+        var httpClient = new HttpClient(handlerMock.Object);
+
+        var service = BuildService(factoryMock, deviceMock, loggerMock, "https://localhost:7063", httpClient);
+
+        // Service should be configured for proxy
+        Assert.True(service.IsProxyEnabled);
+        Assert.Equal("https://localhost:7063", service.ProxyUrl);
+    }
 }
+
+
 

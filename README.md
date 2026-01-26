@@ -1,7 +1,5 @@
 # Feature roadmap
 UI Layer
-- integrate with Twitch channel
-- respond to commands
 - read/update actual and requested midi device state
 
 Midi Layer
@@ -10,6 +8,7 @@ Midi Layer
   - service running on cluster: handles data requests
 - seed db operation to init midi config in db
 - remove device dependency on PC connection
+- make proxy mode more modular
 
 State Layer?
 - unified state to ensure consistent: UI and db match midi and chat states
@@ -26,6 +25,7 @@ Server layer
 - all containers enforced probes for health monitoring
 - service mesh for finer tuned monitoring
 - shared ansible role for common work among layers
+- multiple runners for parallel build steps
 
 Monitoring layer
 - grafana configured to show health of app end to end
@@ -35,6 +35,7 @@ CI/CD
 - linting and scanning
 - shared workflow logic for common tasks
 - split versioning between app and infra in layers e.g. no change in image/infra no rebuild and deploy of image/infra
+- cicd templates and standard make commands for cicd server side operations e.g. test, build, deploy etc.
 
 Security
 - end to end review

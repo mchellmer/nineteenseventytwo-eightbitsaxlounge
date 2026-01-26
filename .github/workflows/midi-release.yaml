@@ -114,7 +114,7 @@ jobs:
 
   deploy:
     name: Deploy MIDI API to Windows PC
-    needs: build-and-package
+    needs: [build-and-package, build-and-push-container]
     runs-on: self-hosted
     steps:
     - name: Checkout Code
@@ -158,4 +158,71 @@ jobs:
         AUTHENTICATION__CLIENTS__0__CLIENTSECRET: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTSECRET }}
         AUTHENTICATION__CLIENTS__1__CLIENTID: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTID }}
         AUTHENTICATION__CLIENTS__1__CLIENTSECRET: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTSECRET }}
+        MIDIDEVICESERVICE__BYPASSKEY: ${{ secrets.MIDI_DEVICE_BYPASS_KEY }}
+      run: make deploy-midi-pc
+  build-and-push-container:
+    name: Build and Push MIDI Container
+    needs: test
+    runs-on: self-hosted
+    permissions:
+      packages: write
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and Push Docker Image
+      working-directory: ./midi
+      run: |
+        VERSION=$(cat version.txt)
+        IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-midi
+        docker build -t "$IMAGE_BASE:$VERSION" -t "$IMAGE_BASE:latest" .
+        docker push "$IMAGE_BASE:$VERSION"
+        docker push "$IMAGE_BASE:latest"
+
+  deploy-k8s:
+    name: Deploy MIDI to Kubernetes
+    needs: [build-and-package, build-and-push-container]
+    runs-on: self-hosted
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set Namespace Based on Branch
+      run: |
+        if [[ "${{ github.ref_name }}" == "main" ]]; then
+          echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
+          echo "DEVICE_SERVICE_URL=${{ secrets.MIDI_DEVICE_URL_PROD }}" >> $GITHUB_ENV
+        else
+          echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
+          echo "DEVICE_SERVICE_URL=${{ secrets.MIDI_DEVICE_URL_DEV }}" >> $GITHUB_ENV
+        fi
+
+    - name: Read Version
+      run: |
+        echo "VERSION=$(cat midi/version.txt)" >> $GITHUB_ENV
+
+    - name: Deploy MIDI via Ansible
+      working-directory: ./midi
+      env:
+        NAMESPACE: ${{ env.NAMESPACE }}
+        VERSION: ${{ env.VERSION }}
+        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        AUTH_SECRET_KEY: ${{ secrets.AUTHENTICATION_SECRETKEY }}
+        AUTH_ISSUER: ${{ secrets.AUTHENTICATION_ISSUER }}
+        AUTH_AUDIENCE: ${{ secrets.AUTHENTICATION_AUDIENCE }}
+        AUTH_CLIENT_0_ID: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTID }}
+        AUTH_CLIENT_0_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTSECRET }}
+        AUTH_CLIENT_1_ID: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTID }}
+        AUTH_CLIENT_1_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTSECRET }}
+        CONNECTION_STRING: ${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER }}
+        DEVICE_SERVICE_URL: ${{ env.DEVICE_SERVICE_URL }}
+        DEVICE_BYPASS_KEY: ${{ secrets.MIDI_DEVICE_BYPASS_KEY }}
+        TOKEN_EXPIRY: ${{ secrets.AUTHENTICATION_TOKENEXPIRYINMINUTES }}
       run: make deploy-midi-api

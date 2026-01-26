@@ -9,6 +9,7 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
 
 using System.Text;
+using System.Net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
 
@@ -27,9 +28,6 @@ var authOptions = builder.Configuration.GetSection("Authentication").Get<AppAuth
 if (string.IsNullOrWhiteSpace(authOptions.SecretKey))
     throw new InvalidOperationException("Missing 'Authentication:SecretKey'. Set via user-secrets or environment variable.");
 builder.Services.Configure<AppAuthenticationOptions>(builder.Configuration.GetSection("Authentication"));
-
-// Api model and SSL
-builder.Services.AddEndpointsApiExplorer();
 
 // Docs
 builder.Services.AddSwaggerGen(opts =>
@@ -66,9 +64,58 @@ builder.Services.AddSwaggerGen(opts =>
 builder.Services.AddSingleton<IDataAccess, EightbitSaxLoungeDataAccess>();
 builder.Services.AddSingleton<IEffectActivatorFactory, EffectActivatorFactory>();
 builder.Services.AddSingleton<IEffectActivator, VentrisDualReverbActivator>();
-builder.Services.AddSingleton<IMidiOutDeviceFactory, MidiOutDeviceFactory>(); // register factory for MIDI out devices
-builder.Services.AddSingleton<IMidiDeviceService, WinmmMidiDeviceService>();
 builder.Services.AddSingleton<IMidiDataService, EightBitSaxLoungeMidiDataService>();
+
+// API and HTTP services
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddEndpointsApiExplorer();
+
+// MIDI Device Service - handles both local and remote (proxy) requests
+// If MidiDeviceService:Url is configured, it will proxy remote requests, otherwise use local devices
+builder.Services.AddSingleton<IMidiOutDeviceFactory, MidiOutDeviceFactory>();
+
+var deviceServiceUrl = builder.Configuration["MidiDeviceService:Url"];
+
+if (!string.IsNullOrWhiteSpace(deviceServiceUrl))
+{
+    // Configure HttpClient for proxy with certificate validation handling
+    builder.Services.AddHttpClient<WinmmMidiDeviceService>()
+        .ConfigureHttpClient(client =>
+        {
+            client.DefaultRequestHeaders.Add("User-Agent", "NineteenSeventyTwo.EightBitSaxLounge.Midi");
+        })
+        .ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler
+            {
+                // Skip certificate validation for development/localhost
+                ServerCertificateCustomValidationCallback = (request, cert, chain, errors) =>
+                {
+                    // If development and localhost, accept any certificate
+                    if (builder.Environment.IsDevelopment())
+                    {
+                        var host = request?.RequestUri?.Host;
+                        if (host == "localhost" || host == "127.0.0.1")
+                        {
+                            return true;
+                        }
+                    }
+                    // Otherwise validate normally
+                    return errors == System.Net.Security.SslPolicyErrors.None;
+                }
+            };
+            return handler;
+        });
+    
+    builder.Services.AddSingleton<IMidiDeviceService>(sp => 
+        ActivatorUtilities.CreateInstance<WinmmMidiDeviceService>(sp, sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<IHttpContextAccessor>()));
+}
+else
+{
+    builder.Services.AddSingleton<IMidiDeviceService, WinmmMidiDeviceService>();
+}
+
+// Register handlers that depend on IMidiDeviceService
 builder.Services.AddTransient<MidiEndpointsHandler>();
 
 // Auth
@@ -107,9 +154,32 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Bypass authentication middleware - only enabled for device service (Windows PC), not proxy service (K8s)
+// When MidiDeviceService:Url is set, this service acts as a proxy and requires JWT auth for incoming requests
+// When MidiDeviceService:Url is NOT set, this service acts as the device service and accepts bypass key from proxy
+var bypassKey = builder.Configuration["MidiDeviceService:BypassKey"];
+var isProxyMode = !string.IsNullOrWhiteSpace(deviceServiceUrl);
+
+if (!string.IsNullOrWhiteSpace(bypassKey) && !isProxyMode)
+{
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Headers.TryGetValue("X-Bypass-Key", out var headerValue) &&
+            headerValue == bypassKey)
+        {
+            // Mark request as authenticated to bypass JWT validation
+            var claims = new[] { new System.Security.Claims.Claim("bypass", "true") };
+            var identity = new System.Security.Claims.ClaimsIdentity(claims, "BypassKey");
+            context.User = new System.Security.Claims.ClaimsPrincipal(identity);
+        }
+        await next();
+    });
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.AddHealthEndpoints();
 app.AddAuthenticationEndpoints();
 app.AddMidiEndpoints();
 
