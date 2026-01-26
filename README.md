@@ -8,6 +8,7 @@ Midi Layer
   - service running on cluster: handles data requests
 - seed db operation to init midi config in db
 - remove device dependency on PC connection
+- make proxy mode more modular
 
 State Layer?
 - unified state to ensure consistent: UI and db match midi and chat states
