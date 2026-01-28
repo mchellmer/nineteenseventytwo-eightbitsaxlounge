@@ -1,0 +1,6 @@
+#- selectors (size,dual/single mode)
+- Name: ReverbEngine
+  Selections:
+    Name: EchoVerb
+    MidiCCValue: 8
+    etc
