@@ -1,0 +1,8 @@
+# Example selector configuration for ReverbEngine on Ventris Dual Reverb
+# Where midi implementations have discrete values, selectors map names to midi CC values
+selectors:
+- Name: ReverbEngine
+  Selections:
+    - Name: EchoVerb
+      MidiCCValue: 8
+    # There are about 13 reverb engines on the Ventris Dual Reverb each with a set midi CC value

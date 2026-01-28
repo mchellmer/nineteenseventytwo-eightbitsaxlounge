@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Moq;
 
@@ -8,6 +9,7 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
 
 using System.Text.Json;
 
@@ -42,17 +44,26 @@ public class MidiEndpointsTests
         }
     };
 
-    private static Task<IResult> InvokeResetDeviceAsync(ILogger<MidiEndpointsHandler> logger, IMidiDeviceService deviceService, IMidiDataService dataService)
+    private static Task<IResult> InvokeResetDeviceAsync(ILogger<MidiEndpointsHandler> logger, IMidiDeviceService deviceService, IMidiDataService dataService, IOptions<DatabaseOptions>? databaseOptions = null)
     {
         // construct handler directly with DI-style constructor parameters (mocks in tests)
-        var handler = new MidiEndpointsHandler(logger, deviceService, dataService);
+        var dbOpts = databaseOptions ?? Options.Create(new DatabaseOptions { Names = ["devices"] });
+        var handler = new MidiEndpointsHandler(logger, deviceService, dataService, dbOpts);
         return handler.ResetDevice(TestDeviceName);
     }
 
-    private static Task<IResult> InvokeSendCcAsync(ILogger<MidiEndpointsHandler> logger, IMidiDeviceService deviceService, IMidiDataService dataService, string midiConnectName, int address, int value)
+    private static Task<IResult> InvokeSendCcAsync(ILogger<MidiEndpointsHandler> logger, IMidiDeviceService deviceService, IMidiDataService dataService, string midiConnectName, int address, int value, IOptions<DatabaseOptions>? databaseOptions = null)
     {
-        var handler = new MidiEndpointsHandler(logger, deviceService, dataService);
+        var dbOpts = databaseOptions ?? Options.Create(new DatabaseOptions { Names = ["devices"] });
+        var handler = new MidiEndpointsHandler(logger, deviceService, dataService, dbOpts);
         return handler.PostControlChangeMessageToDeviceByMidiConnectName(midiConnectName, address, value);
+    }
+
+    private static Task<IResult> InvokeInitializeDataModelAsync(ILogger<MidiEndpointsHandler> logger, IMidiDataService dataService, IOptions<DatabaseOptions> databaseOptions)
+    {
+        var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var handler = new MidiEndpointsHandler(logger, deviceServiceMock.Object, dataService, databaseOptions);
+        return handler.InitializeDataModel();
     }
 
     private static async Task<(int StatusCode, string Body)> ExecuteResultAsync(IResult result)
@@ -282,5 +293,60 @@ public class MidiEndpointsTests
         Assert.Equal(500, status);
         Assert.Contains("Failed to send Control Change Message", body);
         deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, It.IsAny<ControlChangeMessage>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task InitializeDataModel_Success_Returns200()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        var dbNames = new List<string> { "devices", "effects", "selectors" };
+        var databaseOptions = Options.Create(new DatabaseOptions { Names = dbNames });
+
+        dataServiceMock.Setup(m => m.CreateDatabaseAsync("devices")).Returns(Task.CompletedTask);
+        dataServiceMock.Setup(m => m.CreateDatabaseAsync("effects")).Returns(Task.CompletedTask);
+        dataServiceMock.Setup(m => m.CreateDatabaseAsync("selectors")).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await InvokeInitializeDataModelAsync(loggerMock.Object, dataServiceMock.Object, databaseOptions);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(200, status);
+        Assert.Contains("MIDI data model initialized successfully", body);
+        Assert.Contains("devices", body);
+        Assert.Contains("effects", body);
+        Assert.Contains("selectors", body);
+
+        dataServiceMock.Verify(m => m.CreateDatabaseAsync("devices"), Times.Once);
+        dataServiceMock.Verify(m => m.CreateDatabaseAsync("effects"), Times.Once);
+        dataServiceMock.Verify(m => m.CreateDatabaseAsync("selectors"), Times.Once);
+    }
+
+    [Fact]
+    public async Task InitializeDataModel_DatabaseCreationFails_Returns500()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        var dbNames = new List<string> { "devices", "effects", "selectors" };
+        var databaseOptions = Options.Create(new DatabaseOptions { Names = dbNames });
+
+        dataServiceMock.Setup(m => m.CreateDatabaseAsync("devices"))
+            .ThrowsAsync(new Exception("Database creation failed"));
+
+        // Act
+        var result = await InvokeInitializeDataModelAsync(loggerMock.Object, dataServiceMock.Object, databaseOptions);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(500, status);
+        Assert.Contains("Data model initialization failed", body);
+        Assert.Contains("devices", body);
+
+        dataServiceMock.Verify(m => m.CreateDatabaseAsync("devices"), Times.Once);
     }
 }

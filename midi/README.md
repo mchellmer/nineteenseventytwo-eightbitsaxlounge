@@ -7,6 +7,9 @@ The midi layer interacts with midi devices sending midi messages to set a desire
 - Windows PC: Direct device access via WinMM.dll
 - Request flow: `UI → K8s (JWT) → PC (bypass key) → WinMM → Device`
 
+**Datamodel**
+- See /midi/datamodel/couchdb - this models the midi implementation documented in docs/VentrisDualReverb while being flexible to add similar midi implementations for other devices in the future.
+
 **Authentication:**
 - External requests (UI, clients): JWT token authentication
 - Internal requests (K8s → PC): Bypass key via X-Bypass-Key header

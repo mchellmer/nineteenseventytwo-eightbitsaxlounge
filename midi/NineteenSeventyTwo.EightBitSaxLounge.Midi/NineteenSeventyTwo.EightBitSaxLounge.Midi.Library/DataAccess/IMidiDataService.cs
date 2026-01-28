@@ -4,6 +4,9 @@ namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 
 public interface IMidiDataService
 {
+    // Datamodel Management
+    Task CreateDatabaseAsync(string databaseName);
+    
     // Device Data Management
     Task CreateDeviceAsync(MidiDevice newDevice);
     Task<MidiDevice> GetDeviceByNameAsync(string deviceName);

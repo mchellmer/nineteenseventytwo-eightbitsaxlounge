@@ -29,6 +29,9 @@ if (string.IsNullOrWhiteSpace(authOptions.SecretKey))
     throw new InvalidOperationException("Missing 'Authentication:SecretKey'. Set via user-secrets or environment variable.");
 builder.Services.Configure<AppAuthenticationOptions>(builder.Configuration.GetSection("Authentication"));
 
+// Database configuration
+builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
+
 // Docs
 builder.Services.AddSwaggerGen(opts =>
 {

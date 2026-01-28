@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.0] - TBD
+
+### Added
+- Data endpoints for managing MIDI device metadata and configurations
+- Database initialization endpoint for CouchDB setup
+- Data consistency management between MIDI device state and database
+- Integration with data layer for device, selector, and effect document management
+- Admin endpoints for device configuration and database initialization
+
+### Changed
+- Enhanced MIDI service to maintain data synchronization with CouchDB
+- Updated device operations to persist state changes to database
+
 ## [1.0.7] - 2026-01-23
 
 ### Added

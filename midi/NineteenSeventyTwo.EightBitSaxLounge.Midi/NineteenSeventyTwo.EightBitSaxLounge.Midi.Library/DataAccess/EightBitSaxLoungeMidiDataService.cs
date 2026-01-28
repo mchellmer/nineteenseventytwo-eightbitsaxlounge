@@ -23,6 +23,28 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         _logger = logger;
     }
     
+    public async Task CreateDatabaseAsync(string databaseName)
+    {
+        _logger.LogInformation($"Creating database: {databaseName}");
+        try
+        {
+            await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
+                "PUT",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = databaseName,
+                    RequestBody = null
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Database created: {databaseName}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error creating database {databaseName}: {e.Message}");
+            throw new Exception($"Error creating database {databaseName}: {e.Message}");
+        }
+    }
+    
     public Task CreateDeviceAsync(MidiDevice newDevice)
     {
         throw new NotImplementedException();

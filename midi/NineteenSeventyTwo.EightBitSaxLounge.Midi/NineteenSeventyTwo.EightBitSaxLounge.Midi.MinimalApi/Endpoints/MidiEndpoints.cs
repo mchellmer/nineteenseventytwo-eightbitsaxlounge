@@ -23,8 +23,11 @@ public static class MidiEndpoints
             .WithTags("Device");
 
         // Data endpoints can be added here
-        // e.g., CRUD operations for reverb configs stored in CouchDB
-        // app.MapGet("api/Midi/Configs", ...).WithTags("Data");
-        // app.MapPost("api/Midi/Configs", ...).WithTags("Data");
+        app.MapPost("api/Midi/InitDatamodel",
+                async (MidiEndpointsHandler handler) =>
+                    await handler.InitializeDataModel())
+            .RequireAuthorization()
+            .WithName("InitializeDataModel")
+            .WithTags("Data");
     }
 }
