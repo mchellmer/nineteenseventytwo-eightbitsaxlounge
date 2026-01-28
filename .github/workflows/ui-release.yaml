@@ -95,5 +95,4 @@ jobs:
         TWITCH_TOKEN: ${{ secrets.TWITCH_TOKEN }}
         MIDI_CLIENT_ID: ${{ secrets.MIDI_CLIENT_ID }}
         MIDI_CLIENT_SECRET: ${{ secrets.MIDI_CLIENT_SECRET }}
-        MIDI_DEVICE_URL: ${{ secrets.MIDI_DEVICE_URL }}
       run: make deploy-ui

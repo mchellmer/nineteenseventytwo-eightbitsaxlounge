@@ -33,8 +33,7 @@ Configured commands:
 The 8bsl has several services that handle updating music hardware, state data, etc. Integration with these services is defined in ./src/services.
 
 Configured services:
-- midi_data_client - this handles requests to update midi data inline with UI element state
-- midi_device_client - this handles requests to update midi devices inline with UI element state
+- midi_client - this handles requests to update midi data and devices inline with UI element state
 - twitch_client - handles monitoring token validity
 
 #### App config

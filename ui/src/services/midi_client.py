@@ -12,19 +12,11 @@ class MidiClient:
     Asynchronous HTTP client for the MIDI API service.
     
     Provides methods for making GET and POST requests to the MIDI service.
-    Supports routing to different base URLs based on endpoint type (device vs data).
     """
-    
-    # Endpoints that should route to the device service
-    DEVICE_ENDPOINTS = {
-        'api/token',
-        'api/Midi/SendControlChangeMessage'
-    }
     
     def __init__(
         self, 
-        device_base_url: str,
-        data_base_url: Optional[str] = None,
+        base_url: str,
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
         timeout: int = 5
@@ -33,14 +25,12 @@ class MidiClient:
         Initialize the MIDI client.
         
         Args:
-            device_base_url: Base URL of the MIDI device service
-            data_base_url: Base URL of the MIDI data service (defaults to device_base_url)
+            base_url: Base URL of the MIDI service
             client_id: Client ID for authentication (optional)
             client_secret: Client secret for authentication (optional)
             timeout: Request timeout in seconds (default: 5)
         """
-        self.device_base_url = device_base_url.rstrip('/')
-        self.data_base_url = (data_base_url or device_base_url).rstrip('/')
+        self.base_url = base_url.rstrip('/')
         self.timeout = aiohttp.ClientTimeout(total=timeout)
         self._token: Optional[str] = None
         self._client_id = client_id
@@ -62,8 +52,7 @@ class MidiClient:
         Raises:
             Exception: If the request fails
         """
-        base_url = self._get_base_url(endpoint)
-        url = f"{base_url}/{endpoint.lstrip('/')}"
+        url = f"{self.base_url}/{endpoint.lstrip('/')}"
         
         headers = {}
         if authenticated and self._token:
@@ -104,8 +93,7 @@ class MidiClient:
         Raises:
             Exception: If the request fails
         """
-        base_url = self._get_base_url(endpoint)
-        url = f"{base_url}/{endpoint.lstrip('/')}"
+        url = f"{self.base_url}/{endpoint.lstrip('/')}"
         
         headers = {}
         if authenticated and self._token:
@@ -224,20 +212,4 @@ class MidiClient:
         finally:
             self._authenticating = False
 
-    def _get_base_url(self, endpoint: str) -> str:
-        """
-        Determine which base URL to use based on the endpoint.
-        
-        Args:
-            endpoint: API endpoint path
-            
-        Returns:
-            The appropriate base URL (device or data)
-        """
-        endpoint_clean = endpoint.lstrip('/')
-        
-        for device_endpoint in self.DEVICE_ENDPOINTS:
-            if endpoint_clean.startswith(device_endpoint):
-                return self.device_base_url
-        
-        return self.data_base_url
+

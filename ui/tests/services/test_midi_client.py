@@ -44,8 +44,7 @@ class TestMidiClient:
     def midi_client(self):
         """Create a MIDI client instance for testing."""
         return MidiClient(
-            device_base_url="http://test-device:5000",
-            data_base_url="http://test-data:5001",
+            base_url="http://test-service:8080",
             client_id="test_client",
             client_secret="test_secret",
             timeout=5
@@ -77,8 +76,8 @@ class TestMidiClient:
                 await midi_client.authenticate("bad_client", "bad_secret")
     
     @pytest.mark.asyncio
-    async def test_get_device_endpoint(self, midi_client):
-        """Test GET request to device endpoint."""
+    async def test_get_endpoint(self, midi_client):
+        """Test GET request to any endpoint."""
         mock_response = create_mock_response(
             status=200,
             json_data={"status": "ok"}
@@ -173,17 +172,4 @@ class TestMidiClient:
             
             assert result["success"] is True
     
-    def test_get_base_url_device_endpoint(self, midi_client):
-        """Test base URL selection for device endpoint."""
-        url = midi_client._get_base_url('api/token')
-        assert url == "http://test-device:5000"
-    
-    def test_get_base_url_data_endpoint(self, midi_client):
-        """Test base URL selection for data endpoint."""
-        url = midi_client._get_base_url('api/data/something')
-        assert url == "http://test-data:5001"
-    
-    def test_get_base_url_default(self, midi_client):
-        """Test base URL defaults to data URL for non-device endpoints."""
-        url = midi_client._get_base_url('api/other')
-        assert url == "http://test-data:5001"
+
