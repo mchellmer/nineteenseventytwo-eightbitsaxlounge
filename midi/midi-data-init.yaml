@@ -28,9 +28,16 @@
       no_log: true
       failed_when: false
 
+    - name: Debug token request error
+      ansible.builtin.debug:
+        msg: |
+          Token request failed with return code: {{ token_response.rc }}
+          Error output: {{ token_response.stderr }}
+      when: token_response.rc != 0
+
     - name: Check token request succeeded
       ansible.builtin.fail:
-        msg: "Token request failed. Run with -vvv for details or check pod logs."
+        msg: "Token request failed. See error output above."
       when: token_response.rc != 0
 
     - name: Debug token response on failure
