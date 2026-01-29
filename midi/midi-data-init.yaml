@@ -5,9 +5,23 @@
     k8s_namespace: "{{ lookup('env', 'NAMESPACE') | default('eightbitsaxlounge-dev', true) }}"
     auth_client_id: "{{ lookup('env', 'AUTH_CLIENT_0_ID') }}"
     auth_client_secret: "{{ lookup('env', 'AUTH_CLIENT_0_SECRET') }}"
-    service_url: "http://eightbitsaxlounge-midi-service.{{ k8s_namespace }}.svc.cluster.local:8080"
 
   tasks:
+    - name: Get MIDI service details
+      ansible.builtin.shell: |
+        kubectl get svc -n {{ k8s_namespace }} -l app=eightbitsaxlounge,component=midi -o jsonpath='{.items[0].metadata.name}'
+      register: service_name_result
+      failed_when: service_name_result.stdout == ""
+
+    - name: Get service cluster IP
+      ansible.builtin.shell: |
+        kubectl get svc -n {{ k8s_namespace }} {{ service_name_result.stdout }} -o jsonpath='{.spec.clusterIP}'
+      register: service_ip_result
+
+    - name: Set service URL
+      ansible.builtin.set_fact:
+        service_url: "http://{{ service_ip_result.stdout }}:8080"
+
     - name: Request authentication token
       ansible.builtin.uri:
         url: "{{ service_url }}/api/token"
