@@ -57,7 +57,7 @@
 
     - name: Parse token from response
       ansible.builtin.set_fact:
-        auth_token: "{{ token_response.json.token }}"
+        auth_token: "{{ token_response.json.access_token }}"
       when: token_response.status in [200, 201]
 
     - name: Verify token was parsed
