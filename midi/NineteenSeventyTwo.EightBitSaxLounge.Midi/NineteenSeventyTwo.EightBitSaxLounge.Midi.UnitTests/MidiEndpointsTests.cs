@@ -46,24 +46,34 @@ public class MidiEndpointsTests
 
     private static Task<IResult> InvokeResetDeviceAsync(ILogger<MidiEndpointsHandler> logger, IMidiDeviceService deviceService, IMidiDataService dataService, IOptions<DatabaseOptions>? databaseOptions = null)
     {
-        // construct handler directly with DI-style constructor parameters (mocks in tests)
         var dbOpts = databaseOptions ?? Options.Create(new DatabaseOptions { Names = ["devices"] });
-        var handler = new MidiEndpointsHandler(logger, deviceService, dataService, dbOpts);
+        var effectsOpts = Options.Create(new EffectsOptions());
+        var handler = new MidiEndpointsHandler(logger, deviceService, dataService, dbOpts, effectsOpts);
         return handler.ResetDevice(TestDeviceName);
     }
 
     private static Task<IResult> InvokeSendCcAsync(ILogger<MidiEndpointsHandler> logger, IMidiDeviceService deviceService, IMidiDataService dataService, string midiConnectName, int address, int value, IOptions<DatabaseOptions>? databaseOptions = null)
     {
         var dbOpts = databaseOptions ?? Options.Create(new DatabaseOptions { Names = ["devices"] });
-        var handler = new MidiEndpointsHandler(logger, deviceService, dataService, dbOpts);
+        var effectsOpts = Options.Create(new EffectsOptions());
+        var handler = new MidiEndpointsHandler(logger, deviceService, dataService, dbOpts, effectsOpts);
         return handler.PostControlChangeMessageToDeviceByMidiConnectName(midiConnectName, address, value);
     }
 
     private static Task<IResult> InvokeInitializeDataModelAsync(ILogger<MidiEndpointsHandler> logger, IMidiDataService dataService, IOptions<DatabaseOptions> databaseOptions)
     {
         var deviceServiceMock = new Mock<IMidiDeviceService>();
-        var handler = new MidiEndpointsHandler(logger, deviceServiceMock.Object, dataService, databaseOptions);
+        var effectsOpts = Options.Create(new EffectsOptions());
+        var handler = new MidiEndpointsHandler(logger, deviceServiceMock.Object, dataService, databaseOptions, effectsOpts);
         return handler.InitializeDataModel();
+    }
+
+    private static Task<IResult> InvokeUploadEffectsAsync(ILogger<MidiEndpointsHandler> logger, IMidiDataService dataService, IOptions<EffectsOptions> effectsOptions, IOptions<DatabaseOptions>? databaseOptions = null)
+    {
+        var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var dbOpts = databaseOptions ?? Options.Create(new DatabaseOptions { Names = ["effects"] });
+        var handler = new MidiEndpointsHandler(logger, deviceServiceMock.Object, dataService, dbOpts, effectsOptions);
+        return handler.UploadEffects();
     }
 
     private static async Task<(int StatusCode, string Body)> ExecuteResultAsync(IResult result)
@@ -349,4 +359,293 @@ public class MidiEndpointsTests
 
         dataServiceMock.Verify(m => m.CreateDatabaseAsync("devices"), Times.Once);
     }
+
+    [Fact]
+    public async Task UploadEffects_NoEffectsInConfig_Returns200()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        var effectsOptions = Options.Create(new EffectsOptions { Effects = new List<Effect>() });
+
+        // Act
+        var result = await InvokeUploadEffectsAsync(loggerMock.Object, dataServiceMock.Object, effectsOptions);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(200, status);
+        Assert.Contains("No effects found in configuration", body);
+
+        dataServiceMock.Verify(m => m.GetAllEffectsAsync(), Times.Never);
+        dataServiceMock.Verify(m => m.CreateEffectAsync(It.IsAny<string>(), It.IsAny<Effect>()), Times.Never);
+        dataServiceMock.Verify(m => m.UpdateEffectByNameAsync(It.IsAny<string>(), It.IsAny<Effect>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UploadEffects_AllNewEffects_CreatesAll()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        var effects = new List<Effect>
+        {
+            new() { Name = "Reverb", Description = "Reverb effect" },
+            new() { Name = "Delay", Description = "Delay effect" },
+            new() { Name = "Chorus", Description = "Chorus effect" }
+        };
+
+        var effectsOptions = Options.Create(new EffectsOptions { Effects = effects });
+
+        // Empty database - no existing effects
+        dataServiceMock.Setup(m => m.GetAllEffectsAsync()).ReturnsAsync(new List<Effect>());
+
+        dataServiceMock.Setup(m => m.CreateEffectAsync("Reverb", It.IsAny<Effect>())).Returns(Task.CompletedTask);
+        dataServiceMock.Setup(m => m.CreateEffectAsync("Delay", It.IsAny<Effect>())).Returns(Task.CompletedTask);
+        dataServiceMock.Setup(m => m.CreateEffectAsync("Chorus", It.IsAny<Effect>())).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await InvokeUploadEffectsAsync(loggerMock.Object, dataServiceMock.Object, effectsOptions);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(200, status);
+        Assert.Contains("Created: 3", body);
+        Assert.Contains("Updated: 0", body);
+
+        dataServiceMock.Verify(m => m.GetAllEffectsAsync(), Times.Once);
+        dataServiceMock.Verify(m => m.CreateEffectAsync("Reverb", It.Is<Effect>(e => e.Name == "Reverb")), Times.Once);
+        dataServiceMock.Verify(m => m.CreateEffectAsync("Delay", It.Is<Effect>(e => e.Name == "Delay")), Times.Once);
+        dataServiceMock.Verify(m => m.CreateEffectAsync("Chorus", It.Is<Effect>(e => e.Name == "Chorus")), Times.Once);
+        dataServiceMock.Verify(m => m.UpdateEffectByNameAsync(It.IsAny<string>(), It.IsAny<Effect>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UploadEffects_AllExistingEffects_UpdatesAll()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        var effects = new List<Effect>
+        {
+            new() { Name = "Reverb", Description = "Updated reverb effect" },
+            new() { Name = "Delay", Description = "Updated delay effect" }
+        };
+
+        var effectsOptions = Options.Create(new EffectsOptions { Effects = effects });
+
+        // Existing effects in database
+        var existingEffects = new List<Effect>
+        {
+            new() { Name = "Reverb", Description = "Old reverb effect" },
+            new() { Name = "Delay", Description = "Old delay effect" }
+        };
+
+        dataServiceMock.Setup(m => m.GetAllEffectsAsync()).ReturnsAsync(existingEffects);
+
+        dataServiceMock.Setup(m => m.UpdateEffectByNameAsync("Reverb", It.IsAny<Effect>())).Returns(Task.CompletedTask);
+        dataServiceMock.Setup(m => m.UpdateEffectByNameAsync("Delay", It.IsAny<Effect>())).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await InvokeUploadEffectsAsync(loggerMock.Object, dataServiceMock.Object, effectsOptions);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(200, status);
+        Assert.Contains("Created: 0", body);
+        Assert.Contains("Updated: 2", body);
+
+        dataServiceMock.Verify(m => m.GetAllEffectsAsync(), Times.Once);
+        dataServiceMock.Verify(m => m.UpdateEffectByNameAsync("Reverb", It.Is<Effect>(e => e.Description == "Updated reverb effect")), Times.Once);
+        dataServiceMock.Verify(m => m.UpdateEffectByNameAsync("Delay", It.Is<Effect>(e => e.Description == "Updated delay effect")), Times.Once);
+        dataServiceMock.Verify(m => m.CreateEffectAsync(It.IsAny<string>(), It.IsAny<Effect>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UploadEffects_MixedEffects_CreatesAndUpdates()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        var effects = new List<Effect>
+        {
+            new() { Name = "Reverb", Description = "Updated reverb effect" },
+            new() { Name = "Delay", Description = "New delay effect" },
+            new() { Name = "Chorus", Description = "New chorus effect" }
+        };
+
+        var effectsOptions = Options.Create(new EffectsOptions { Effects = effects });
+
+        // Only Reverb exists in database
+        var existingEffects = new List<Effect>
+        {
+            new() { Name = "Reverb", Description = "Old reverb effect" }
+        };
+
+        dataServiceMock.Setup(m => m.GetAllEffectsAsync()).ReturnsAsync(existingEffects);
+
+        dataServiceMock.Setup(m => m.UpdateEffectByNameAsync("Reverb", It.IsAny<Effect>())).Returns(Task.CompletedTask);
+        dataServiceMock.Setup(m => m.CreateEffectAsync("Delay", It.IsAny<Effect>())).Returns(Task.CompletedTask);
+        dataServiceMock.Setup(m => m.CreateEffectAsync("Chorus", It.IsAny<Effect>())).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await InvokeUploadEffectsAsync(loggerMock.Object, dataServiceMock.Object, effectsOptions);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(200, status);
+        Assert.Contains("Created: 2", body);
+        Assert.Contains("Updated: 1", body);
+
+        dataServiceMock.Verify(m => m.GetAllEffectsAsync(), Times.Once);
+        dataServiceMock.Verify(m => m.UpdateEffectByNameAsync("Reverb", It.IsAny<Effect>()), Times.Once);
+        dataServiceMock.Verify(m => m.CreateEffectAsync("Delay", It.IsAny<Effect>()), Times.Once);
+        dataServiceMock.Verify(m => m.CreateEffectAsync("Chorus", It.IsAny<Effect>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UploadEffects_DatabaseEmpty_CreatesAll()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        var effects = new List<Effect>
+        {
+            new() { Name = "Reverb", Description = "Reverb effect" }
+        };
+
+        var effectsOptions = Options.Create(new EffectsOptions { Effects = effects });
+
+        // GetAllEffectsAsync throws (database doesn't exist or is empty)
+        dataServiceMock.Setup(m => m.GetAllEffectsAsync()).ThrowsAsync(new Exception("Database empty"));
+
+        dataServiceMock.Setup(m => m.CreateEffectAsync("Reverb", It.IsAny<Effect>())).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await InvokeUploadEffectsAsync(loggerMock.Object, dataServiceMock.Object, effectsOptions);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(200, status);
+        Assert.Contains("Created: 1", body);
+
+        dataServiceMock.Verify(m => m.GetAllEffectsAsync(), Times.Once);
+        dataServiceMock.Verify(m => m.CreateEffectAsync("Reverb", It.IsAny<Effect>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UploadEffects_CreateFails_Returns500WithErrors()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        var effects = new List<Effect>
+        {
+            new() { Name = "Reverb", Description = "Reverb effect" },
+            new() { Name = "Delay", Description = "Delay effect" }
+        };
+
+        var effectsOptions = Options.Create(new EffectsOptions { Effects = effects });
+
+        dataServiceMock.Setup(m => m.GetAllEffectsAsync()).ReturnsAsync(new List<Effect>());
+
+        dataServiceMock.Setup(m => m.CreateEffectAsync("Reverb", It.IsAny<Effect>()))
+            .ThrowsAsync(new Exception("Create failed"));
+        dataServiceMock.Setup(m => m.CreateEffectAsync("Delay", It.IsAny<Effect>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await InvokeUploadEffectsAsync(loggerMock.Object, dataServiceMock.Object, effectsOptions);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(500, status);
+        Assert.Contains("Effects upload completed with errors", body);
+        Assert.Contains("Created: 1", body);
+        Assert.Contains("Failed: 1", body);
+        Assert.Contains("Reverb", body);
+
+        dataServiceMock.Verify(m => m.CreateEffectAsync("Reverb", It.IsAny<Effect>()), Times.Once);
+        dataServiceMock.Verify(m => m.CreateEffectAsync("Delay", It.IsAny<Effect>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UploadEffects_UpdateFails_Returns500WithErrors()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        var effects = new List<Effect>
+        {
+            new() { Name = "Reverb", Description = "Updated reverb effect" }
+        };
+
+        var effectsOptions = Options.Create(new EffectsOptions { Effects = effects });
+
+        var existingEffects = new List<Effect>
+        {
+            new() { Name = "Reverb", Description = "Old reverb effect" }
+        };
+
+        dataServiceMock.Setup(m => m.GetAllEffectsAsync()).ReturnsAsync(existingEffects);
+
+        dataServiceMock.Setup(m => m.UpdateEffectByNameAsync("Reverb", It.IsAny<Effect>()))
+            .ThrowsAsync(new Exception("Update failed"));
+
+        // Act
+        var result = await InvokeUploadEffectsAsync(loggerMock.Object, dataServiceMock.Object, effectsOptions);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(500, status);
+        Assert.Contains("Effects upload completed with errors", body);
+        Assert.Contains("Failed: 1", body);
+        Assert.Contains("Reverb", body);
+
+        dataServiceMock.Verify(m => m.UpdateEffectByNameAsync("Reverb", It.IsAny<Effect>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UploadEffects_CaseInsensitiveMatch_Updates()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+
+        var effects = new List<Effect>
+        {
+            new() { Name = "REVERB", Description = "Updated reverb effect" }
+        };
+
+        var effectsOptions = Options.Create(new EffectsOptions { Effects = effects });
+
+        // Existing effect with different case
+        var existingEffects = new List<Effect>
+        {
+            new() { Name = "reverb", Description = "Old reverb effect" }
+        };
+
+        dataServiceMock.Setup(m => m.GetAllEffectsAsync()).ReturnsAsync(existingEffects);
+
+        dataServiceMock.Setup(m => m.UpdateEffectByNameAsync("REVERB", It.IsAny<Effect>())).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await InvokeUploadEffectsAsync(loggerMock.Object, dataServiceMock.Object, effectsOptions);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(200, status);
+        Assert.Contains("Updated: 1", body);
+        Assert.Contains("Created: 0", body);
+
+        dataServiceMock.Verify(m => m.UpdateEffectByNameAsync("REVERB", It.IsAny<Effect>()), Times.Once);
+        dataServiceMock.Verify(m => m.CreateEffectAsync(It.IsAny<string>(), It.IsAny<Effect>()), Times.Never);
+    }
 }
+

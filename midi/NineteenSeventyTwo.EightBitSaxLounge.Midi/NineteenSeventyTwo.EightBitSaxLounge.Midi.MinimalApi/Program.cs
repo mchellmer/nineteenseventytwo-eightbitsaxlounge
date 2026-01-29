@@ -15,6 +15,9 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add additional configuration files
+builder.Configuration.AddJsonFile("appsettings.Effects.json", optional: false, reloadOnChange: true);
+
 // Configure logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
@@ -31,6 +34,9 @@ builder.Services.Configure<AppAuthenticationOptions>(builder.Configuration.GetSe
 
 // Database configuration
 builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
+
+// Effects configuration
+builder.Services.Configure<EffectsOptions>(builder.Configuration.GetSection(EffectsOptions.SectionName));
 
 // Docs
 builder.Services.AddSwaggerGen(opts =>

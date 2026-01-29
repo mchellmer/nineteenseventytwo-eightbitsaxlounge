@@ -137,9 +137,26 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         throw new NotImplementedException();
     }
 
-    public Task CreateEffectAsync(string effectName, Effect newEffect)
+    public async Task CreateEffectAsync(string effectName, Effect newEffect)
     {
-        throw new NotImplementedException();
+        _logger.LogInformation($"Creating effect: {effectName}");
+        try
+        {
+            await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
+                "POST",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = "effects",
+                    RequestBody = newEffect
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Effect created: {effectName}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error creating effect {effectName}: {e.Message}");
+            throw new Exception($"Error creating effect {effectName}: {e.Message}");
+        }
     }
 
     public async Task<Effect> GetEffectByNameAsync(string effectName)
@@ -178,9 +195,49 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         }
     }
 
-    public Task UpdateEffectByNameAsync(string effectName, Effect updatedEffect)
+    public async Task<List<Effect>> GetAllEffectsAsync()
     {
-        throw new NotImplementedException();
+        _logger.LogInformation("Retrieving all effects");
+        try
+        {
+            var effects = await _eightBitSaxLoungeMidiDataAccess.LoadDataAsync<Effect, EightBitSaxLoungeDataRequest>(
+                "GET",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = "effects/docs",
+                    RequestBody = null
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Retrieved {effects.Count} effects successfully.");
+            return effects;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error retrieving all effects: {e.Message}");
+            throw new Exception($"Error retrieving all effects: {e.Message}");
+        }
+    }
+
+    public async Task UpdateEffectByNameAsync(string effectName, Effect updatedEffect)
+    {
+        _logger.LogInformation($"Updating effect: {effectName}");
+        try
+        {
+            await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
+                "PUT",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = $"effects/{effectName}",
+                    RequestBody = updatedEffect
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Effect updated: {effectName}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error updating effect {effectName}: {e.Message}");
+            throw new Exception($"Error updating effect {effectName}: {e.Message}");
+        }
     }
 
     public Task DeleteEffectByNameAsync(string effectName)

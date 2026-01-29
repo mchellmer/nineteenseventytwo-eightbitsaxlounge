@@ -1,5 +1,6 @@
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
 using Microsoft.Extensions.Options;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
 
@@ -11,17 +12,20 @@ public class MidiEndpointsHandler
     private readonly IMidiDeviceService _midiDeviceService;
     private readonly IMidiDataService _midiDataService;
     private readonly IOptions<DatabaseOptions> _databaseOptions;
+    private readonly IOptions<EffectsOptions> _effectsOptions;
 
     public MidiEndpointsHandler(
         ILogger<MidiEndpointsHandler> logger, 
         IMidiDeviceService midiDeviceService, 
         IMidiDataService midiDataService,
-        IOptions<DatabaseOptions> databaseOptions)
+        IOptions<DatabaseOptions> databaseOptions,
+        IOptions<EffectsOptions> effectsOptions)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _midiDeviceService = midiDeviceService ?? throw new ArgumentNullException(nameof(midiDeviceService));
         _midiDataService = midiDataService ?? throw new ArgumentNullException(nameof(midiDataService));
         _databaseOptions = databaseOptions ?? throw new ArgumentNullException(nameof(databaseOptions));
+        _effectsOptions = effectsOptions ?? throw new ArgumentNullException(nameof(effectsOptions));
     }
 
     /// <summary>
@@ -53,6 +57,99 @@ public class MidiEndpointsHandler
         }
         
         return Results.Ok(new { Message = $"MIDI data model initialized successfully. Databases created: {string.Join(", ", databases)}" } );
+    }
+    
+    /// <summary>
+    /// Uploads effects from appsettings.Effects.json to the effects database.
+    /// Gets all existing effects, then for each effect in config:
+    /// - If exists, update it
+    /// - If not exists, create it
+    /// </summary>
+    public async Task<IResult> UploadEffects()
+    {
+        _logger.LogInformation("Starting effects upload");
+        
+        var effectsFromConfig = _effectsOptions.Value.Effects;
+        if (effectsFromConfig.Count == 0)
+        {
+            _logger.LogWarning("No effects found in configuration");
+            return Results.Ok(new { Message = "No effects found in configuration to upload" });
+        }
+
+        _logger.LogInformation($"Found {effectsFromConfig.Count} effects in configuration");
+
+        try
+        {
+            // Get all existing effects from database
+            List<Effect> existingEffects;
+            try
+            {
+                existingEffects = await _midiDataService.GetAllEffectsAsync();
+                _logger.LogInformation($"Retrieved {existingEffects.Count} existing effects from database");
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning($"Could not retrieve existing effects (database may be empty): {e.Message}");
+                existingEffects = new List<Effect>();
+            }
+
+            int created = 0;
+            int updated = 0;
+            int failed = 0;
+            var errors = new List<string>();
+
+            foreach (var effect in effectsFromConfig)
+            {
+                try
+                {
+                    var existingEffect = existingEffects.FirstOrDefault(e => 
+                        e.Name.Equals(effect.Name, StringComparison.OrdinalIgnoreCase));
+
+                    if (existingEffect != null)
+                    {
+                        _logger.LogInformation($"Updating effect: {effect.Name}");
+                        await _midiDataService.UpdateEffectByNameAsync(effect.Name, effect);
+                        updated++;
+                        _logger.LogInformation($"Effect updated successfully: {effect.Name}");
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"Creating effect: {effect.Name}");
+                        await _midiDataService.CreateEffectAsync(effect.Name, effect);
+                        created++;
+                        _logger.LogInformation($"Effect created successfully: {effect.Name}");
+                    }
+                }
+                catch (Exception e)
+                {
+                    failed++;
+                    var errorMsg = $"Failed to process effect '{effect.Name}': {e.Message}";
+                    _logger.LogError(e, errorMsg);
+                    errors.Add(errorMsg);
+                }
+            }
+
+            var summary = $"Effects upload completed. Created: {created}, Updated: {updated}, Failed: {failed}";
+            _logger.LogInformation(summary);
+
+            if (failed > 0)
+            {
+                return Results.Problem(
+                    detail: $"{summary}. Errors: {string.Join("; ", errors)}",
+                    title: "Effects upload completed with errors",
+                    statusCode: 500);
+            }
+
+            return Results.Ok(new { Message = summary, Created = created, Updated = updated });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during effects upload");
+            return Results.Problem(
+                detail: $"Effects upload failed: {ex.Message}",
+                title: "Effects upload failed",
+                statusCode: 500);
+        }
     }
     
     public async Task<IResult> ResetDevice(string deviceName)

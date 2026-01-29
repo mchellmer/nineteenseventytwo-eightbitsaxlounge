@@ -29,5 +29,12 @@ public static class MidiEndpoints
             .RequireAuthorization()
             .WithName("InitializeDataModel")
             .WithTags("Data");
+        
+        app.MapPost("api/Midi/UploadEffects",
+            async (MidiEndpointsHandler handler) =>
+                await handler.UploadEffects())
+            .RequireAuthorization()
+            .WithName("UploadEffects")
+            .WithTags("Data");
     }
 }

@@ -2,6 +2,7 @@
 # Consider an effects pedal that can be turned on/off and has effects you can adjust via knobs
 ventrisdualreverb:
   Name: VentrisDualReverb
+  MidiConnectName: One Series Ventris Dual Reverb
   Description: Reverb effects pedal with two engines.
   Active: true
 

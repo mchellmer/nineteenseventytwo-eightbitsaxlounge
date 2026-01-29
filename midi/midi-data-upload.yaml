@@ -1,0 +1,70 @@
+---
+- name: Upload MIDI Data
+  hosts: master
+  vars:
+    namespace: "{{ lookup('env', 'NAMESPACE') | default('eightbitsaxlounge', true) }}"
+    upload_type: "{{ lookup('env', 'UPLOAD_TYPE') | default('effects', true) }}"
+    auth_client_id: "{{ lookup('env', 'AUTH_CLIENT_0_ID') }}"
+    auth_client_secret: "{{ lookup('env', 'AUTH_CLIENT_0_SECRET') }}"
+    pod_label: "app=eightbitsaxlounge-midi"
+
+  tasks:
+    - name: Get MIDI pod name
+      ansible.builtin.shell: |
+        kubectl get pod -n {{ namespace }} -l {{ pod_label }} -o jsonpath='{.items[0].metadata.name}'
+      register: pod_name_result
+      failed_when: pod_name_result.stdout == ""
+
+    - name: Set pod name fact
+      ansible.builtin.set_fact:
+        midi_pod: "{{ pod_name_result.stdout }}"
+
+    - name: Request authentication token
+      ansible.builtin.shell: |
+        kubectl exec -n {{ namespace }} {{ midi_pod }} -- \
+          curl -s -X POST http://localhost:8080/api/token \
+          -H "Content-Type: application/json" \
+          -d '{"clientId":"{{ auth_client_id }}","clientSecret":"{{ auth_client_secret }}"}'
+      register: token_response
+      no_log: true
+
+    - name: Parse token from response
+      ansible.builtin.set_fact:
+        auth_token: "{{ (token_response.stdout | from_json).token }}"
+      no_log: true
+
+    - name: Determine endpoint based on upload type
+      ansible.builtin.set_fact:
+        endpoint: "{{ 'UploadEffects' if upload_type == 'effects' else 'UploadDevices' }}"
+
+    - name: Upload {{ upload_type }} data
+      ansible.builtin.shell: |
+        kubectl exec -n {{ namespace }} {{ midi_pod }} -- \
+          curl -s -X POST http://localhost:8080/api/Midi/{{ endpoint }} \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer {{ auth_token }}" \
+          -w "\n%{http_code}"
+      register: upload_result
+      no_log: false
+
+    - name: Parse response
+      ansible.builtin.set_fact:
+        response_body: "{{ upload_result.stdout_lines[:-1] | join('\n') }}"
+        status_code: "{{ upload_result.stdout_lines[-1] }}"
+
+    - name: Display upload result
+      ansible.builtin.debug:
+        msg: "{{ upload_type | capitalize }} upload completed successfully (HTTP {{ status_code }})"
+      when: status_code in ['200', '201', '204']
+
+    - name: Display response body on success
+      ansible.builtin.debug:
+        msg: "{{ response_body }}"
+      when: 
+        - status_code in ['200', '201', '204']
+        - response_body | length > 0
+
+    - name: Fail if upload failed
+      ansible.builtin.fail:
+        msg: "{{ upload_type | capitalize }} upload failed with status {{ status_code }}: {{ response_body }}"
+      when: status_code not in ['200', '201', '204']
