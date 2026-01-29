@@ -5,81 +5,42 @@
     k8s_namespace: "{{ lookup('env', 'NAMESPACE') | default('eightbitsaxlounge-dev', true) }}"
     auth_client_id: "{{ lookup('env', 'AUTH_CLIENT_0_ID') }}"
     auth_client_secret: "{{ lookup('env', 'AUTH_CLIENT_0_SECRET') }}"
-    pod_label: "app=eightbitsaxlounge,component=midi"
+    service_url: "http://eightbitsaxlounge-midi-service.{{ k8s_namespace }}.svc.cluster.local:8080"
 
   tasks:
-    - name: Get MIDI pod name
-      ansible.builtin.shell: |
-        kubectl get pod -n {{ k8s_namespace }} -l {{ pod_label }} -o jsonpath='{.items[0].metadata.name}'
-      register: pod_name_result
-      failed_when: pod_name_result.stdout == ""
-
-    - name: Set pod name fact
-      ansible.builtin.set_fact:
-        midi_pod: "{{ pod_name_result.stdout }}"
-
     - name: Request authentication token
-      ansible.builtin.shell: |
-        kubectl exec -n {{ k8s_namespace }} {{ midi_pod }} -- \
-          curl -s -X POST http://localhost:8080/api/token \
-          -H "Content-Type: application/json" \
-          -d '{"clientId":"{{ auth_client_id }}","clientSecret":"{{ auth_client_secret }}"}'
+      ansible.builtin.uri:
+        url: "{{ service_url }}/api/token"
+        method: POST
+        body_format: json
+        body:
+          clientId: "{{ auth_client_id }}"
+          clientSecret: "{{ auth_client_secret }}"
+        status_code: [200, 201]
+        return_content: yes
       register: token_response
       no_log: true
-      failed_when: false
-
-    - name: Debug token request error
-      ansible.builtin.debug:
-        msg: |
-          Token request failed with return code: {{ token_response.rc }}
-          Error output: {{ token_response.stderr }}
-      when: token_response.rc != 0
-
-    - name: Check token request succeeded
-      ansible.builtin.fail:
-        msg: "Token request failed. See error output above."
-      when: token_response.rc != 0
-
-    - name: Debug token response on failure
-      ansible.builtin.debug:
-        msg: "Token response: {{ token_response.stdout }}"
-      when: 
-        - token_response.rc == 0
-        - (token_response.stdout | from_json).token is not defined
-      no_log: false
 
     - name: Parse token from response
       ansible.builtin.set_fact:
-        auth_token: "{{ (token_response.stdout | from_json).token }}"
+        auth_token: "{{ token_response.json.token }}"
       no_log: true
 
     - name: Initialize datamodel
-      ansible.builtin.shell: |
-        kubectl exec -n {{ k8s_namespace }} {{ midi_pod }} -- \
-          curl -s -X POST http://localhost:8080/api/Midi/InitDatamodel \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer {{ auth_token }}" \
-          -w "\n%{http_code}"
+      ansible.builtin.uri:
+        url: "{{ service_url }}/api/Midi/InitDatamodel"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ auth_token }}"
+        status_code: [200, 201, 204]
+        return_content: yes
       register: init_result
-
-    - name: Parse response
-      ansible.builtin.set_fact:
-        response_body: "{{ init_result.stdout_lines[:-1] | join('\n') }}"
-        status_code: "{{ init_result.stdout_lines[-1] }}"
 
     - name: Display initialization result
       ansible.builtin.debug:
-        msg: "Datamodel initialization completed successfully (HTTP {{ status_code }})"
-      when: status_code in ['200', '201', '204']
+        msg: "Datamodel initialization completed successfully (HTTP {{ init_result.status }})"
 
     - name: Display response body on success
       ansible.builtin.debug:
-        msg: "{{ response_body }}"
-      when: 
-        - status_code in ['200', '201', '204']
-        - response_body | length > 0
-
-    - name: Fail if initialization failed
-      ansible.builtin.fail:
-        msg: "Datamodel initialization failed with status {{ status_code }}: {{ response_body }}"
-      when: status_code not in ['200', '201', '204']
+        msg: "{{ init_result.content }}"
+      when: init_result.content | length > 0
