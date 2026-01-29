@@ -27,6 +27,20 @@
           -d '{"clientId":"{{ auth_client_id }}","clientSecret":"{{ auth_client_secret }}"}'
       register: token_response
       no_log: true
+      failed_when: false
+
+    - name: Check token request succeeded
+      ansible.builtin.fail:
+        msg: "Token request failed. Run with -vvv for details or check pod logs."
+      when: token_response.rc != 0
+
+    - name: Debug token response on failure
+      ansible.builtin.debug:
+        msg: "Token response: {{ token_response.stdout }}"
+      when: 
+        - token_response.rc == 0
+        - (token_response.stdout | from_json).token is not defined
+      no_log: false
 
     - name: Parse token from response
       ansible.builtin.set_fact:
