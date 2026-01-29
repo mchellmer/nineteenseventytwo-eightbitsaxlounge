@@ -2,15 +2,15 @@
 - name: Initialize MIDI Datamodel
   hosts: master
   vars:
-    namespace: "{{ lookup('env', 'NAMESPACE') | default('eightbitsaxlounge', true) }}"
+    k8s_namespace: "{{ lookup('env', 'NAMESPACE') | default('eightbitsaxlounge-dev', true) }}"
     auth_client_id: "{{ lookup('env', 'AUTH_CLIENT_0_ID') }}"
     auth_client_secret: "{{ lookup('env', 'AUTH_CLIENT_0_SECRET') }}"
-    pod_label: "app=eightbitsaxlounge-midi"
+    pod_label: "app=eightbitsaxlounge,component=midi"
 
   tasks:
     - name: Get MIDI pod name
       ansible.builtin.shell: |
-        kubectl get pod -n {{ namespace }} -l {{ pod_label }} -o jsonpath='{.items[0].metadata.name}'
+        kubectl get pod -n {{ k8s_namespace }} -l {{ pod_label }} -o jsonpath='{.items[0].metadata.name}'
       register: pod_name_result
       failed_when: pod_name_result.stdout == ""
 
@@ -20,7 +20,7 @@
 
     - name: Request authentication token
       ansible.builtin.shell: |
-        kubectl exec -n {{ namespace }} {{ midi_pod }} -- \
+        kubectl exec -n {{ k8s_namespace }} {{ midi_pod }} -- \
           curl -s -X POST http://localhost:8080/api/token \
           -H "Content-Type: application/json" \
           -d '{"clientId":"{{ auth_client_id }}","clientSecret":"{{ auth_client_secret }}"}'
@@ -34,7 +34,7 @@
 
     - name: Initialize datamodel
       ansible.builtin.shell: |
-        kubectl exec -n {{ namespace }} {{ midi_pod }} -- \
+        kubectl exec -n {{ k8s_namespace }} {{ midi_pod }} -- \
           curl -s -X POST http://localhost:8080/api/Midi/InitDatamodel \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer {{ auth_token }}" \
