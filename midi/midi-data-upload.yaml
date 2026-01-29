@@ -21,6 +21,20 @@
         return_content: yes
       register: token_response
       no_log: true
+      failed_when: false
+
+    - name: Show token request error
+      ansible.builtin.debug:
+        msg: |
+          Token request failed!
+          Status: {{ token_response.status | default('N/A') }}
+          Message: {{ token_response.msg | default('N/A') }}
+      when: token_response.status is defined and token_response.status not in [200, 201]
+
+    - name: Fail on token request error
+      ansible.builtin.fail:
+        msg: "Failed to obtain authentication token. See error above."
+      when: token_response.status is defined and token_response.status not in [200, 201]
 
     - name: Parse token from response
       ansible.builtin.set_fact:
