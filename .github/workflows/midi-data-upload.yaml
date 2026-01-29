@@ -1,0 +1,39 @@
+name: MIDI Data Upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_type:
+        description: 'Type of data to upload'
+        required: true
+        default: 'effects'
+        type: choice
+        options:
+          - effects
+          - devices
+
+jobs:
+  upload-data:
+    name: Upload MIDI Data
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: ./midi
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Namespace Based on Branch
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
+          else
+            echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
+          fi
+
+      - name: Run Data Upload
+        run: make data-upload UPLOAD_TYPE=${{ github.event.inputs.upload_type }}
+        env:
+          NAMESPACE: ${{ env.NAMESPACE }}
+          AUTH_CLIENT_0_ID: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTID }}
+          AUTH_CLIENT_0_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTSECRET }}
