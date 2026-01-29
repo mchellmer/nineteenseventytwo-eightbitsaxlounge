@@ -1,0 +1,17 @@
+name: Midi Data Upload
+
+on:
+  workflow_dispatch: # allows manual trigger from GitHub UI
+#  push: # unsuppress and adjust to some test branch then push a test commit to test cicd
+#        branches:
+#        - testbranch
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Make Deploy
+        run: make test-system
