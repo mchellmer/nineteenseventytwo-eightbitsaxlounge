@@ -49,10 +49,20 @@
         msg: "Failed to obtain authentication token. See error above."
       when: token_response.status is defined and token_response.status not in [200, 201]
 
+    - name: Debug token response structure
+      ansible.builtin.debug:
+        msg: "Token response: {{ token_response.json }}"
+      when: token_response.status in [200, 201]
+
     - name: Parse token from response
       ansible.builtin.set_fact:
         auth_token: "{{ token_response.json.token }}"
-      no_log: true
+      when: token_response.status in [200, 201]
+
+    - name: Verify token was parsed
+      ansible.builtin.fail:
+        msg: "Token not found in response. Check response structure above."
+      when: auth_token is not defined or auth_token == ""
 
     - name: Initialize datamodel
       ansible.builtin.uri:

@@ -10,14 +10,14 @@ deploy-midi-api:
 	ansible-playbook midi-api-deploy.yaml
 
 data-init:
-	ansible-playbook midi-data-init.yaml
+	ansible-playbook midi-data-init.yaml -vv
 
 data-upload:
 	@if [ -z "$(UPLOAD_TYPE)" ]; then \
 		echo "Error: UPLOAD_TYPE not set. Use: make data-upload UPLOAD_TYPE=effects|devices"; \
 		exit 1; \
 	fi
-	UPLOAD_TYPE=$(UPLOAD_TYPE) ansible-playbook midi-data-upload.yaml
+	UPLOAD_TYPE=$(UPLOAD_TYPE) ansible-playbook midi-data-upload.yaml -vv
 
 docker-build:
 	docker build -t eightbitsaxlounge-midi .
