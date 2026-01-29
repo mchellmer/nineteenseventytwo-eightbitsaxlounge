@@ -18,7 +18,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="appsettings.Devices.VentrisDualReverb.json" />
+      <None Include="appsettings.Devices.VentrisDualReverb.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Include="appsettings.Effects.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>
