@@ -85,6 +85,34 @@ public class MidiEndpointsTests
         return handler.UploadDevice(deviceName);
     }
 
+    [Fact]
+    public async Task UploadDevice_VentrisDualReverbJson_IsVaild()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+        
+        // Mock data service to return existing effects for the Ventris Dual Reverb upload
+        // The real JSON has effects like "Room", "Hall", "EDome", etc.
+        dataServiceMock.Setup(m => m.GetEffectByNameAsync(It.IsAny<string>()))
+            .ReturnsAsync((string name) => new Effect { Name = name, Description = "Test Description" });
+        
+        dataServiceMock.Setup(m => m.GetDeviceByNameAsync(It.IsAny<string>())).ReturnsAsync((MidiDevice)null);
+        dataServiceMock.Setup(m => m.GetSelectorByNameAsync(It.IsAny<string>())).ReturnsAsync((Selector)null);
+
+        // Act
+        var result = await InvokeUploadDeviceAsync(loggerMock.Object, dataServiceMock.Object, "VentrisDualReverb");
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        if (status != 200)
+        {
+            throw new Exception($"Test failed with status {status}. Body: {body}");
+        }
+        Assert.Equal(200, status);
+        Assert.Contains("uploaded successfully", body);
+    }
+
     private static async Task<(int StatusCode, string Body)> ExecuteResultAsync(IResult result)
     {
         // Try to extract common properties without executing the result (avoids needing RequestServices)

@@ -216,42 +216,60 @@ public class MidiEndpointsHandler
             // 3. Populate 'effects' database
             if (deviceUploadWrapper.Effects != null)
             {
-                foreach (var effect in deviceUploadWrapper.Effects)
+                var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                foreach (var effectElement in deviceUploadWrapper.Effects)
                 {
-                    var existingEffect = await _midiDataService.GetEffectByNameAsync(effect.Name);
-                    if (existingEffect != null)
+                    if (effectElement.TryGetProperty("Name", out var nameElement))
                     {
-                        // Merge DeviceSettings if they exist
-                        if (effect.DeviceSettings != null)
+                        var effectName = nameElement.GetString();
+                        if (string.IsNullOrEmpty(effectName)) continue;
+
+                        var existingEffect = await _midiDataService.GetEffectByNameAsync(effectName);
+                        if (existingEffect != null)
                         {
-                            existingEffect.DeviceSettings ??= new List<DeviceSetting>();
-                            foreach (var newSetting in effect.DeviceSettings)
+                            // Merge DeviceSettings if they exist in JSON
+                            if (effectElement.TryGetProperty("DeviceSettings", out var settingsElement))
                             {
-                                var existingSettingIndex = existingEffect.DeviceSettings.FindIndex(ds => ds.Name == newSetting.Name && ds.DeviceName == newSetting.DeviceName);
-                                if (existingSettingIndex >= 0)
+                                var deviceSettings = JsonSerializer.Deserialize<List<DeviceSettingStub>>(settingsElement.GetRawText(), jsonOptions);
+                                if (deviceSettings != null)
                                 {
-                                    existingEffect.DeviceSettings[existingSettingIndex] = newSetting;
-                                }
-                                else
-                                {
-                                    existingEffect.DeviceSettings.Add(newSetting);
+                                    existingEffect.DeviceSettings ??= new List<DeviceSetting>();
+                                    foreach (var stub in deviceSettings)
+                                    {
+                                        var newSetting = new DeviceSetting
+                                        {
+                                            Name = stub.Name,
+                                            DeviceName = deviceName,
+                                            EffectName = stub.EffectName,
+                                            DeviceMidiImplementationName = stub.DeviceMidiImplementationName ?? stub.EffectName
+                                        };
+
+                                        var existingSettingIndex = existingEffect.DeviceSettings.FindIndex(ds => ds.Name == newSetting.Name && ds.DeviceName == newSetting.DeviceName);
+                                        if (existingSettingIndex >= 0)
+                                        {
+                                            existingEffect.DeviceSettings[existingSettingIndex] = newSetting;
+                                        }
+                                        else
+                                        {
+                                            existingEffect.DeviceSettings.Add(newSetting);
+                                        }
+                                    }
                                 }
                             }
-                        }
-                        
-                        // Update Description if provided
-                        if (!string.IsNullOrWhiteSpace(effect.Description))
-                        {
-                            existingEffect.Description = effect.Description;
-                        }
+                            
+                            // Update Description if provided in JSON
+                            if (effectElement.TryGetProperty("Description", out var descElement))
+                            {
+                                existingEffect.Description = descElement.GetString() ?? existingEffect.Description;
+                            }
 
-                        await _midiDataService.UpdateEffectByNameAsync(effect.Name, existingEffect);
-                        _logger.LogInformation("Updated existing effect {EffectName} in 'effects' database", effect.Name);
-                    }
-                    else
-                    {
-                        await _midiDataService.CreateEffectAsync(effect.Name, effect);
-                        _logger.LogInformation("Created new effect {EffectName} in 'effects' database", effect.Name);
+                            await _midiDataService.UpdateEffectByNameAsync(effectName, existingEffect);
+                            _logger.LogInformation("Updated existing effect {EffectName} in 'effects' database", effectName);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Effect {EffectName} not found, skipping device settings upload", effectName);
+                        }
                     }
                 }
             }
@@ -266,6 +284,13 @@ public class MidiEndpointsHandler
                 title: "Device upload failed",
                 statusCode: 500);
         }
+    }
+
+    private class DeviceSettingStub
+    {
+        public string Name { get; set; } = string.Empty;
+        public string EffectName { get; set; } = string.Empty;
+        public string? DeviceMidiImplementationName { get; set; }
     }
     
     public async Task<IResult> ResetDevice(string deviceName)
