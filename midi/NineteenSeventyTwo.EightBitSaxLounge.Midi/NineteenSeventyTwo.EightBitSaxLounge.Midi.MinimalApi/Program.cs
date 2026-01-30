@@ -9,7 +9,6 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
 
 using System.Text;
-using System.Net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
 
