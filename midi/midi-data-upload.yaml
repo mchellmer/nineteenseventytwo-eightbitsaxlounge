@@ -6,6 +6,8 @@
     upload_type: "{{ lookup('env', 'UPLOAD_TYPE') | default('effects', true) }}"
     auth_client_id: "{{ lookup('env', 'AUTH_CLIENT_0_ID') }}"
     auth_client_secret: "{{ lookup('env', 'AUTH_CLIENT_0_SECRET') }}"
+    device_names:
+      - VentrisDualReverb
 
   tasks:
     - name: Get MIDI service details
@@ -65,25 +67,47 @@
         msg: "Token not found in response. Check response structure above."
       when: auth_token is not defined or auth_token == ""
 
-    - name: Determine endpoint based on upload type
-      ansible.builtin.set_fact:
-        endpoint: "{{ 'UploadEffects' if upload_type == 'effects' else 'UploadDevices' }}"
-
-    - name: Upload {{ upload_type }} data
+    - name: Upload effects data
       ansible.builtin.uri:
-        url: "{{ service_url }}/api/Midi/{{ endpoint }}"
+        url: "{{ service_url }}/api/Midi/UploadEffects"
         method: POST
         headers:
           Authorization: "Bearer {{ auth_token }}"
         status_code: [200, 201, 204]
         return_content: yes
       register: upload_result
+      when: upload_type == 'effects'
 
-    - name: Display upload result
+    - name: Display effects upload result
       ansible.builtin.debug:
-        msg: "{{ upload_type | capitalize }} upload completed successfully (HTTP {{ upload_result.status }})"
+        msg: "Effects upload completed successfully (HTTP {{ upload_result.status }})"
+      when: upload_type == 'effects'
 
-    - name: Display response body on success
+    - name: Display effects response body on success
       ansible.builtin.debug:
         msg: "{{ upload_result.content }}"
-      when: upload_result.content | length > 0
+      when: upload_type == 'effects' and upload_result.content | length > 0
+
+    - name: Upload device data
+      ansible.builtin.uri:
+        url: "{{ service_url }}/api/Midi/UploadDevice/{{ item }}"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ auth_token }}"
+        status_code: [200, 201, 204]
+        return_content: yes
+      register: device_upload_results
+      loop: "{{ device_names }}"
+      when: upload_type == 'devices'
+
+    - name: Display device upload results
+      ansible.builtin.debug:
+        msg: "Device {{ item.item }} upload completed successfully (HTTP {{ item.status }})"
+      loop: "{{ device_upload_results.results }}"
+      when: upload_type == 'devices' and device_upload_results.results is defined
+
+    - name: Display device response bodies on success
+      ansible.builtin.debug:
+        msg: "Device {{ item.item }}: {{ item.content }}"
+      loop: "{{ device_upload_results.results }}"
+      when: upload_type == 'devices' and device_upload_results.results is defined and item.content | length > 0
