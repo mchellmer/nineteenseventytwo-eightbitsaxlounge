@@ -341,7 +341,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             throw new InvalidOperationException(msg);
         }
         
-        var deviceEffectSetting = deviceEffect.DeviceEffectSettings
+        var deviceEffectSetting = deviceEffect.EffectSettings
             .FirstOrDefault(des => des.Name == settingName);
         if (deviceEffectSetting == null)
         {
@@ -397,7 +397,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         string settingMidiImplementationName;
         // Some settings are dependent on others e.g. if a reverb engine is 'Room' then Control1 is 'Bass'
         // If the EffectSetting has a DeviceEffectSettingDependencyName, get that effect's ControlChangeAddress instead
-        var deviceEffectSettingDependency = deviceEffect.DeviceEffectSettings.FirstOrDefault(setting => setting.Name == deviceEffectSetting.Name);
+        var deviceEffectSettingDependency = deviceEffect.EffectSettings.FirstOrDefault(setting => setting.Name == deviceEffectSetting.Name);
         if (deviceEffectSettingDependency != null)
         {
             // Get the effect keyed to the dependentSetting from selectors

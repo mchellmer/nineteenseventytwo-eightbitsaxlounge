@@ -4,5 +4,6 @@ selectors:
 - Name: ReverbEngine
   Selections:
     - Name: EchoVerb
-      MidiCCValue: 8
+      MidiControlChangeValue: 8 # Optional, some selections just have a max value
+      # MidiMaxValue: 127 - optional e.g. Size has selections for different engines having 0-max ranges
     # There are about 13 reverb engines on the Ventris Dual Reverb each with a set midi CC value

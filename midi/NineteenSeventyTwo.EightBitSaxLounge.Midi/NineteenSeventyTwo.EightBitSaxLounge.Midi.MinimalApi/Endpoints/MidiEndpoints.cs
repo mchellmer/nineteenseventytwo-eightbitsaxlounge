@@ -36,5 +36,12 @@ public static class MidiEndpoints
             .RequireAuthorization()
             .WithName("UploadEffects")
             .WithTags("Data");
+
+        app.MapPost("api/Midi/UploadDevice/{deviceName}",
+                async (string deviceName, MidiEndpointsHandler handler) =>
+                    await handler.UploadDevice(deviceName))
+            .RequireAuthorization()
+            .WithName("UploadDevice")
+            .WithTags("Data");
     }
 }

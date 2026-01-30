@@ -33,7 +33,7 @@ public class MidiEndpointsTests
                 Name = TestEffectName,
                 Active = false,
                 DefaultActive = true,
-                DeviceEffectSettings = new List<DeviceEffectSetting>
+                EffectSettings = new List<DeviceEffectSetting>
                 {
                     new() {
                         Name = "SettingA",
@@ -74,6 +74,15 @@ public class MidiEndpointsTests
         var dbOpts = databaseOptions ?? Options.Create(new DatabaseOptions { Names = ["effects"] });
         var handler = new MidiEndpointsHandler(logger, deviceServiceMock.Object, dataService, dbOpts, effectsOptions);
         return handler.UploadEffects();
+    }
+
+    private static Task<IResult> InvokeUploadDeviceAsync(ILogger<MidiEndpointsHandler> logger, IMidiDataService dataService, string deviceName, IOptions<DatabaseOptions>? databaseOptions = null)
+    {
+        var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var dbOpts = databaseOptions ?? Options.Create(new DatabaseOptions { Names = ["devices", "effects", "selectors"] });
+        var effectsOpts = Options.Create(new EffectsOptions());
+        var handler = new MidiEndpointsHandler(logger, deviceServiceMock.Object, dataService, dbOpts, effectsOpts);
+        return handler.UploadDevice(deviceName);
     }
 
     private static async Task<(int StatusCode, string Body)> ExecuteResultAsync(IResult result)
@@ -224,7 +233,7 @@ public class MidiEndpointsTests
                     Name = TestEffectName,
                     Active = false,
                     DefaultActive = true,
-                    DeviceEffectSettings = new List<DeviceEffectSetting>()
+                    EffectSettings = new List<DeviceEffectSetting>()
                 }
             }
         };
@@ -646,6 +655,150 @@ public class MidiEndpointsTests
 
         dataServiceMock.Verify(m => m.UpdateEffectByNameAsync("REVERB", It.IsAny<Effect>()), Times.Once);
         dataServiceMock.Verify(m => m.CreateEffectAsync(It.IsAny<string>(), It.IsAny<Effect>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UploadDevice_FileNotFound_Returns404()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+        var deviceName = "NonExistentDevice";
+
+        // Act
+        var result = await InvokeUploadDeviceAsync(loggerMock.Object, dataServiceMock.Object, deviceName);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(404, status);
+        Assert.Contains("Configuration file for device", body);
+        Assert.Contains(deviceName, body);
+    }
+
+    [Fact]
+    public async Task UploadDevice_ValidJson_UpsertsAllEntities()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<ILogger<MidiEndpointsHandler>>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+        var deviceName = "TestDeviceUpload";
+        var fileName = $"appsettings.Devices.{deviceName}.json";
+
+        var jsonContent = @"{
+  ""Devices"": [
+    {
+      ""Name"": ""TestDeviceUpload"",
+      ""MidiConnectName"": ""Test Midi Connect"",
+      ""Description"": ""Test Description"",
+      ""Active"": true,
+      ""MidiImplementation"": [],
+      ""DeviceEffects"": []
+    }
+  ],
+  ""Effects"": [
+    {
+      ""Name"": ""TestEffect"",
+      ""Description"": ""Updated Description"",
+      ""DeviceSettings"": [
+        {
+          ""Name"": ""Control1"",
+          ""DeviceName"": ""TestDeviceUpload"",
+          ""EffectName"": ""TestEffect"",
+          ""DeviceMidiImplementationName"": ""Implementation1""
+        }
+      ]
+    }
+  ],
+  ""Selectors"": [
+    {
+      ""Name"": ""TestSelector"",
+      ""Selections"": [
+        {
+          ""Name"": ""Selection1"",
+          ""ControlChangeMessageValue"": 1
+        }
+      ]
+    }
+  ]
+}";
+
+        await File.WriteAllTextAsync(fileName, jsonContent);
+
+        try
+        {
+            // Setup for Devices: existing one to update
+            dataServiceMock.Setup(m => m.GetDeviceByNameAsync("TestDeviceUpload"))
+                .ReturnsAsync(new MidiDevice 
+                { 
+                    Name = "TestDeviceUpload", 
+                    Description = "Old", 
+                    MidiConnectName = "Old", 
+                    MidiImplementation = new List<MidiConfiguration>(),
+                    DeviceEffects = new List<DeviceEffect>()
+                });
+            
+            // Setup for Selectors: new one to create
+            dataServiceMock.Setup(m => m.GetSelectorByNameAsync("TestSelector"))
+                .ReturnsAsync((Selector)null);
+
+            // Setup for Effects: existing one to update/merge
+            var existingEffect = new Effect { Name = "TestEffect", Description = "Old Description", DeviceSettings = new List<DeviceSetting>() };
+            dataServiceMock.Setup(m => m.GetEffectByNameAsync("TestEffect"))
+                .ReturnsAsync(existingEffect);
+
+            // Act
+            var result = await InvokeUploadDeviceAsync(new Mock<ILogger<MidiEndpointsHandler>>().Object, dataServiceMock.Object, deviceName);
+            var (status, body) = await ExecuteResultAsync(result);
+
+            // Assert
+            Assert.Equal(200, status);
+            Assert.Contains("configuration uploaded successfully", body);
+            Assert.Contains(deviceName, body);
+
+            // Verify Device Update
+            dataServiceMock.Verify(m => m.UpdateDeviceByNameAsync("TestDeviceUpload", It.IsAny<MidiDevice>()), Times.Once);
+            dataServiceMock.Verify(m => m.CreateDeviceAsync(It.IsAny<MidiDevice>()), Times.Never);
+
+            // Verify Selector Creation
+            dataServiceMock.Verify(m => m.CreateSelectorAsync("TestSelector", It.IsAny<Selector>()), Times.Once);
+
+            // Verify Effect Update/Merge
+            dataServiceMock.Verify(m => m.UpdateEffectByNameAsync("TestEffect", It.Is<Effect>(e => 
+                e.Description == "Updated Description" && 
+                e.DeviceSettings.Count == 1 && 
+                e.DeviceSettings[0].Name == "Control1")), Times.Once);
+        }
+        finally
+        {
+            if (File.Exists(fileName)) File.Delete(fileName);
+        }
+    }
+
+    [Fact]
+    public async Task UploadDevice_InvalidJson_Returns500()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<MidiEndpointsHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+        var deviceName = "InvalidDevice";
+        var fileName = $"appsettings.Devices.{deviceName}.json";
+
+        await File.WriteAllTextAsync(fileName, "{ invalid json }");
+
+        try
+        {
+            // Act
+            var result = await InvokeUploadDeviceAsync(loggerMock.Object, dataServiceMock.Object, deviceName);
+            var (status, body) = await ExecuteResultAsync(result);
+
+            // Assert
+            Assert.Equal(500, status);
+            Assert.Contains("Device upload failed", body);
+        }
+        finally
+        {
+            if (File.Exists(fileName)) File.Delete(fileName);
+        }
     }
 }
 

@@ -3,6 +3,7 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
 using Microsoft.Extensions.Options;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
+using System.Text.Json;
 
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 
@@ -151,6 +152,121 @@ public class MidiEndpointsHandler
                 statusCode: 500);
         }
     }
+
+    public async Task<IResult> UploadDevice(string deviceName)
+    {
+        _logger.LogInformation("Uploading device {DeviceName} configuration to databases", deviceName);
+
+        try
+        {
+            var filePath = $"appsettings.Devices.{deviceName}.json";
+            if (!File.Exists(filePath))
+            {
+                _logger.LogWarning("Device configuration file {FilePath} not found", filePath);
+                return Results.NotFound(new { Message = $"Configuration file for device '{deviceName}' not found." });
+            }
+
+            var jsonContent = await File.ReadAllTextAsync(filePath);
+            var deviceUploadWrapper = JsonSerializer.Deserialize<DeviceUploadWrapper>(jsonContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (deviceUploadWrapper == null)
+            {
+                _logger.LogError("Failed to deserialize device configuration for {DeviceName}", deviceName);
+                return Results.Problem("Failed to deserialize device configuration.");
+            }
+
+            // 1. Populate 'devices' database
+            if (deviceUploadWrapper.Devices != null)
+            {
+                foreach (var device in deviceUploadWrapper.Devices)
+                {
+                    var existingDevice = await _midiDataService.GetDeviceByNameAsync(device.Name);
+                    if (existingDevice != null)
+                    {
+                        await _midiDataService.UpdateDeviceByNameAsync(device.Name, device);
+                        _logger.LogInformation("Updated existing device {DeviceName} in 'devices' database", device.Name);
+                    }
+                    else
+                    {
+                        await _midiDataService.CreateDeviceAsync(device);
+                        _logger.LogInformation("Created new device {DeviceName} in 'devices' database", device.Name);
+                    }
+                }
+            }
+
+            // 2. Populate 'selectors' database
+            if (deviceUploadWrapper.Selectors != null)
+            {
+                foreach (var selector in deviceUploadWrapper.Selectors)
+                {
+                    var existingSelector = await _midiDataService.GetSelectorByNameAsync(selector.Name);
+                    if (existingSelector != null)
+                    {
+                        await _midiDataService.UpdateSelectorByNameAsync(selector.Name, selector);
+                        _logger.LogInformation("Updated selector {SelectorName} in 'selectors' database", selector.Name);
+                    }
+                    else
+                    {
+                        await _midiDataService.CreateSelectorAsync(selector.Name, selector);
+                        _logger.LogInformation("Created selector {SelectorName} in 'selectors' database", selector.Name);
+                    }
+                }
+            }
+
+            // 3. Populate 'effects' database
+            if (deviceUploadWrapper.Effects != null)
+            {
+                foreach (var effect in deviceUploadWrapper.Effects)
+                {
+                    var existingEffect = await _midiDataService.GetEffectByNameAsync(effect.Name);
+                    if (existingEffect != null)
+                    {
+                        // Merge DeviceSettings if they exist
+                        if (effect.DeviceSettings != null)
+                        {
+                            existingEffect.DeviceSettings ??= new List<DeviceSetting>();
+                            foreach (var newSetting in effect.DeviceSettings)
+                            {
+                                var existingSettingIndex = existingEffect.DeviceSettings.FindIndex(ds => ds.Name == newSetting.Name && ds.DeviceName == newSetting.DeviceName);
+                                if (existingSettingIndex >= 0)
+                                {
+                                    existingEffect.DeviceSettings[existingSettingIndex] = newSetting;
+                                }
+                                else
+                                {
+                                    existingEffect.DeviceSettings.Add(newSetting);
+                                }
+                            }
+                        }
+                        
+                        // Update Description if provided
+                        if (!string.IsNullOrWhiteSpace(effect.Description))
+                        {
+                            existingEffect.Description = effect.Description;
+                        }
+
+                        await _midiDataService.UpdateEffectByNameAsync(effect.Name, existingEffect);
+                        _logger.LogInformation("Updated existing effect {EffectName} in 'effects' database", effect.Name);
+                    }
+                    else
+                    {
+                        await _midiDataService.CreateEffectAsync(effect.Name, effect);
+                        _logger.LogInformation("Created new effect {EffectName} in 'effects' database", effect.Name);
+                    }
+                }
+            }
+
+            return Results.Ok(new { Message = $"Device '{deviceName}' configuration uploaded successfully." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to upload device {DeviceName}", deviceName);
+            return Results.Problem(
+                detail: ex.Message,
+                title: "Device upload failed",
+                statusCode: 500);
+        }
+    }
     
     public async Task<IResult> ResetDevice(string deviceName)
     {
@@ -214,7 +330,7 @@ public class MidiEndpointsHandler
                 errorResettingDevice = true;
             }
 
-            foreach (var setting in effect.DeviceEffectSettings)
+            foreach (var setting in effect.EffectSettings)
             {
                 try
                 {
