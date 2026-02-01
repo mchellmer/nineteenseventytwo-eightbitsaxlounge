@@ -20,8 +20,7 @@ class Settings(BaseSettings):
     twitch_prefix: str = "!"
     
     # MIDI API Configuration
-    midi_device_url: str = "http://midi-device-service:5000"
-    midi_data_url: Optional[str] = None  # Defaults to midi_device_url if not set
+    midi_device_url: str = "http://eightbitsaxlounge-midi-service:8080"
     midi_api_timeout: int = 30
     
     # MIDI Authentication

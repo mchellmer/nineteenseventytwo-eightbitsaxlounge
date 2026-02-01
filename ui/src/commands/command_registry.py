@@ -21,8 +21,7 @@ class CommandRegistry:
         from .handlers.help import HelpHandler
         
         self._midi_client = MidiClient(
-            device_base_url=settings.midi_device_url,
-            data_base_url=settings.midi_data_url,
+            base_url=settings.midi_device_url,
             client_id=settings.midi_client_id,
             client_secret=settings.midi_client_secret,
             timeout=settings.midi_api_timeout
