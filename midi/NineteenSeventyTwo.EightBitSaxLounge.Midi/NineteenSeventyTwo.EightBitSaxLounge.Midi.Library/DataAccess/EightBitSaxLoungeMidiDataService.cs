@@ -50,6 +50,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         _logger.LogInformation($"Creating device: {newDevice.Name}");
         try
         {
+            newDevice.Id = newDevice.Name;
             await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
                 "POST",
                 new EightBitSaxLoungeDataRequest
@@ -76,30 +77,33 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                 "GET",
                 new EightBitSaxLoungeDataRequest
                 {
-                    RequestRoute = "devices/docs",
+                    RequestRoute = $"devices/{deviceName}",
                     RequestBody = null
                 },
                 DataLayerConnectionStringName);
             
-            var deviceNameMatch = response.Where(d => d.Name == deviceName).ToList();
-            
-            if (deviceNameMatch.Count > 1)
+            if (response.Count > 1)
             {
                 _logger.LogError($"Multiple devices found with name {deviceName}");
                 throw new InvalidOperationException($"Multiple devices found with name {deviceName}");
             }
 
-            if (deviceNameMatch.Count != 1)
+            if (response.Count == 0)
             {
                 _logger.LogWarning($"Device with name {deviceName} does not exist");
                 return null;
             }
 
             _logger.LogInformation($"Device with name {deviceName} retrieved successfully");
-            return deviceNameMatch.First();
+            return response.First();
         }
         catch (Exception e)
         {
+            if (e.Message.Contains("404"))
+            {
+                _logger.LogWarning($"Device with name {deviceName} does not exist (404)");
+                return null;
+            }
             _logger.LogError($"Error retrieving device {deviceName}: {e.Message}");
             throw new Exception($"Error retrieving device {deviceName}: {e.Message}");
         }
@@ -159,6 +163,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         _logger.LogInformation($"Creating effect: {effectName}");
         try
         {
+            newEffect.Id = effectName;
             await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
                 "POST",
                 new EightBitSaxLoungeDataRequest
@@ -181,25 +186,31 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         _logger.LogInformation($"Retrieving effect by name: {effectName}");
         try
         {
-            var allEffects = await GetAllEffectsAsync();
-            var effectMatch = allEffects.Where(e => e.Name == effectName).ToList();
+            var response = await _eightBitSaxLoungeMidiDataAccess.LoadDataAsync<Effect, EightBitSaxLoungeDataRequest>(
+                "GET",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = $"effects/{effectName}",
+                    RequestBody = null
+                },
+                DataLayerConnectionStringName);
 
-            if (effectMatch.Count == 0)
+            if (response.Count == 0)
             {
                 _logger.LogWarning($"Effect with name {effectName} does not exist.");
                 return null;
             }
-            if (effectMatch.Count > 1)
-            {
-                var msg = $"Multiple effects found with name {effectName}.";
-                _logger.LogError(msg);
-                throw new Exception(msg);
-            }
+            
             _logger.LogInformation($"Effect with name {effectName} retrieved successfully.");
-            return effectMatch.First();
+            return response.First();
         }
         catch (Exception e)
         {
+            if (e.Message.Contains("404"))
+            {
+                _logger.LogWarning($"Effect with name {effectName} does not exist (404).");
+                return null;
+            }
             _logger.LogError($"Error retrieving effect {effectName}: {e.Message}");
             throw new Exception($"Error retrieving effect {effectName}: {e.Message}");
         }
@@ -260,6 +271,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         _logger.LogInformation($"Creating selector: {selectorName}");
         try
         {
+            newSelector.Id = selectorName;
             await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
                 "POST",
                 new EightBitSaxLoungeDataRequest
@@ -282,34 +294,31 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         _logger.LogInformation($"Retrieving selector by name: {selectorName}");
         try
         {
-            var selectorsReturned =
-                await _eightBitSaxLoungeMidiDataAccess.LoadDataAsync<Selector, EightBitSaxLoungeDataRequest>(
-                    "GET",
-                    new EightBitSaxLoungeDataRequest
-                    {
-                        RequestRoute = "selectors/docs",
-                        RequestBody = null
-                    },
-                    DataLayerConnectionStringName);
+            var response = await _eightBitSaxLoungeMidiDataAccess.LoadDataAsync<Selector, EightBitSaxLoungeDataRequest>(
+                "GET",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = $"selectors/{selectorName}",
+                    RequestBody = null
+                },
+                DataLayerConnectionStringName);
             
-            var selectorMatch = selectorsReturned.Where(s => s.Name == selectorName).ToList();
-
-            if (selectorMatch.Count == 0)
+            if (response.Count == 0)
             {
                 _logger.LogWarning($"Selector with name {selectorName} does not exist.");
                 return null;
             }
-            if (selectorMatch.Count > 1)
-            {
-                var msg = $"Multiple selectors found with name {selectorName}.";
-                _logger.LogError(msg);
-                throw new Exception(msg);
-            }
+
             _logger.LogInformation($"Selector with name {selectorName} retrieved successfully.");
-            return selectorMatch.First();
+            return response.First();
         }
         catch (Exception e)
         {
+            if (e.Message.Contains("404"))
+            {
+                _logger.LogWarning($"Selector with name {selectorName} does not exist (404).");
+                return null;
+            }
             _logger.LogError($"Error retrieving selector {selectorName}: {e.Message}");
             throw new Exception($"Error retrieving selector {selectorName}: {e.Message}");
         }
@@ -443,11 +452,25 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         string settingMidiImplementationName;
         // Some settings are dependent on others e.g. if a reverb engine is 'Room' then Control1 is 'Bass'
         // If the EffectSetting has a DeviceEffectSettingDependencyName, get that effect's ControlChangeAddress instead
-        var deviceEffectSettingDependency = deviceEffect.EffectSettings.FirstOrDefault(setting => setting.Name == deviceEffectSetting.Name);
-        if (deviceEffectSettingDependency != null)
+        if (!string.IsNullOrEmpty(deviceEffectSetting.DeviceEffectSettingDependencyName))
         {
+            var deviceEffectSettingDependency = deviceEffect.EffectSettings.FirstOrDefault(setting => setting.Name == deviceEffectSetting.DeviceEffectSettingDependencyName);
+            if (deviceEffectSettingDependency == null)
+            {
+                var msg = $"No dependency found with name '{deviceEffectSetting.DeviceEffectSettingDependencyName}' for setting '{settingName}' in device '{deviceName}'.";
+                _logger.LogError(msg);
+                throw new InvalidOperationException(msg);
+            }
+
             // Get the effect keyed to the dependentSetting from selectors
             var dependentSettingSelector = await GetSelectorByNameAsync(deviceEffectSettingDependency.Name);
+            if (dependentSettingSelector == null)
+            {
+                var msg = $"No selector found with name '{deviceEffectSettingDependency.Name}' for dependency in device '{deviceName}'.";
+                _logger.LogError(msg);
+                throw new InvalidOperationException(msg);
+            }
+
             var dependentEffectName = dependentSettingSelector.Selections.FirstOrDefault(
                 selection => selection.ControlChangeMessageValue == deviceEffectSettingDependency.Value)?.Name;
             if (string.IsNullOrEmpty(dependentEffectName))
