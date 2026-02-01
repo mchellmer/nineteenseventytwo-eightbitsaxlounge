@@ -193,6 +193,51 @@ public class UploadDeviceHandlerTests : TestBase
     }
 
     [Fact]
+    public async Task UploadDevice_EffectNotFound_ThrowsError()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<UploadDeviceHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+        var deviceName = "EffectNotFoundDevice";
+        var fileName = $"appsettings.Devices.{deviceName}.json";
+
+        var jsonContent = @"{
+              ""Effects"": [
+                {
+                  ""Name"": ""NonExistentEffect"",
+                  ""Description"": ""Updated Description""
+                }
+              ]
+            }";
+
+        await File.WriteAllTextAsync(fileName, jsonContent);
+
+        try
+        {
+            // Mock GetEffectByNameAsync to return null (simulating new implementation behavior)
+            dataServiceMock.Setup(m => m.GetEffectByNameAsync("NonExistentEffect"))
+                .ReturnsAsync((Effect?)null);
+
+            var handler = new UploadDeviceHandler(loggerMock.Object, dataServiceMock.Object);
+
+            // Act
+            var result = await handler.HandleAsync(deviceName);
+            var (status, body) = await ExecuteResultAsync(result);
+
+            // Assert
+            // Now this should FAIL with 500 because the handler throws an error when an effect is not found
+            Assert.Equal(500, status);
+            Assert.Contains("The following effects were not found", body);
+            Assert.Contains("NonExistentEffect", body);
+            dataServiceMock.Verify(m => m.UpdateEffectByNameAsync(It.IsAny<string>(), It.IsAny<Effect>()), Times.Never);
+        }
+        finally
+        {
+            if (File.Exists(fileName)) File.Delete(fileName);
+        }
+    }
+
+    [Fact]
     public async Task UploadDevice_InvalidJson_Returns500()
     {
         // Arrange

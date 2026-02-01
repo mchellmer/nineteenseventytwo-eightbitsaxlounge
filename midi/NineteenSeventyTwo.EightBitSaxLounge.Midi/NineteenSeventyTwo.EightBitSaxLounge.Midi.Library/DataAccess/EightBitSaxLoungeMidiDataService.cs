@@ -176,34 +176,27 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         }
     }
 
-    public async Task<Effect> GetEffectByNameAsync(string effectName)
+    public async Task<Effect?> GetEffectByNameAsync(string effectName)
     {
         _logger.LogInformation($"Retrieving effect by name: {effectName}");
         try
         {
-            var effectsReturned =
-                await _eightBitSaxLoungeMidiDataAccess.LoadDataAsync<Effect, EightBitSaxLoungeDataRequest>(
-                    "GET",
-                    new EightBitSaxLoungeDataRequest
-                    {
-                        RequestRoute = $"effects/{effectName}",
-                        RequestBody = null
-                    },
-                    DataLayerConnectionStringName);
-            if (effectsReturned.Count == 0)
+            var allEffects = await GetAllEffectsAsync();
+            var effectMatch = allEffects.Where(e => e.Name == effectName).ToList();
+
+            if (effectMatch.Count == 0)
             {
-                var msg = $"Effect with name {effectName} does not exist.";
-                _logger.LogError(msg);
-                throw new Exception(msg);
+                _logger.LogWarning($"Effect with name {effectName} does not exist.");
+                return null;
             }
-            if (effectsReturned.Count > 1)
+            if (effectMatch.Count > 1)
             {
                 var msg = $"Multiple effects found with name {effectName}.";
                 _logger.LogError(msg);
                 throw new Exception(msg);
             }
             _logger.LogInformation($"Effect with name {effectName} retrieved successfully.");
-            return effectsReturned.First();
+            return effectMatch.First();
         }
         catch (Exception e)
         {

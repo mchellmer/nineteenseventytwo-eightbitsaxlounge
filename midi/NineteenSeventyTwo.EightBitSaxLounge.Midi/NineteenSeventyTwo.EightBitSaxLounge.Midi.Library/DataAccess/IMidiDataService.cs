@@ -16,7 +16,7 @@ public interface IMidiDataService
     
     // Effect Data Management
     Task CreateEffectAsync(string effectName, Effect newEffect);
-    Task<Effect> GetEffectByNameAsync(string effectName);
+    Task<Effect?> GetEffectByNameAsync(string effectName);
     Task<List<Effect>> GetAllEffectsAsync();
     Task UpdateEffectByNameAsync(string effectName, Effect updatedEffect);
     Task DeleteEffectByNameAsync(string effectName);

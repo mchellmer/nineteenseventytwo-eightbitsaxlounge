@@ -88,6 +88,7 @@ public class UploadDeviceHandler : IEndpointHandler<string, IResult>
             // 3. Populate 'effects' database
             if (deviceUploadWrapper.Effects != null)
             {
+                var missingEffects = new List<string>();
                 var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 foreach (var effectElement in deviceUploadWrapper.Effects)
                 {
@@ -132,9 +133,17 @@ public class UploadDeviceHandler : IEndpointHandler<string, IResult>
                         }
                         else
                         {
-                            _logger.LogWarning("Effect {EffectName} not found, skipping device settings upload", effectName);
+                            _logger.LogWarning("Effect {EffectName} not found, tracking for error report", effectName);
+                            missingEffects.Add(effectName);
                         }
                     }
+                }
+
+                if (missingEffects.Count > 0)
+                {
+                    var errorMessage = $"The following effects were not found in the 'effects' database: {string.Join(", ", missingEffects)}";
+                    _logger.LogError(errorMessage);
+                    throw new Exception(errorMessage);
                 }
             }
 
