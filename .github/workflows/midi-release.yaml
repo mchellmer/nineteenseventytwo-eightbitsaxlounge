@@ -199,9 +199,11 @@ jobs:
         if [[ "${{ github.ref_name }}" == "main" ]]; then
           echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
           echo "DEVICE_SERVICE_URL=${{ secrets.MIDI_DEVICE_URL_PROD }}" >> $GITHUB_ENV
+          echo "CONNECTION_STRING=${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER_PROD }}" >> $GITHUB_ENV
         else
           echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
           echo "DEVICE_SERVICE_URL=${{ secrets.MIDI_DEVICE_URL_DEV }}" >> $GITHUB_ENV
+          echo "CONNECTION_STRING=${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER_DEV }}" >> $GITHUB_ENV
         fi
 
     - name: Read Version
@@ -221,7 +223,7 @@ jobs:
         AUTH_CLIENT_0_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTSECRET }}
         AUTH_CLIENT_1_ID: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTID }}
         AUTH_CLIENT_1_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTSECRET }}
-        CONNECTION_STRING: ${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER }}
+        CONNECTION_STRING: ${{ env.CONNECTION_STRING }}
         DEVICE_SERVICE_URL: ${{ env.DEVICE_SERVICE_URL }}
         DEVICE_BYPASS_KEY: ${{ secrets.MIDI_DEVICE_BYPASS_KEY }}
         TOKEN_EXPIRY: ${{ secrets.AUTHENTICATION_TOKENEXPIRYINMINUTES }}
