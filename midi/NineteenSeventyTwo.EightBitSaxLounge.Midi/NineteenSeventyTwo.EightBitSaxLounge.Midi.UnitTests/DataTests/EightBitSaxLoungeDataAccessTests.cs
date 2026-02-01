@@ -1,4 +1,4 @@
-namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.UnitTests;
+namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.UnitTests.DataTests;
 
 using System;
 using System.Net;

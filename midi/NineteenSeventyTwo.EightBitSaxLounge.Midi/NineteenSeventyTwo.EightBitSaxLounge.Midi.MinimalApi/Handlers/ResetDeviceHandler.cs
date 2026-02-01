@@ -1,26 +1,36 @@
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 
-public class MidiEndpointsHandler
+public class ResetDeviceHandler : IEndpointHandler<string, IResult>
 {
-    private readonly ILogger<MidiEndpointsHandler> _logger;
+    private readonly ILogger<ResetDeviceHandler> _logger;
     private readonly IMidiDeviceService _midiDeviceService;
     private readonly IMidiDataService _midiDataService;
 
-    public MidiEndpointsHandler(ILogger<MidiEndpointsHandler> logger, IMidiDeviceService midiDeviceService, IMidiDataService midiDataService)
+    public ResetDeviceHandler(
+        ILogger<ResetDeviceHandler> logger,
+        IMidiDeviceService midiDeviceService,
+        IMidiDataService midiDataService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _midiDeviceService = midiDeviceService ?? throw new ArgumentNullException(nameof(midiDeviceService));
         _midiDataService = midiDataService ?? throw new ArgumentNullException(nameof(midiDataService));
     }
 
-    public async Task<IResult> ResetDevice(string deviceName)
+    public async Task<IResult> HandleAsync(string deviceName)
     {
         _logger.LogInformation("Resetting device {DeviceName}", deviceName);
 
         var midiDevice = await _midiDataService.GetDeviceByNameAsync(deviceName);
+        if (midiDevice == null)
+        {
+            return Results.NotFound(new { Message = $"Device '{deviceName}' not found." });
+        }
+
         var deviceEffects = midiDevice.DeviceEffects;
         bool errorResettingDevice = false;
 
@@ -78,7 +88,7 @@ public class MidiEndpointsHandler
                 errorResettingDevice = true;
             }
 
-            foreach (var setting in effect.DeviceEffectSettings)
+            foreach (var setting in effect.EffectSettings)
             {
                 try
                 {
@@ -106,28 +116,4 @@ public class MidiEndpointsHandler
 
         return Results.Ok(new { Message = $"Device '{deviceName}' reset to default settings successfully." });
     }
-    
-    public async Task<IResult> PostControlChangeMessageToDeviceByMidiConnectName(string deviceMidiConnectName, int controlChangeMessageAddress, int controlChangeMessageValue)
-    {
-        _logger.LogInformation("Received request to send Control Change Message to device {DeviceName}", deviceMidiConnectName);
-        try
-        {
-            await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(
-                deviceMidiConnectName, 
-                new() { Address = controlChangeMessageAddress, Value = controlChangeMessageValue });
-            var msg = $"Request to send Control Change Message to device '{deviceMidiConnectName}' processed successfully.";
-            _logger.LogInformation(msg);
-            return Results.Ok(new { Message = msg });
-        }
-        catch (Exception ex)
-        {
-            var msg = $"Failed to send Control Change Message '{controlChangeMessageValue}' to device '{deviceMidiConnectName}': {ex.Message}";
-            _logger.LogError(ex, msg);
-            return Results.Problem(
-                detail: msg,
-                title: "Send Control Change Message failed",
-                statusCode: 500);
-        }
-    }
 }
-

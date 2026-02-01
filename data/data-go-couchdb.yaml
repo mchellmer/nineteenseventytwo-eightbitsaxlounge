@@ -44,6 +44,12 @@
       vars:
         data_ingress_host: "{{ data_ingress_host }}"
 
+    - name: Delete old ingress if it exists
+      ansible.builtin.shell: |
+        kubectl delete ingress eightbitsaxlounge-data-ingress -n $NAMESPACE --ignore-not-found=true
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
     - name: Deploy CouchDB Deployment
       ansible.builtin.shell: |
         kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/deployment.yaml

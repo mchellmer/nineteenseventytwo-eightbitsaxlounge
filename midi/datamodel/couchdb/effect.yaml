@@ -1,0 +1,29 @@
+# example effects
+# an effect transforms music input via a device e.g. reverb, delay etc
+reverbengine:
+- Name: ReverbEngine
+  Description: text
+
+echoverb:
+- Name: EchoVerb
+  Description: text
+
+# an effect may have device specific settings 
+# e.g. the Ventris Dual Reverb has controls for pre-delay feedback and delay/reverb crossfade to apply to echoverb
+  DeviceSettings:
+    - Name: Control1
+      DeviceName: VentrisDualReverb
+      EffectName: PreDelayFeedback 
+      DeviceMidiImplementationName: EngineParam1-5 or engine agnostic i.e. this.EffectName
+     
+    - Name: Control2
+      DeviceName: VentrisDualReverb
+      EffectName: DelayReverbCrossfade
+      DeviceMidiImplementationName: EngineParameter5
+
+# some effects just have name and description
+- Name: PreDelayFeedback
+  Description: text
+
+- Name: DelayReverbCrossfade
+  Description: text

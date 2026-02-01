@@ -23,12 +23,52 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         _logger = logger;
     }
     
-    public Task CreateDeviceAsync(MidiDevice newDevice)
+    public async Task CreateDatabaseAsync(string databaseName)
     {
-        throw new NotImplementedException();
+        _logger.LogInformation($"Creating database: {databaseName}");
+        try
+        {
+            await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
+                "PUT",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = databaseName,
+                    RequestBody = null
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Database created: {databaseName}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error creating database {databaseName}: {e.Message}");
+            throw new Exception($"Error creating database {databaseName}: {e.Message}");
+        }
+    }
+    
+    public async Task CreateDeviceAsync(MidiDevice newDevice)
+    {
+        _logger.LogInformation($"Creating device: {newDevice.Name}");
+        try
+        {
+            newDevice.Id = newDevice.Name;
+            await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
+                "POST",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = "devices",
+                    RequestBody = newDevice
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Device created: {newDevice.Name}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error creating device {newDevice.Name}: {e.Message}");
+            throw new Exception($"Error creating device {newDevice.Name}: {e.Message}");
+        }
     }
 
-    public async Task<MidiDevice> GetDeviceByNameAsync(string deviceName)
+    public async Task<MidiDevice?> GetDeviceByNameAsync(string deviceName)
     {
         _logger.LogInformation($"Retrieving device by name: {deviceName}");
         try
@@ -37,30 +77,33 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                 "GET",
                 new EightBitSaxLoungeDataRequest
                 {
-                    RequestRoute = "devices/docs",
+                    RequestRoute = $"devices/{deviceName}",
                     RequestBody = null
                 },
                 DataLayerConnectionStringName);
             
-            var deviceNameMatch = response.Where(d => d.Name == deviceName).ToList();
-            
-            if (deviceNameMatch.Count > 1)
+            if (response.Count > 1)
             {
                 _logger.LogError($"Multiple devices found with name {deviceName}");
                 throw new InvalidOperationException($"Multiple devices found with name {deviceName}");
             }
 
-            if (deviceNameMatch.Count != 1)
+            if (response.Count == 0)
             {
-                _logger.LogError($"Device with name {deviceName} does not exist");
-                throw new InvalidOperationException($"Device with name {deviceName} does not exist");
+                _logger.LogWarning($"Device with name {deviceName} does not exist");
+                return null;
             }
 
             _logger.LogInformation($"Device with name {deviceName} retrieved successfully");
-            return deviceNameMatch.First();
+            return response.First();
         }
         catch (Exception e)
         {
+            if (e.Message.Contains("404"))
+            {
+                _logger.LogWarning($"Device with name {deviceName} does not exist (404)");
+                return null;
+            }
             _logger.LogError($"Error retrieving device {deviceName}: {e.Message}");
             throw new Exception($"Error retrieving device {deviceName}: {e.Message}");
         }
@@ -115,50 +158,107 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         throw new NotImplementedException();
     }
 
-    public Task CreateEffectAsync(string effectName, Effect newEffect)
+    public async Task CreateEffectAsync(string effectName, Effect newEffect)
     {
-        throw new NotImplementedException();
+        _logger.LogInformation($"Creating effect: {effectName}");
+        try
+        {
+            newEffect.Id = effectName;
+            await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
+                "POST",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = "effects",
+                    RequestBody = newEffect
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Effect created: {effectName}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error creating effect {effectName}: {e.Message}");
+            throw new Exception($"Error creating effect {effectName}: {e.Message}");
+        }
     }
 
-    public async Task<Effect> GetEffectByNameAsync(string effectName)
+    public async Task<Effect?> GetEffectByNameAsync(string effectName)
     {
         _logger.LogInformation($"Retrieving effect by name: {effectName}");
         try
         {
-            var effectsReturned =
-                await _eightBitSaxLoungeMidiDataAccess.LoadDataAsync<Effect, EightBitSaxLoungeDataRequest>(
-                    "GET",
-                    new EightBitSaxLoungeDataRequest
-                    {
-                        RequestRoute = $"effects/{effectName}",
-                        RequestBody = null
-                    },
-                    DataLayerConnectionStringName);
-            if (effectsReturned.Count == 0)
+            var response = await _eightBitSaxLoungeMidiDataAccess.LoadDataAsync<Effect, EightBitSaxLoungeDataRequest>(
+                "GET",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = $"effects/{effectName}",
+                    RequestBody = null
+                },
+                DataLayerConnectionStringName);
+
+            if (response.Count == 0)
             {
-                var msg = $"Effect with name {effectName} does not exist.";
-                _logger.LogError(msg);
-                throw new Exception(msg);
+                _logger.LogWarning($"Effect with name {effectName} does not exist.");
+                return null;
             }
-            if (effectsReturned.Count > 1)
-            {
-                var msg = $"Multiple effects found with name {effectName}.";
-                _logger.LogError(msg);
-                throw new Exception(msg);
-            }
+            
             _logger.LogInformation($"Effect with name {effectName} retrieved successfully.");
-            return effectsReturned.First();
+            return response.First();
         }
         catch (Exception e)
         {
+            if (e.Message.Contains("404"))
+            {
+                _logger.LogWarning($"Effect with name {effectName} does not exist (404).");
+                return null;
+            }
             _logger.LogError($"Error retrieving effect {effectName}: {e.Message}");
             throw new Exception($"Error retrieving effect {effectName}: {e.Message}");
         }
     }
 
-    public Task UpdateEffectByNameAsync(string effectName, Effect updatedEffect)
+    public async Task<List<Effect>> GetAllEffectsAsync()
     {
-        throw new NotImplementedException();
+        _logger.LogInformation("Retrieving all effects");
+        try
+        {
+            var effects = await _eightBitSaxLoungeMidiDataAccess.LoadDataAsync<Effect, EightBitSaxLoungeDataRequest>(
+                "GET",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = "effects/docs",
+                    RequestBody = null
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Retrieved {effects.Count} effects successfully.");
+            return effects;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error retrieving all effects: {e.Message}");
+            throw new Exception($"Error retrieving all effects: {e.Message}");
+        }
+    }
+
+    public async Task UpdateEffectByNameAsync(string effectName, Effect updatedEffect)
+    {
+        _logger.LogInformation($"Updating effect: {effectName}");
+        try
+        {
+            await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
+                "PUT",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = $"effects/{effectName}",
+                    RequestBody = updatedEffect
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Effect updated: {effectName}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error updating effect {effectName}: {e.Message}");
+            throw new Exception($"Error updating effect {effectName}: {e.Message}");
+        }
     }
 
     public Task DeleteEffectByNameAsync(string effectName)
@@ -166,50 +266,84 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         throw new NotImplementedException();
     }
 
-    public Task CreateSelectorAsync(string selectorName, Selector newSelector)
+    public async Task CreateSelectorAsync(string selectorName, Selector newSelector)
     {
-        throw new NotImplementedException();
+        _logger.LogInformation($"Creating selector: {selectorName}");
+        try
+        {
+            newSelector.Id = selectorName;
+            await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
+                "POST",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = "selectors",
+                    RequestBody = newSelector
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Selector created: {selectorName}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error creating selector {selectorName}: {e.Message}");
+            throw new Exception($"Error creating selector {selectorName}: {e.Message}");
+        }
     }
 
-    public async Task<Selector> GetSelectorByNameAsync(string selectorName)
+    public async Task<Selector?> GetSelectorByNameAsync(string selectorName)
     {
         _logger.LogInformation($"Retrieving selector by name: {selectorName}");
         try
         {
-            var selectorsReturned =
-                await _eightBitSaxLoungeMidiDataAccess.LoadDataAsync<Selector, EightBitSaxLoungeDataRequest>(
-                    "GET",
-                    new EightBitSaxLoungeDataRequest
-                    {
-                        RequestRoute = $"selectors/{selectorName}",
-                        RequestBody = null
-                    },
-                    DataLayerConnectionStringName);
-            if (selectorsReturned.Count == 0)
+            var response = await _eightBitSaxLoungeMidiDataAccess.LoadDataAsync<Selector, EightBitSaxLoungeDataRequest>(
+                "GET",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = $"selectors/{selectorName}",
+                    RequestBody = null
+                },
+                DataLayerConnectionStringName);
+            
+            if (response.Count == 0)
             {
-                var msg = $"Selector with name {selectorName} does not exist.";
-                _logger.LogError(msg);
-                throw new Exception(msg);
+                _logger.LogWarning($"Selector with name {selectorName} does not exist.");
+                return null;
             }
-            if (selectorsReturned.Count > 1)
-            {
-                var msg = $"Multiple selectors found with name {selectorName}.";
-                _logger.LogError(msg);
-                throw new Exception(msg);
-            }
+
             _logger.LogInformation($"Selector with name {selectorName} retrieved successfully.");
-            return selectorsReturned.First();
+            return response.First();
         }
         catch (Exception e)
         {
+            if (e.Message.Contains("404"))
+            {
+                _logger.LogWarning($"Selector with name {selectorName} does not exist (404).");
+                return null;
+            }
             _logger.LogError($"Error retrieving selector {selectorName}: {e.Message}");
             throw new Exception($"Error retrieving selector {selectorName}: {e.Message}");
         }
     }
 
-    public Task UpdateSelectorByNameAsync(string selectorName, Selector updatedSelector)
+    public async Task UpdateSelectorByNameAsync(string selectorName, Selector updatedSelector)
     {
-        throw new NotImplementedException();
+        _logger.LogInformation($"Updating selector: {selectorName}");
+        try
+        {
+            await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
+                "PUT",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = $"selectors/{selectorName}",
+                    RequestBody = updatedSelector
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Selector updated: {selectorName}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error updating selector {selectorName}: {e.Message}");
+            throw new Exception($"Error updating selector {selectorName}: {e.Message}");
+        }
     }
 
     public Task DeleteSelectorByNameAsync(string selectorName)
@@ -262,7 +396,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             throw new InvalidOperationException(msg);
         }
         
-        var deviceEffectSetting = deviceEffect.DeviceEffectSettings
+        var deviceEffectSetting = deviceEffect.EffectSettings
             .FirstOrDefault(des => des.Name == settingName);
         if (deviceEffectSetting == null)
         {
@@ -318,11 +452,25 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         string settingMidiImplementationName;
         // Some settings are dependent on others e.g. if a reverb engine is 'Room' then Control1 is 'Bass'
         // If the EffectSetting has a DeviceEffectSettingDependencyName, get that effect's ControlChangeAddress instead
-        var deviceEffectSettingDependency = deviceEffect.DeviceEffectSettings.FirstOrDefault(setting => setting.Name == deviceEffectSetting.Name);
-        if (deviceEffectSettingDependency != null)
+        if (!string.IsNullOrEmpty(deviceEffectSetting.DeviceEffectSettingDependencyName))
         {
+            var deviceEffectSettingDependency = deviceEffect.EffectSettings.FirstOrDefault(setting => setting.Name == deviceEffectSetting.DeviceEffectSettingDependencyName);
+            if (deviceEffectSettingDependency == null)
+            {
+                var msg = $"No dependency found with name '{deviceEffectSetting.DeviceEffectSettingDependencyName}' for setting '{settingName}' in device '{deviceName}'.";
+                _logger.LogError(msg);
+                throw new InvalidOperationException(msg);
+            }
+
             // Get the effect keyed to the dependentSetting from selectors
             var dependentSettingSelector = await GetSelectorByNameAsync(deviceEffectSettingDependency.Name);
+            if (dependentSettingSelector == null)
+            {
+                var msg = $"No selector found with name '{deviceEffectSettingDependency.Name}' for dependency in device '{deviceName}'.";
+                _logger.LogError(msg);
+                throw new InvalidOperationException(msg);
+            }
+
             var dependentEffectName = dependentSettingSelector.Selections.FirstOrDefault(
                 selection => selection.ControlChangeMessageValue == deviceEffectSettingDependency.Value)?.Name;
             if (string.IsNullOrEmpty(dependentEffectName))

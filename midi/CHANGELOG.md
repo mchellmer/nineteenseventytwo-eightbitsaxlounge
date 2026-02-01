@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.0.8]
+
+### Added
+- Data initialization endpoint (`POST /api/Midi/InitializeDataModel`) to create CouchDB databases and views
+- Data upload endpoints for effects (`POST /api/Midi/UploadEffects`) and devices (`POST /api/Midi/UploadDevice/{deviceName}`)
+- Handler pattern architecture for endpoint logic separation
+- Device configuration data model matching CouchDB schema (devices, effects, selectors)
+- Configuration files: `appsettings.Effects.json` and `appsettings.Devices.VentrisDualReverb.json`
+- GitHub Actions workflows for data initialization and upload
+- Support for device-specific effect mappings with MIDI implementation details
+- DeviceName field in effect device settings for multi-device support
+
+### Changed
+- Restructured data model to align with CouchDB document structure
+- Updated effects configuration to include device-specific settings
+- Refactored endpoint handlers into dedicated handler classes implementing `IEndpointHandler<TRequest, TResponse>`
+- Enhanced data upload workflows with support for effects and devices upload types
+
 ## [1.0.7] - 2026-01-23
 
 ### Added

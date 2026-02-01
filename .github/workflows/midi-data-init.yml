@@ -1,17 +1,30 @@
-name: Midi Data Init
+name: MIDI Data Init
 
 on:
-  workflow_dispatch: # allows manual trigger from GitHub UI
-#  push: # unsuppress and adjust to some test branch then push a test commit to test cicd
-#        branches:
-#        - testbranch
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  init-datamodel:
+    name: Initialize MIDI Datamodel
     runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: ./midi
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Run Make Deploy
-        run: make test-system
+      - name: Set Namespace Based on Branch
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
+          else
+            echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
+          fi
+
+      - name: Run Data Init
+        run: make data-init
+        env:
+          NAMESPACE: ${{ env.NAMESPACE }}
+          AUTH_CLIENT_0_ID: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTID }}
+          AUTH_CLIENT_0_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTSECRET }}

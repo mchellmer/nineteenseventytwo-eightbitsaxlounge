@@ -12,19 +12,33 @@ public static class MidiEndpoints
         // Device control endpoint - uses injected IMidiDeviceService (local or proxied)
         app.MapPost("api/Midi/SendControlChangeMessage",
                 async (
-                    MidiEndpointsHandler handler,
+                    SendControlChangeMessageHandler handler,
                     [FromBody] SendControlChangeMessageRequest request) =>
-                    await handler.PostControlChangeMessageToDeviceByMidiConnectName(
-                        request.DeviceMidiConnectName,
-                        request.Address,
-                        request.Value))
+                    await handler.HandleAsync(request))
             .RequireAuthorization()
             .WithName("SendControlChangeMessage")
             .WithTags("Device");
 
         // Data endpoints can be added here
-        // e.g., CRUD operations for reverb configs stored in CouchDB
-        // app.MapGet("api/Midi/Configs", ...).WithTags("Data");
-        // app.MapPost("api/Midi/Configs", ...).WithTags("Data");
+        app.MapPost("api/Midi/InitDatamodel",
+                async (InitializeDataModelHandler handler) =>
+                    await handler.HandleAsync())
+            .RequireAuthorization()
+            .WithName("InitializeDataModel")
+            .WithTags("Data");
+        
+        app.MapPost("api/Midi/UploadEffects",
+            async (UploadEffectsHandler handler) =>
+                await handler.HandleAsync())
+            .RequireAuthorization()
+            .WithName("UploadEffects")
+            .WithTags("Data");
+
+        app.MapPost("api/Midi/UploadDevice/{deviceName}",
+                async (string deviceName, UploadDeviceHandler handler) =>
+                    await handler.HandleAsync(deviceName))
+            .RequireAuthorization()
+            .WithName("UploadDevice")
+            .WithTags("Data");
     }
 }

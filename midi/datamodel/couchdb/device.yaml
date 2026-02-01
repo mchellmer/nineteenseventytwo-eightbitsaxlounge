@@ -1,0 +1,50 @@
+# Example device configuration for Ventris Dual Reverb
+# Consider an effects pedal that can be turned on/off and has effects you can adjust via knobs
+ventrisdualreverb:
+  Name: VentrisDualReverb
+  MidiConnectName: One Series Ventris Dual Reverb
+  Description: Reverb effects pedal with two engines.
+  Active: true
+
+# The device has a midi implementation mapping midi CC values to effect parameters
+# By default assume the parameter has values in a range 0-127, otherwise discrete values can be mapped via selectors
+# e.g. the engine has 13 or so options, but time and pre-delay are continuous values 0-127
+  MidiImplementation:
+  - Name: ReverbEngine
+    ControlChangeValueSelector: ReverbEngine
+    ControlChangeAddresses:
+      - Name: ReverbEngineA
+        Value: 1
+      - Name: ReverbEngineB
+        Value: 27
+  
+  # similar for Time, PreDelay, EngineParam5, Size
+  # ControlChangeAddresses map to midi CC address for all implementations of the device
+  # ControlChangeValueSelector maps to selector for discrete values only otherwise ommitted
+
+# The device model emulates the physical controls in this case 5 knobs: engine, time, pre-delay, engine specific param 1 & 2
+# DeviceEffects is the state, set the value inline with changes to the device
+  DeviceEffects:
+    Name: ReverbEngineA
+    Active: true
+    DefaultActive: true
+    EffectSettings:
+      - Name: ReverbEngine
+        DefaultValue: 0 # default engine is Room
+        Value: 8 # engine set to Echoverb
+      - Name: PreDelay
+        DefaultValue: 10 # default pre-delay to a small amount
+        Value: 0 # no pre-delay
+      - Name: Time
+        Default: 10 # default time to a small amount
+        Value: 100 # moderate reverb time
+      - Name: Control1
+        DeviceEffectSettingDependencyName: ReverbEngine
+        DefaultValue: 0 # default to off
+        Value: 0 # 0-127 or selector dependent
+      - Name: Control2
+        DefaultValue: 0 # default to off
+        Value: 0
+    
+    # repeat for ReverbEngineB which has its own state
+    

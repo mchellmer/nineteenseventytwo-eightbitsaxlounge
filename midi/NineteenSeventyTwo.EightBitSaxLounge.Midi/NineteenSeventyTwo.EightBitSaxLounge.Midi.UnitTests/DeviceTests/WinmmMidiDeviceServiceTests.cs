@@ -7,7 +7,7 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
 
-namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.UnitTests;
+namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.UnitTests.DeviceTests;
 
 public class WinmmMidiDeviceServiceTests
 {

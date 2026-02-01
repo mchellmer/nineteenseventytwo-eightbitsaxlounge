@@ -9,11 +9,13 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
 
 using System.Text;
-using System.Net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add additional configuration files
+builder.Configuration.AddJsonFile("appsettings.Effects.json", optional: false, reloadOnChange: true);
 
 // Configure logging
 builder.Logging.ClearProviders();
@@ -28,6 +30,12 @@ var authOptions = builder.Configuration.GetSection("Authentication").Get<AppAuth
 if (string.IsNullOrWhiteSpace(authOptions.SecretKey))
     throw new InvalidOperationException("Missing 'Authentication:SecretKey'. Set via user-secrets or environment variable.");
 builder.Services.Configure<AppAuthenticationOptions>(builder.Configuration.GetSection("Authentication"));
+
+// Database configuration
+builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
+
+// Effects configuration
+builder.Services.Configure<EffectsOptions>(builder.Configuration.GetSection(EffectsOptions.SectionName));
 
 // Docs
 builder.Services.AddSwaggerGen(opts =>
@@ -116,7 +124,11 @@ else
 }
 
 // Register handlers that depend on IMidiDeviceService
-builder.Services.AddTransient<MidiEndpointsHandler>();
+builder.Services.AddTransient<SendControlChangeMessageHandler>();
+builder.Services.AddTransient<InitializeDataModelHandler>();
+builder.Services.AddTransient<UploadEffectsHandler>();
+builder.Services.AddTransient<UploadDeviceHandler>();
+builder.Services.AddTransient<ResetDeviceHandler>();
 
 // Auth
 builder.Services.AddAuthorization(opts =>
