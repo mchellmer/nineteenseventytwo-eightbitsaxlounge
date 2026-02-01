@@ -17,6 +17,7 @@
       <ProjectReference Include="..\NineteenSeventyTwo.EightBitSaxLounge.Midi.Library\NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.csproj" />
     </ItemGroup>
 
+
     <ItemGroup>
         <None Include="appsettings.Devices.VentrisDualReverb.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
