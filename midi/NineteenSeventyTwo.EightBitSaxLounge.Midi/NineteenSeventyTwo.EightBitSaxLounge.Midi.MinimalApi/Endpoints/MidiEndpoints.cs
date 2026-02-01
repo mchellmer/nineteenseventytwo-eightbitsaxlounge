@@ -12,34 +12,31 @@ public static class MidiEndpoints
         // Device control endpoint - uses injected IMidiDeviceService (local or proxied)
         app.MapPost("api/Midi/SendControlChangeMessage",
                 async (
-                    MidiEndpointsHandler handler,
+                    SendControlChangeMessageHandler handler,
                     [FromBody] SendControlChangeMessageRequest request) =>
-                    await handler.PostControlChangeMessageToDeviceByMidiConnectName(
-                        request.DeviceMidiConnectName,
-                        request.Address,
-                        request.Value))
+                    await handler.HandleAsync(request))
             .RequireAuthorization()
             .WithName("SendControlChangeMessage")
             .WithTags("Device");
 
         // Data endpoints can be added here
         app.MapPost("api/Midi/InitDatamodel",
-                async (MidiEndpointsHandler handler) =>
-                    await handler.InitializeDataModel())
+                async (InitializeDataModelHandler handler) =>
+                    await handler.HandleAsync())
             .RequireAuthorization()
             .WithName("InitializeDataModel")
             .WithTags("Data");
         
         app.MapPost("api/Midi/UploadEffects",
-            async (MidiEndpointsHandler handler) =>
-                await handler.UploadEffects())
+            async (UploadEffectsHandler handler) =>
+                await handler.HandleAsync())
             .RequireAuthorization()
             .WithName("UploadEffects")
             .WithTags("Data");
 
         app.MapPost("api/Midi/UploadDevice/{deviceName}",
-                async (string deviceName, MidiEndpointsHandler handler) =>
-                    await handler.UploadDevice(deviceName))
+                async (string deviceName, UploadDeviceHandler handler) =>
+                    await handler.HandleAsync(deviceName))
             .RequireAuthorization()
             .WithName("UploadDevice")
             .WithTags("Data");

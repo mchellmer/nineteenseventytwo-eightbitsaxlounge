@@ -45,12 +45,29 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         }
     }
     
-    public Task CreateDeviceAsync(MidiDevice newDevice)
+    public async Task CreateDeviceAsync(MidiDevice newDevice)
     {
-        throw new NotImplementedException();
+        _logger.LogInformation($"Creating device: {newDevice.Name}");
+        try
+        {
+            await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
+                "POST",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = "devices",
+                    RequestBody = newDevice
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Device created: {newDevice.Name}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error creating device {newDevice.Name}: {e.Message}");
+            throw new Exception($"Error creating device {newDevice.Name}: {e.Message}");
+        }
     }
 
-    public async Task<MidiDevice> GetDeviceByNameAsync(string deviceName)
+    public async Task<MidiDevice?> GetDeviceByNameAsync(string deviceName)
     {
         _logger.LogInformation($"Retrieving device by name: {deviceName}");
         try
@@ -74,8 +91,8 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
 
             if (deviceNameMatch.Count != 1)
             {
-                _logger.LogError($"Device with name {deviceName} does not exist");
-                throw new InvalidOperationException($"Device with name {deviceName} does not exist");
+                _logger.LogWarning($"Device with name {deviceName} does not exist");
+                return null;
             }
 
             _logger.LogInformation($"Device with name {deviceName} retrieved successfully");
@@ -245,12 +262,29 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         throw new NotImplementedException();
     }
 
-    public Task CreateSelectorAsync(string selectorName, Selector newSelector)
+    public async Task CreateSelectorAsync(string selectorName, Selector newSelector)
     {
-        throw new NotImplementedException();
+        _logger.LogInformation($"Creating selector: {selectorName}");
+        try
+        {
+            await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
+                "POST",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = "selectors",
+                    RequestBody = newSelector
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Selector created: {selectorName}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error creating selector {selectorName}: {e.Message}");
+            throw new Exception($"Error creating selector {selectorName}: {e.Message}");
+        }
     }
 
-    public async Task<Selector> GetSelectorByNameAsync(string selectorName)
+    public async Task<Selector?> GetSelectorByNameAsync(string selectorName)
     {
         _logger.LogInformation($"Retrieving selector by name: {selectorName}");
         try
@@ -260,24 +294,26 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                     "GET",
                     new EightBitSaxLoungeDataRequest
                     {
-                        RequestRoute = $"selectors/{selectorName}",
+                        RequestRoute = "selectors/docs",
                         RequestBody = null
                     },
                     DataLayerConnectionStringName);
-            if (selectorsReturned.Count == 0)
+            
+            var selectorMatch = selectorsReturned.Where(s => s.Name == selectorName).ToList();
+
+            if (selectorMatch.Count == 0)
             {
-                var msg = $"Selector with name {selectorName} does not exist.";
-                _logger.LogError(msg);
-                throw new Exception(msg);
+                _logger.LogWarning($"Selector with name {selectorName} does not exist.");
+                return null;
             }
-            if (selectorsReturned.Count > 1)
+            if (selectorMatch.Count > 1)
             {
                 var msg = $"Multiple selectors found with name {selectorName}.";
                 _logger.LogError(msg);
                 throw new Exception(msg);
             }
             _logger.LogInformation($"Selector with name {selectorName} retrieved successfully.");
-            return selectorsReturned.First();
+            return selectorMatch.First();
         }
         catch (Exception e)
         {
@@ -286,9 +322,26 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         }
     }
 
-    public Task UpdateSelectorByNameAsync(string selectorName, Selector updatedSelector)
+    public async Task UpdateSelectorByNameAsync(string selectorName, Selector updatedSelector)
     {
-        throw new NotImplementedException();
+        _logger.LogInformation($"Updating selector: {selectorName}");
+        try
+        {
+            await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
+                "PUT",
+                new EightBitSaxLoungeDataRequest
+                {
+                    RequestRoute = $"selectors/{selectorName}",
+                    RequestBody = updatedSelector
+                },
+                DataLayerConnectionStringName);
+            _logger.LogInformation($"Selector updated: {selectorName}");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"Error updating selector {selectorName}: {e.Message}");
+            throw new Exception($"Error updating selector {selectorName}: {e.Message}");
+        }
     }
 
     public Task DeleteSelectorByNameAsync(string selectorName)

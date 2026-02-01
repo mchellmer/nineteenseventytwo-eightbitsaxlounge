@@ -9,7 +9,7 @@ public interface IMidiDataService
     
     // Device Data Management
     Task CreateDeviceAsync(MidiDevice newDevice);
-    Task<MidiDevice> GetDeviceByNameAsync(string deviceName);
+    Task<MidiDevice?> GetDeviceByNameAsync(string deviceName);
     Task UpdateDeviceByNameAsync(string deviceName, MidiDevice updatedDevice);
     Task UpdateDeviceEffectActiveStateAsync(string deviceName, string effectName, bool activate);
     Task DeleteDeviceByNameAsync(string deviceName);
@@ -23,7 +23,7 @@ public interface IMidiDataService
     
     // Selector Data Management
     Task CreateSelectorAsync(string selectorName, Selector newSelector);
-    Task<Selector> GetSelectorByNameAsync(string selectorName);
+    Task<Selector?> GetSelectorByNameAsync(string selectorName);
     Task UpdateSelectorByNameAsync(string selectorName, Selector updatedSelector);
     Task DeleteSelectorByNameAsync(string selectorName);
     

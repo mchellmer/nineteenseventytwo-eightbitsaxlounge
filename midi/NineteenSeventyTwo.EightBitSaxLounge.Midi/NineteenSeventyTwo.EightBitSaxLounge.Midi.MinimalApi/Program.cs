@@ -124,7 +124,11 @@ else
 }
 
 // Register handlers that depend on IMidiDeviceService
-builder.Services.AddTransient<MidiEndpointsHandler>();
+builder.Services.AddTransient<SendControlChangeMessageHandler>();
+builder.Services.AddTransient<InitializeDataModelHandler>();
+builder.Services.AddTransient<UploadEffectsHandler>();
+builder.Services.AddTransient<UploadDeviceHandler>();
+builder.Services.AddTransient<ResetDeviceHandler>();
 
 // Auth
 builder.Services.AddAuthorization(opts =>

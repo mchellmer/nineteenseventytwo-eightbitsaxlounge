@@ -42,3 +42,4 @@ Thumbs.db
 # Editors / tooling
 .vscode/
 *.swp
+.output.txt
