@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - midideviceupload
     paths:
       - 'midi/version.txt'
 
