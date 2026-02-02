@@ -194,15 +194,19 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Set Namespace Based on Branch
+    - name: Set Namespace and URLs for main branch
+      if: github.ref_name == 'main'
       run: |
-        if [[ "${{ github.ref_name }}" == "main" ]]; then
-          echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
-          echo "DEVICE_SERVICE_URL=${{ secrets.MIDI_DEVICE_URL_PROD }}" >> $GITHUB_ENV
-        else
-          echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
-          echo "DEVICE_SERVICE_URL=${{ secrets.MIDI_DEVICE_URL_DEV }}" >> $GITHUB_ENV
-        fi
+        echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
+        echo "DEVICE_SERVICE_URL=${{ secrets.MIDI_DEVICE_URL_PROD }}" >> $GITHUB_ENV
+        echo "CONNECTION_STRING=${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER_PROD }}" >> $GITHUB_ENV
+
+    - name: Set Namespace and URLs for dev branch
+      if: github.ref_name != 'main'
+      run: |
+        echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
+        echo "DEVICE_SERVICE_URL=${{ secrets.MIDI_DEVICE_URL_DEV }}" >> $GITHUB_ENV
+        echo "CONNECTION_STRING=${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER_DEV }}" >> $GITHUB_ENV
 
     - name: Read Version
       run: |
