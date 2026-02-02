@@ -4,10 +4,10 @@ init-midi-host:
 	ansible-playbook midi-init.yaml --ask-pass
 
 deploy-midi-pc:
-	ansible-playbook midi-pc-deploy.yaml
+	ansible-playbook midi-pc-deploy.yaml -vv
 
 deploy-midi-api:
-	ansible-playbook midi-api-deploy.yaml
+	ansible-playbook midi-api-deploy.yaml -vv
 
 data-init:
 	ansible-playbook midi-data-init.yaml -vv
