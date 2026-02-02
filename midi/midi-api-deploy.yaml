@@ -23,6 +23,10 @@
         - k8s/deployment.yaml
         - k8s/service.yaml
 
+    - name: Debug CONNECTION_STRING before creating secret
+      ansible.builtin.debug:
+        msg: "CONNECTION_STRING from env: {{ lookup('env', 'CONNECTION_STRING') }}"
+
     - name: Create MIDI Secrets
       ansible.builtin.shell: |
         kubectl create secret generic eightbitsaxlounge-midi-secrets \
