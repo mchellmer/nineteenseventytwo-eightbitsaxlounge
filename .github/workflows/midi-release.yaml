@@ -208,6 +208,19 @@ jobs:
       run: |
         echo "VERSION=$(cat midi/version.txt)" >> $GITHUB_ENV
 
+    - name: Debug environment variables
+      run: |
+        echo "NAMESPACE: ${{ env.NAMESPACE }}"
+        echo "DEVICE_SERVICE_URL: ${{ env.DEVICE_SERVICE_URL }}"
+        echo "CONNECTION_STRING length: ${#CONNECTION_STRING}"
+        if [ -z "$CONNECTION_STRING" ]; then
+          echo "WARNING: CONNECTION_STRING is empty!"
+        else
+          echo "CONNECTION_STRING is set (not showing value for security)"
+        fi
+      env:
+        CONNECTION_STRING: ${{ env.CONNECTION_STRING }}
+
     - name: Deploy MIDI via Ansible
       working-directory: ./midi
       env:
