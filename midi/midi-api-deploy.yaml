@@ -96,6 +96,12 @@
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
         VERSION: "{{ lookup('env', 'VERSION') }}"
 
+    - name: Restart deployment to pickup changes
+      ansible.builtin.shell: |
+        kubectl -n "$NAMESPACE" rollout restart deployment/eightbitsaxlounge-midi
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
     - name: Wait for rollout to complete
       ansible.builtin.shell: |
         kubectl -n "$NAMESPACE" rollout status deploy/eightbitsaxlounge-midi --timeout=180s
