@@ -3,6 +3,7 @@ using Moq;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.UnitTests;
 
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.UnitTests.DataTests;
 
@@ -44,7 +45,7 @@ public class EightBitSaxLoungeMidiDataServiceTests
     public async Task CreateDeviceAsync_CallsSaveDataAsync()
     {
         // Arrange
-        var device = new MidiDevice { Name = "TestDevice", Description = "Desc", MidiConnectName = "Conn", MidiImplementation = [], DeviceEffects = [] };
+        var device = TestObjects.Clone(TestObjects.PrototypeDevice);
 
         // Act
         await _service.CreateDeviceAsync(device);
@@ -63,7 +64,7 @@ public class EightBitSaxLoungeMidiDataServiceTests
         var deviceName = "TestDevice";
         var devices = new List<MidiDevice>
         {
-            new MidiDevice { Name = deviceName, Description = "Desc", MidiConnectName = "Conn", MidiImplementation = [], DeviceEffects = [] }
+            TestObjects.BuildDevice(deviceName)
         };
         _dataAccessMock.Setup(m => m.LoadDataAsync<MidiDevice, EightBitSaxLoungeDataRequest>(
             "GET", It.Is<EightBitSaxLoungeDataRequest>(r => r.RequestRoute == $"devices/{deviceName}"), "EightBitSaxLoungeDataLayer"))
@@ -98,14 +99,7 @@ public class EightBitSaxLoungeMidiDataServiceTests
         // Arrange
         var deviceName = "TestDevice";
         var effectName = "TestEffect";
-        var device = new MidiDevice 
-        { 
-            Name = deviceName, 
-            Description = "Desc", 
-            MidiConnectName = "Conn", 
-            MidiImplementation = [], 
-            DeviceEffects = new List<DeviceEffect> { new DeviceEffect { Name = effectName, Active = false, EffectSettings = new List<DeviceEffectSetting>() } } 
-        };
+        var device = TestObjects.BuildDevice(deviceName, new List<DeviceEffect> { TestObjects.BuildEffect(effectName, false, new List<DeviceEffectSetting>()) });
         _dataAccessMock.Setup(m => m.LoadDataAsync<MidiDevice, EightBitSaxLoungeDataRequest>(
             "GET", It.Is<EightBitSaxLoungeDataRequest>(r => r.RequestRoute == $"devices/{deviceName}"), "EightBitSaxLoungeDataLayer"))
             .ReturnsAsync(new List<MidiDevice> { device });

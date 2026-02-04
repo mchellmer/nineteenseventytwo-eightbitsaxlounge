@@ -384,47 +384,83 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         }
     }
     
+    /// <summary>
+    /// Get MIDI control change message values to set a <see cref="DeviceEffect"/>>'s state.
+    /// A <see cref="MidiDevice"/>'s midi implementation contains some <see cref="MidiConfiguration"/>"/>.
+    /// The configuration's name either matches the devices effect's name or its dependency.
+    /// Dependent <see cref="Effect"/>'s contain details to identify the correct configuration.
+    /// </summary>
+    /// <param name="deviceName">
+    /// The name of the <see cref="MidiDevice"/> whose midi implementation contains the configuration.
+    /// </param>
+    /// <param name="deviceEffectName">
+    /// The name of the <see cref="DeviceEffect"/>.
+    /// </param>
+    /// <param name="deviceEffectSettingName">
+    /// The name of the <see cref="DeviceEffectSetting"/>.
+    /// </param>
+    /// <param name="settingValue">
+    /// The value the <see cref="ControlChangeMessage"/> will set for the effect.
+    /// </param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     public async Task<ControlChangeMessage> GetControlChangeMessageToSetDeviceEffectSettingAsync(
-        string deviceName, string effectName, string settingName, int settingValue)
+        string deviceName, string deviceEffectName, string deviceEffectSettingName, int settingValue)
     {
         var device = await GetDeviceByNameAsync(deviceName);
-        var deviceEffect = device.DeviceEffects.FirstOrDefault(de => de.Name == effectName);
+        if (device == null)
+        {
+            var msg = $"No device named '{deviceName}' found.";
+            _logger.LogError(msg);
+            throw new InvalidOperationException(msg);
+        }
+        
+        var deviceEffect = device.DeviceEffects.FirstOrDefault(de => de.Name == deviceEffectName);
         if (deviceEffect == null)
         {
-            var msg = $"No effect named '{effectName}' found in device '{deviceName}'.";
+            var msg = $"No effect named '{deviceEffectName}' found in device '{deviceName}'.";
             _logger.LogError(msg);
             throw new InvalidOperationException(msg);
         }
         
         var deviceEffectSetting = deviceEffect.EffectSettings
-            .FirstOrDefault(des => des.Name == settingName);
+            .FirstOrDefault(des => des.Name == deviceEffectSettingName);
         if (deviceEffectSetting == null)
         {
-            var msg = $"No setting named '{settingName}' found for effect '{effectName}' in device '{deviceName}'.";
+            var msg = $"No setting named '{deviceEffectSettingName}' found for effect '{deviceEffectName}' in device '{deviceName}'.";
             _logger.LogError(msg);
             throw new InvalidOperationException(msg);
         }
+
+        MidiConfiguration? settingMidiConfiguration;
+        if (deviceEffectSetting.DeviceEffectSettingDependencyName == null)
+        {
+            settingMidiConfiguration = device.MidiImplementation.FirstOrDefault(
+                midiConfiguration => midiConfiguration.Name == deviceEffectSetting.Name);
+        }
+        else
+        {
+            settingMidiConfiguration = await GetDeviceMidiConfigurationNameForDependentEffect(deviceEffectSetting);
+        }
         
-        var settingMidiImplementationName = await GetSettingMidiImplementationName(
-            deviceName, settingName, deviceEffect, deviceEffectSetting);
+        MidiConfiguration settingMidiConfiguration = await GetDeviceMidiConfigurationForEffectSetting(
+            device, deviceEffectSettingName, deviceEffect, deviceEffectSetting);
         
-        var settingMidiConfiguration = device.MidiImplementation
-            .FirstOrDefault(configuration => configuration.Name == settingMidiImplementationName);
         if (settingMidiConfiguration == null)
         {
-            var msg = $"No MIDI implementation found for setting '{settingName}' in device '{deviceName}'.";
+            var msg = $"No MIDI implementation found for setting '{deviceEffectSettingName}' in device '{deviceName}'.";
             _logger.LogError(msg);
             throw new InvalidOperationException(msg);
         }
 
         var settingAddress = 
             (settingMidiConfiguration.ControlChangeAddresses ?? throw new InvalidOperationException
-            ($"No MIDI implementation found for setting '{settingName}' in device '{deviceName}'."))
-            .FirstOrDefault(address => address.Name == effectName);
+            ($"No MIDI implementation found for setting '{deviceEffectSettingName}' in device '{deviceName}'."))
+            .FirstOrDefault(address => address.Name == deviceEffectName);
         
         if (settingAddress == null)
         {
-            var msg = $"No ControlChangeAddress found for effect '{effectName}' in setting '{settingName}' for device '{deviceName}'.";
+            var msg = $"No ControlChangeAddress found for effect '{deviceEffectName}' in setting '{deviceEffectSettingName}' for device '{deviceName}'.";
             _logger.LogError(msg);
             throw new InvalidOperationException(msg);
         }
@@ -437,27 +473,43 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         };
     }
 
+    private async Task<MidiConfiguration?> GetDeviceMidiConfigurationNameForDependentEffect(DeviceEffectSetting deviceEffectSetting)
+    {
+        var dependentEffectSetting = 
+    }
+
     /// <summary>
-    /// Gets the MIDI implementation name for a device effect setting, considering any dependencies.
+    /// Gets the <see cref="MidiConfiguration"/> for a <see cref="DeviceEffectSetting"/>.
+    /// This is the configuration matching the setting name or its dependency.
     /// </summary>
-    /// <param name="deviceName"></param>
+    /// <param name="device">
+    /// The <see cref="MidiDevice"/>
+    /// whose midi implementation contains the configuration
+    /// and whose effect settings contain a 
+    /// </param>
     /// <param name="settingName"></param>
     /// <param name="deviceEffect"></param>
     /// <param name="deviceEffectSetting"></param>
-    /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    private async Task<string> GetSettingMidiImplementationName(string deviceName, string settingName, DeviceEffect deviceEffect,
+    private async Task<MidiConfiguration> GetDeviceMidiConfigurationForEffectSetting(
+        MidiDevice device,
+        string settingName,
+        DeviceEffect deviceEffect,
         DeviceEffectSetting deviceEffectSetting)
     {
+        List<MidiConfiguration> deviceMidiImplementation;
+        
         string settingMidiImplementationName;
+        
         // Some settings are dependent on others e.g. if a reverb engine is 'Room' then Control1 is 'Bass'
         // If the EffectSetting has a DeviceEffectSettingDependencyName, get that effect's ControlChangeAddress instead
         if (!string.IsNullOrEmpty(deviceEffectSetting.DeviceEffectSettingDependencyName))
         {
-            var deviceEffectSettingDependency = deviceEffect.EffectSettings.FirstOrDefault(setting => setting.Name == deviceEffectSetting.DeviceEffectSettingDependencyName);
+            var deviceEffectSettingDependency = deviceEffect.EffectSettings.FirstOrDefault(
+                setting => setting.Name == deviceEffectSetting.DeviceEffectSettingDependencyName);
             if (deviceEffectSettingDependency == null)
             {
-                var msg = $"No dependency found with name '{deviceEffectSetting.DeviceEffectSettingDependencyName}' for setting '{settingName}' in device '{deviceName}'.";
+                var msg = $"No dependency found with name '{deviceEffectSetting.DeviceEffectSettingDependencyName}' for setting '{settingName}' in device '{device.Name}'.";
                 _logger.LogError(msg);
                 throw new InvalidOperationException(msg);
             }
@@ -466,7 +518,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             var dependentSettingSelector = await GetSelectorByNameAsync(deviceEffectSettingDependency.Name);
             if (dependentSettingSelector == null)
             {
-                var msg = $"No selector found with name '{deviceEffectSettingDependency.Name}' for dependency in device '{deviceName}'.";
+                var msg = $"No selector found with name '{deviceEffectSettingDependency.Name}' for dependency in device '{device.Name}'.";
                 _logger.LogError(msg);
                 throw new InvalidOperationException(msg);
             }
@@ -475,7 +527,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                 selection => selection.ControlChangeMessageValue == deviceEffectSettingDependency.Value)?.Name;
             if (string.IsNullOrEmpty(dependentEffectName))
             {
-                var msg = $"No dependent effect found for setting '{settingName}' in device '{deviceName}'.";
+                var msg = $"No dependent effect found for setting '{settingName}' in device '{device.Name}'.";
                 _logger.LogError(msg);
                 throw new InvalidOperationException(msg);
             }
@@ -483,16 +535,16 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             var dependentEffect = await GetEffectByNameAsync(dependentEffectName);
             if (dependentEffect.DeviceSettings == null)
             {
-                var msg = $"No device settings found for dependent effect '{dependentEffectName}' in device '{deviceName}'.";
+                var msg = $"No device settings found for dependent effect '{dependentEffectName}' in device '{device.Name}'.";
                 _logger.LogError(msg);
                 throw new InvalidOperationException(msg);
             }
             
             var effectDeviceSetting = dependentEffect.DeviceSettings.FirstOrDefault(
-                setting => setting.DeviceName == deviceName && setting.Name == settingName);
+                setting => setting.DeviceName == device.Name && setting.Name == settingName);
             if (effectDeviceSetting == null)
             {
-                var msg = $"No device setting found for dependent effect '{dependentEffectName}' in device '{deviceName}' with setting name '{settingName}'.";
+                var msg = $"No device setting found for dependent effect '{dependentEffectName}' in device '{device.Name}' with setting name '{settingName}'.";
                 _logger.LogError(msg);
                 throw new InvalidOperationException(msg);
             }
@@ -503,7 +555,10 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         {
             settingMidiImplementationName = settingName;
         }
+        
+        var settingMidiConfiguration = device.MidiImplementation
+            .FirstOrDefault(configuration => configuration.Name == settingMidiImplementationName);
 
-        return settingMidiImplementationName;
+        return settingMidiConfiguration;
     }
 }
