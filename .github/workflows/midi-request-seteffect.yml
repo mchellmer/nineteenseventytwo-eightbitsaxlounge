@@ -2,6 +2,41 @@ name: MIDI Request SetEffect
 
 on:
   workflow_dispatch:
+    inputs:
+      device:
+        description: 'Device name'
+        required: true
+        default: 'VentrisDualReverb'
+        type: choice
+        options:
+          - VentrisDualReverb
+      device_effect:
+        description: 'Device effect'
+        required: true
+        default: 'ReverbEngineA'
+        type: choice
+        options:
+          - ReverbEngineA
+          - ReverbEngineB
+      device_effect_setting:
+        description: 'Device effect setting'
+        required: true
+        default: 'ReverbEngine'
+        type: choice
+        options:
+          - ReverbEngine
+          - Time
+          - Delay
+          - Control1
+          - Control2
+      value:
+        description: 'Value (optional integer)'
+        required: false
+        type: string
+      selection:
+        description: 'Selection (optional string)'
+        required: false
+        type: string
 
 jobs:
   set-effect:
@@ -23,6 +58,14 @@ jobs:
           fi
 
       - name: Run Set Effect
-        run: make request-seteffect
+        run: |
+          make request-seteffect \
+            DEVICE="${{ github.event.inputs.device }}" \
+            DEVICE_EFFECT="${{ github.event.inputs.device_effect }}" \
+            DEVICE_EFFECT_SETTING="${{ github.event.inputs.device_effect_setting }}" \
+            VALUE="${{ github.event.inputs.value }}" \
+            SELECTION="${{ github.event.inputs.selection }}"
         env:
           NAMESPACE: ${{ env.NAMESPACE }}
+          AUTH_CLIENT_0_ID: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTID }}
+          AUTH_CLIENT_0_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTSECRET }}
