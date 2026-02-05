@@ -152,7 +152,7 @@ public class SetEffectHandlerTests : TestBase
 
         // Assert
         Assert.Equal(404, status);
-        Assert.Contains("Control change address for effect \\u0027ReverbEngineA\\u0027 not found", body);
+        Assert.Contains("No control change addresses defined", body);
     }
 
     [Fact]
@@ -239,5 +239,105 @@ public class SetEffectHandlerTests : TestBase
         Assert.Contains("Effect set for device VentrisDualReverb to 0", body);
         deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync("Conn", It.Is<ControlChangeMessage>(msg => msg.Address == 1 && msg.Value == 0)), Times.Once);
         dataServiceMock.Verify(m => m.UpdateDeviceByNameAsync("VentrisDualReverb", It.Is<MidiDevice>(d => d.DeviceEffects[0].EffectSettings[0].Value == 0)), Times.Once);
+    }
+
+    [Fact]
+    public async Task SetEffect_WithDependency_ReturnsOk()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<SetEffectHandler>>();
+        var dataServiceMock = new Mock<IMidiDataService>();
+        var deviceServiceMock = new Mock<IMidiDeviceService>();
+
+        var deviceName = "VentrisDualReverb";
+        var effectName = "ReverbEngineA";
+        var settingName = "Control1";
+        var dependencyName = "ReverbEngine";
+        var dependentEffectName = "Room";
+        var implementationName = "EngineParameter1";
+
+        var device = new MidiDevice
+        {
+            Name = deviceName,
+            Description = "Desc",
+            MidiConnectName = "Conn",
+            MidiImplementation = new List<MidiConfiguration>
+            {
+                new MidiConfiguration
+                {
+                    Name = implementationName,
+                    ControlChangeAddresses = new List<ControlChangeAddress>
+                    {
+                        new ControlChangeAddress { Name = effectName, Value = 15 }
+                    }
+                }
+            },
+            DeviceEffects = new List<DeviceEffect>
+            {
+                new DeviceEffect
+                {
+                    Name = effectName,
+                    Active = true,
+                    EffectSettings = new List<DeviceEffectSetting>
+                    {
+                        new DeviceEffectSetting 
+                        { 
+                            Name = settingName, 
+                            Value = 0, 
+                            DefaultValue = 0,
+                            DeviceEffectSettingDependencyName = dependencyName 
+                        },
+                        new DeviceEffectSetting
+                        {
+                            Name = dependencyName,
+                            Value = 10,
+                            DefaultValue = 0
+                        }
+                    }
+                }
+            }
+        };
+
+        var selector = new Selector
+        {
+            Name = dependencyName,
+            Selections = new List<MidiSelection>
+            {
+                new MidiSelection { Name = dependentEffectName, ControlChangeMessageValue = 10 }
+            }
+        };
+
+        var dependentEffect = new Effect
+        {
+            Name = dependentEffectName,
+            Description = "Desc",
+            DeviceSettings = new List<DeviceSetting>
+            {
+                new DeviceSetting
+                {
+                    Name = settingName,
+                    DeviceName = deviceName,
+                    EffectName = dependentEffectName,
+                    DeviceMidiImplementationName = implementationName
+                }
+            }
+        };
+
+        dataServiceMock.Setup(m => m.GetDeviceByNameAsync(deviceName)).ReturnsAsync(device);
+        dataServiceMock.Setup(m => m.GetSelectorByNameAsync(dependencyName)).ReturnsAsync(selector);
+        dataServiceMock.Setup(m => m.GetEffectByNameAsync(dependentEffectName)).ReturnsAsync(dependentEffect);
+        
+        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
+        var request = new SetEffectRequest(deviceName, effectName, settingName, Value: 127);
+
+        // Act
+        var result = await handler.HandleAsync(request);
+        var (status, body) = await ExecuteResultAsync(result);
+
+        // Assert
+        Assert.Equal(200, status);
+        Assert.Contains($"Effect set for device {deviceName} to 127", body);
+        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync("Conn", It.Is<ControlChangeMessage>(msg => msg.Address == 15 && msg.Value == 127)), Times.Once);
+        dataServiceMock.Verify(m => m.UpdateDeviceByNameAsync(deviceName, It.IsAny<MidiDevice>()), Times.Once);
     }
 }
