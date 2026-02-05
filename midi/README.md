@@ -68,6 +68,9 @@ make deploy-pc-prod     # Deploy to C:\Services\Midi\prod (port 5001)
   - Manual trigger with choice: `effects` or `devices`
   - Authenticates with JWT token
   - Uploads to environment based on branch (dev/prod)
+- **SetEffect Request** (`midi-request-seteffect.yml`): Sends effect change requests to devices
+  - Manual trigger with parameters: device, effect, setting, value/selection
+  - Translates high-level settings to MIDI control change messages
 
 **Manual Deployment:**
 ```bash
@@ -159,6 +162,17 @@ GitHub Actions → K8s MIDI API (JWT auth)
   - Authentication: Required (Bearer token)
   - Request: `{ "deviceMidiConnectName": "...", "address": 0-127, "value": 0-127, "channel": 0-15 }`
   
+- `POST /api/Midi/SetEffect`: Set device effect using high-level parameters
+  - Authentication: Required (Bearer token)
+  - Request: `{ "deviceName": "VentrisDualReverb", "deviceEffectName": "ReverbEngineA", "deviceEffectSettingName": "Time", "value": 64, "selection": "Room" }`
+  - Parameters:
+    - `deviceName` (required): Device identifier (e.g., "VentrisDualReverb")
+    - `deviceEffectName` (required): Effect identifier (e.g., "ReverbEngineA", "ReverbEngineB")
+    - `deviceEffectSettingName` (required): Setting name (e.g., "ReverbEngine", "Time", "Delay", "Control1", "Control2")
+    - `value` (optional): Integer value for continuous settings (0-127)
+    - `selection` (optional): String value for discrete selector settings
+  - Translates effect settings to MIDI control change messages using device configuration
+  
 - `POST /api/Midi/InitializeDataModel`: Initialize CouchDB databases and views
   - Authentication: Required (Bearer token)
   - Creates databases: `devices`, `effects`, `selectors`
@@ -206,11 +220,36 @@ curl -X POST http://localhost:5000/api/Midi/UploadDevice/VentrisDualReverb \
   -H "Authorization: Bearer $TOKEN"
 ```
 
+**Example - Set Device Effect:**
+```bash
+# Set reverb time to value 64
+curl -X POST http://localhost:5000/api/Midi/SetEffect \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "deviceName": "VentrisDualReverb",
+    "deviceEffectName": "ReverbEngineA",
+    "deviceEffectSettingName": "Time",
+    "value": 64
+  }'
+
+# Set reverb engine to "Room" selection
+curl -X POST http://localhost:5000/api/Midi/SetEffect \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "deviceName": "VentrisDualReverb",
+    "deviceEffectName": "ReverbEngineA",
+    "deviceEffectSettingName": "ReverbEngine",
+    "selection": "Room"
+  }'
+```
+
 ## Library
 
 **Architecture:**
 - Handler pattern with `IEndpointHandler<TRequest, TResponse>` interface
-- Endpoint handlers: `SendControlChangeMessageHandler`, `InitializeDataModelHandler`, `UploadEffectsHandler`, `UploadDeviceHandler`, `ResetDeviceHandler`
+- Endpoint handlers: `SendControlChangeMessageHandler`, `SetEffectHandler`, `InitializeDataModelHandler`, `UploadEffectsHandler`, `UploadDeviceHandler`, `ResetDeviceHandler`
 - Service layer: `WinmmMidiDeviceService`, `EightBitSaxLoungeMidiDataService`
 
 **WinmmMidiDeviceService:**
@@ -232,7 +271,7 @@ curl -X POST http://localhost:5000/api/Midi/UploadDevice/VentrisDualReverb \
 - DeviceSettings with DeviceName for multi-device effect support
 
 # Tests
-- Endpoint handler unit tests (SendControlChangeMessage, InitializeDataModel, UploadEffects, UploadDevice, ResetDevice)
+- Endpoint handler unit tests (SendControlChangeMessage, SetEffect, InitializeDataModel, UploadEffects, UploadDevice, ResetDevice)
 - Data service unit tests (EightBitSaxLoungeMidiDataService)
 - WinMM device service unit tests (WinmmMidiDeviceService)
 - Configuration model validation tests

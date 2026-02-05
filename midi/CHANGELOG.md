@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.9]
+
+### Added
+- SetEffect endpoint (`POST /api/Midi/SetEffect`) for high-level device effect control
+- SetEffectHandler to translate effect settings to MIDI control change messages
+- SetEffectRequest record model with device, effect, and setting parameters
+- Support for both value-based (int) and selection-based (string) effect settings
+- GitHub Actions workflow for sending SetEffect requests (`midi-request-seteffect.yml`)
+- Ansible playbook for SetEffect endpoint requests with authentication
+- Make target `request-seteffect` for manual effect updates
+
 ## [2.0.8]
 
 ### Added
