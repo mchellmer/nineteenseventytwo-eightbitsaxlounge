@@ -139,10 +139,19 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         try
         {
             var device = await GetDeviceByNameAsync(deviceName);
-        
-            device.DeviceEffects.First(e => e.Name == effectName).Active = activate;
-        
-            await UpdateDeviceByNameAsync(deviceName, device);
+
+            if (device != null)
+            {
+                device.DeviceEffects.First(e => e.Name == effectName).Active = activate;
+
+                await UpdateDeviceByNameAsync(deviceName, device);
+            }
+            else
+            {
+                var msg = $"Update device failed. Device with name {deviceName} not found.";
+                _logger.LogError(msg);
+                throw new InvalidOperationException(msg);
+            }
         }
         catch (Exception e)
         {
@@ -355,6 +364,13 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         string deviceName, string effectName, bool activate)
     {
         var device = await GetDeviceByNameAsync(deviceName);
+        
+        if (device == null)
+        {
+            var msg = $"Get control change message failed. Device with name {deviceName} not found.";
+            _logger.LogError(msg);
+            throw  new InvalidOperationException(msg);
+        }
 
         var activator = _effectActivatorFactory.GetActivator(device.Name);
         if (activator == null)
@@ -432,16 +448,17 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             throw new InvalidOperationException(msg);
         }
 
-        MidiConfiguration? settingMidiConfiguration;
-        if (deviceEffectSetting.DeviceEffectSettingDependencyName == null)
-        {
-            settingMidiConfiguration = device.MidiImplementation.FirstOrDefault(
-                midiConfiguration => midiConfiguration.Name == deviceEffectSetting.Name);
-        }
-        else
-        {
-            settingMidiConfiguration = await GetDeviceMidiConfigurationNameForDependentEffect(deviceEffectSetting);
-        }
+        //TODO: wip to improve logic based on updated data model
+        // MidiConfiguration? settingMidiConfiguration;
+        // if (deviceEffectSetting.DeviceEffectSettingDependencyName == null)
+        // {
+        //     settingMidiConfiguration = device.MidiImplementation.FirstOrDefault(
+        //         midiConfiguration => midiConfiguration.Name == deviceEffectSetting.Name);
+        // }
+        // else
+        // {
+        //     settingMidiConfiguration = await GetDeviceMidiConfigurationNameForDependentEffect(deviceEffectSetting);
+        // }
         
         MidiConfiguration settingMidiConfiguration = await GetDeviceMidiConfigurationForEffectSetting(
             device, deviceEffectSettingName, deviceEffect, deviceEffectSetting);
@@ -473,10 +490,11 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         };
     }
 
-    private async Task<MidiConfiguration?> GetDeviceMidiConfigurationNameForDependentEffect(DeviceEffectSetting deviceEffectSetting)
-    {
-        var dependentEffectSetting = 
-    }
+    // TODO: wip
+    // private async Task<MidiConfiguration?> GetDeviceMidiConfigurationNameForDependentEffect(DeviceEffectSetting deviceEffectSetting)
+    // {
+    //     var dependentEffectSetting = 
+    // }
 
     /// <summary>
     /// Gets the <see cref="MidiConfiguration"/> for a <see cref="DeviceEffectSetting"/>.
@@ -533,6 +551,13 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             }
             
             var dependentEffect = await GetEffectByNameAsync(dependentEffectName);
+            if (dependentEffect == null)
+            {
+                var msg = $"No dependent effect found with name '{dependentEffectName}' for setting '{settingName}' in device '{device.Name}'.";
+                _logger.LogError(msg);
+                throw new InvalidOperationException(msg);
+            }
+            
             if (dependentEffect.DeviceSettings == null)
             {
                 var msg = $"No device settings found for dependent effect '{dependentEffectName}' in device '{device.Name}'.";
@@ -550,6 +575,12 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             }
             
             settingMidiImplementationName = effectDeviceSetting.DeviceMidiImplementationName;
+            if (settingMidiImplementationName == null)
+            {
+                var msg = $"No MIDI implementation name found for device setting '{settingName}' for dependent effect '{dependentEffectName}' in device '{device.Name}'.";
+                _logger.LogError(msg);
+                throw new InvalidOperationException(msg);
+            }
         }
         else
         {

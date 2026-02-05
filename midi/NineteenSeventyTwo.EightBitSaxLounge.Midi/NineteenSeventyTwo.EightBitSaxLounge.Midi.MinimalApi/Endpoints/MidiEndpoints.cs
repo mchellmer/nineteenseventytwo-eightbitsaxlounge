@@ -40,5 +40,14 @@ public static class MidiEndpoints
             .RequireAuthorization()
             .WithName("UploadDevice")
             .WithTags("Data");
+
+        app.MapPost("api/Midi/SetEffect",
+                async (
+                    SetEffectHandler handler,
+                    [FromBody] SetEffectRequest request) =>
+                    await handler.HandleAsync(request))
+            .RequireAuthorization()
+            .WithName("SetEffect")
+            .WithTags("Device");
     }
 }
