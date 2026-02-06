@@ -26,8 +26,8 @@ public class SetEffectHandler : IEndpointHandler<SetEffectRequest, IResult>
 
     public async Task<IResult> HandleAsync(SetEffectRequest request)
     {
-        _logger.LogInformation("Setting effect: Device={DeviceName}, Effect={EffectName}, Setting={SettingName}", 
-            request.DeviceName, request.DeviceEffectName, request.DeviceEffectSettingName);
+        _logger.LogInformation("Setting effect: Device={DeviceName}, Effect={EffectName}, Setting={SettingName}, Value={Value}, Selection={Selection}", 
+            request.DeviceName, request.DeviceEffectName, request.DeviceEffectSettingName, request.Value, request.Selection);
 
         try
         {

@@ -580,6 +580,9 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                 _logger.LogError(msg);
                 throw new InvalidOperationException(msg);
             }
+            
+            _logger.LogInformation("Resolved dependent effect setting: Dependency={DependencyName}, Value={DependencyValue}, DependentEffect={DependentEffectName}, EffectName={EffectName}, MidiImplementationName={MidiImplementationName}",
+                deviceEffectSetting.DeviceEffectSettingDependencyName, deviceEffectSettingDependency.Value, dependentEffectName, effectDeviceSetting.EffectName, settingMidiImplementationName);
         }
         else
         {
