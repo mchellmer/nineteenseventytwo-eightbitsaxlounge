@@ -35,16 +35,27 @@ deploy-storage:
 	ansible-playbook k8s-storage.yaml
 
 clean-cicd:
-	@echo "Cleaning up GitHub Actions Runner..."
-	cd ~/actions-runner && sudo ./svc.sh stop || true
-	cd ~/actions-runner && sudo ./svc.sh uninstall || true
-	cd ~/actions-runner && rm -f .credentials .credentials_rsaparams .runner .runner_migrated
-	cd ~/actions-runner && rm -rf _diag
+	@echo "Cleaning up GitHub Actions Runners..."
+	@for runner in ~/actions-runner-*; do \
+		if [ -d "$$runner" ]; then \
+			echo "Cleaning up $$runner..."; \
+			cd "$$runner" && sudo ./svc.sh stop || true; \
+			cd "$$runner" && sudo ./svc.sh uninstall || true; \
+			cd "$$runner" && ./config.sh remove || true; \
+		fi; \
+	done
+	@rm -rf ~/actions-runner-* || true
 	@echo "Cleanup complete. Run 'make init-cicd' to reconfigure."
 
 init-cicd: scripts/github-runner.sh
-	@read -p "Enter the GitHub Actions Runner token: " TOKEN; \
-	bash scripts/github-runner.sh $$TOKEN
+	@echo "You need TWO registration tokens from GitHub:"
+	@echo "  1. Go to: https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge/settings/actions/runners/new"
+	@echo "  2. Copy the token for Runner 1"
+	@echo "  3. Refresh the page and get a NEW token for Runner 2"
+	@echo ""
+	@read -p "Enter token for Runner 1: " TOKEN1; \
+	read -p "Enter token for Runner 2: " TOKEN2; \
+	bash scripts/github-runner.sh "$$TOKEN1" "$$TOKEN2"
 
 init-console: scripts/init.sh
 	bash scripts/init.sh
