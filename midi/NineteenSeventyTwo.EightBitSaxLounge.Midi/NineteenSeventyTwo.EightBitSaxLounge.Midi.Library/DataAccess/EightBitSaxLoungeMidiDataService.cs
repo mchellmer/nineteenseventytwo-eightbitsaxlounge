@@ -516,8 +516,6 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         DeviceEffect deviceEffect,
         DeviceEffectSetting deviceEffectSetting)
     {
-        List<MidiConfiguration> deviceMidiImplementation;
-        
         string settingMidiImplementationName;
         
         // Some settings are dependent on others e.g. if a reverb engine is 'Room' then Control1 is 'Bass'
@@ -575,7 +573,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                 throw new InvalidOperationException(msg);
             }
             
-            settingMidiImplementationName = effectDeviceSetting.DeviceMidiImplementationName;
+            settingMidiImplementationName = effectDeviceSetting.DeviceMidiImplementationName ?? effectDeviceSetting.EffectName;
             if (settingMidiImplementationName == null)
             {
                 var msg = $"No MIDI implementation name found for device setting '{settingName}' for dependent effect '{dependentEffectName}' in device '{device.Name}'.";
