@@ -70,7 +70,7 @@
 
     - name: Patch Deployment image to versioned tag
       ansible.builtin.shell: |
-        IMAGE_BASE=${IMAGE_BASE:-ghcr.io/${GITHUB_REPOSITORY_OWNER}/eightbitsaxlounge-couchdb-api}
+        IMAGE_BASE=${IMAGE_BASE:-ghcr.io/${GITHUB_REPOSITORY_OWNER}/eightbitsaxlounge-data}
         kubectl -n "$NAMESPACE" set image deploy/eightbitsaxlounge-data-api \
           eightbitsaxlounge-data-api="${IMAGE_BASE}:${VERSION}"
       environment:
