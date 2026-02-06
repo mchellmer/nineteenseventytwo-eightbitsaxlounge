@@ -33,11 +33,16 @@ help:
 
 # Standard CI/CD targets
 test:
+	@echo "Setting up .NET and running tests..."
+	@if ! command -v dotnet >/dev/null 2>&1 || [ ! -d "$$HOME/.dotnet" ]; then \
+		echo "Installing .NET SDK to $$HOME/.dotnet..."; \
+		curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir $$HOME/.dotnet; \
+	fi
 	@echo "Running .NET tests in NineteenSeventyTwo.EightBitSaxLounge.Midi..."
 	cd NineteenSeventyTwo.EightBitSaxLounge.Midi && \
-	dotnet restore NineteenSeventyTwo.EightBitSaxLounge.Midi.sln && \
-	dotnet build NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-restore --configuration Release && \
-	dotnet test NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-build --configuration Release --verbosity normal
+	$$HOME/.dotnet/dotnet restore NineteenSeventyTwo.EightBitSaxLounge.Midi.sln && \
+	$$HOME/.dotnet/dotnet build NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-restore --configuration Release && \
+	$$HOME/.dotnet/dotnet test NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-build --configuration Release --verbosity normal
 
 build-container:
 	@echo "Building and pushing MIDI container $(IMAGE_BASE):$(VERSION)..."

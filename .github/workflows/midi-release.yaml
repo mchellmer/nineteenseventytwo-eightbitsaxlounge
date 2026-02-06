@@ -14,15 +14,34 @@ permissions:
   packages: write
 
 jobs:
-  # Container release for Kubernetes
+  # Shared test job
+  test:
+    name: Run .NET Tests
+    runs-on: self-hosted
+    env:
+      # Dummy configuration for tests
+      Authentication__SecretKey: "dummySecretKeyForTestingOnly1234567890123456789012"
+      Authentication__Issuer: "Test"
+      Authentication__Audience: "Test"
+      Authentication__TokenExpiryInMinutes: "5"
+      ConnectionStrings__EightBitSaxLoungeDataLayer: "http://localhost:5000"
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run tests
+        working-directory: ./midi
+        run: make test
+
+  # Container release for Kubernetes (runs in parallel with build-pc after test)
   release-k8s:
     name: Release MIDI Container (K8s)
+    needs: test
     permissions:
       packages: write
     uses: ./.github/workflows/release-template.yaml
     with:
       component: 'midi'
-      test-target: 'test'
       build-target: 'build-container'
       deploy-target: 'deploy-k8s'
       requires-docker-login: true
@@ -44,26 +63,39 @@ jobs:
           "TOKEN_EXPIRY": "${{ secrets.AUTHENTICATION_TOKENEXPIRYINMINUTES }}"
         }
 
-  # Windows PC deployment  
+  # Windows PC build (runs in parallel with release-k8s after test)
   build-pc:
     name: Build Windows PC Package
-    needs: release-k8s
+    needs: test
     runs-on: self-hosted
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
+
+    - name: Setup .NET
+      run: |
+        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir $HOME/.dotnet
+        echo "$HOME/.dotnet" >> $GITHUB_PATH
 
     - name: Read version
       id: version
       working-directory: ./midi
       run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
 
-    - name: Build Windows package
-      working-directory: ./midi
-      env:
-        VERSION: ${{ steps.version.outputs.version }}
-        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-      run: make build-pc
+    - name: Publish Windows application
+      working-directory: ./midi/NineteenSeventyTwo.EightBitSaxLounge.Midi
+      run: |
+        $HOME/.dotnet/dotnet publish NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi/NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.csproj \
+          --configuration Release \
+          --runtime win-x64 \
+          --self-contained true \
+          -p:PublishSingleFile=false \
+          -p:Version=${{ steps.version.outputs.version }} \
+          --output ${{ github.workspace }}/midi/publish/bin
+
+    - name: Create artifact archive
+      working-directory: ./midi/publish/bin
+      run: tar -czf ../midi-api-${{ steps.version.outputs.version }}.tar.gz *
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4

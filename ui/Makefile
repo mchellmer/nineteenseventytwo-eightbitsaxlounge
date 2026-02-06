@@ -55,29 +55,29 @@ docker-run:
 	docker run --rm -it --env-file .env eightbitsaxlounge-ui:local
 
 set-environment:
-\tansible-playbook ui-set-environment.yaml
+	ansible-playbook ui-set-environment.yaml
 
 # Help target
 help:
-\t@echo \"Available targets:\"
-\t@echo \"  test               - Run tests with coverage (for CI)\"
-\t@echo \"  build              - Build and push Docker image\"
-\t@echo \"  deploy             - Deploy to Kubernetes cluster\"
-\t@echo \"  deploy-ui          - (deprecated) Same as deploy\"
-\t@echo \"\"
-\t@echo \"Local development:\"
-\t@echo \"  install            - Install Python dependencies\"
-\t@echo \"  install-dev        - Install dev dependencies\"
-\t@echo \"  dev                - Run bot locally\"
-\t@echo \"  test-local         - Run tests (verbose)\"
-\t@echo \"  clean              - Clean test artifacts\"
-\t@echo \"  docker-build       - Build Docker image locally\"
-\t@echo \"  docker-run         - Run Docker image locally\"
-\t@echo \"  set-environment    - Switch active environment (dev/prod)\"
-\t@echo \"\"
-\t@echo \"Environment variables:\"
-\t@echo \"  VERSION            - Image version (default: from version.txt)\"
-\t@echo \"  NAMESPACE          - K8s namespace (default: eightbitsaxlounge-dev)\"
-\t@echo \"  GITHUB_REPOSITORY_OWNER - Docker registry owner (default: mchellmer)\"
+	@echo "Available targets:"
+	@echo "  test               - Run tests with coverage (for CI)"
+	@echo "  build              - Build and push Docker image"
+	@echo "  deploy             - Deploy to Kubernetes cluster"
+	@echo "  deploy-ui          - (deprecated) Same as deploy"
+	@echo ""
+	@echo "Local development:"
+	@echo "  install            - Install Python dependencies"
+	@echo "  install-dev        - Install dev dependencies"
+	@echo "  dev                - Run bot locally"
+	@echo "  test-local         - Run tests (verbose)"
+	@echo "  clean              - Clean test artifacts"
+	@echo "  docker-build       - Build Docker image locally"
+	@echo "  docker-run         - Run Docker image locally"
+	@echo "  set-environment    - Switch active environment (dev/prod)"
+	@echo ""
+	@echo "Environment variables:"
+	@echo "  VERSION            - Image version (default: from version.txt)"
+	@echo "  NAMESPACE          - K8s namespace (default: eightbitsaxlounge-dev)"
+	@echo "  GITHUB_REPOSITORY_OWNER - Docker registry owner (default: mchellmer)"
 
 .PHONY: test build deploy deploy-ui install install-dev dev test-local clean docker-build docker-run set-environment help
