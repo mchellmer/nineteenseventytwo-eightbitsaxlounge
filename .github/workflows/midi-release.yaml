@@ -30,7 +30,6 @@ jobs:
   check-artifacts:
     name: Check if Artifacts Exist
     runs-on: self-hosted
-    needs: [lint]
     outputs:
       version: ${{ steps.version.outputs.version }}
       namespace: ${{ steps.namespace.outputs.namespace }}
