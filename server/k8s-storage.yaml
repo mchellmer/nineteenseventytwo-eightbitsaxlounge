@@ -2,15 +2,20 @@
 - name: Install Longhorn distributed storage for Kubernetes
   hosts: master
   tasks:
-    - name: Check if open-iscsi is installed on nodes
-      ansible.builtin.shell: |
-        kubectl get nodes -o json | jq -r '.items[].status.nodeInfo.osImage'
-      register: node_check
-      changed_when: false
+    - name: Create temporary directory for manifests
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: longhorn
+      register: tempdir
+
+    - name: Copy iSCSI prerequisite manifest to master
+      ansible.builtin.copy:
+        src: templates/longhorn-iscsi-prereqs.yaml
+        dest: "{{ tempdir.path }}/longhorn-iscsi-prereqs.yaml"
 
     - name: Apply iSCSI prerequisite installer DaemonSet
       ansible.builtin.shell: |
-        kubectl apply -f {{ playbook_dir }}/templates/longhorn-iscsi-prereqs.yaml
+        kubectl apply -f {{ tempdir.path }}/longhorn-iscsi-prereqs.yaml
       register: iscsi_install
 
     - name: Wait for iSCSI installation to complete
@@ -21,7 +26,7 @@
 
     - name: Remove iSCSI installer DaemonSet
       ansible.builtin.shell: |
-        kubectl delete -f {{ playbook_dir }}/templates/longhorn-iscsi-prereqs.yaml
+        kubectl delete -f {{ tempdir.path }}/longhorn-iscsi-prereqs.yaml
       when: iscsi_wait is succeeded
 
     - name: Add Longhorn Helm repository
