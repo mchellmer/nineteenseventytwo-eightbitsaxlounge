@@ -4,6 +4,12 @@ NAMESPACE ?= eightbitsaxlounge-dev
 IMAGE_BASE ?= ghcr.io/$(GITHUB_REPOSITORY_OWNER)/eightbitsaxlounge-ui
 GITHUB_REPOSITORY_OWNER ?= mchellmer
 
+# Lint Python code
+lint:
+	@echo "Running Python linter..."
+	pip3 install ruff --break-system-packages || pip3 install ruff
+	ruff check src/ tests/
+
 # Run Python tests with coverage
 test:
 	@echo "Running Python tests..."

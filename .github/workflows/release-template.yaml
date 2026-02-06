@@ -22,6 +22,11 @@ on:
         required: false
         type: string
         default: ''
+      lint-target:
+        description: 'Make target for linting (empty to skip)'
+        required: false
+        type: string
+        default: ''
       package-target:
         description: 'Make target for packaging (empty to skip)'
         required: false
@@ -42,10 +47,25 @@ on:
         required: false
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: self-hosted
+    if: inputs.lint-target != ''
+    defaults:
+      run:
+        working-directory: ./${{ inputs.component }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run Lint
+        run: make ${{ inputs.lint-target }}
+
   test:
     name: Test
     runs-on: self-hosted
-    if: inputs.test-target != ''
+    needs: [lint]
+    if: always() && (needs.lint.result == 'success' || needs.lint.result == 'skipped') && inputs.test-target != ''
     defaults:
       run:
         working-directory: ./${{ inputs.component }}
@@ -59,8 +79,8 @@ jobs:
   build:
     name: Build and Package
     runs-on: self-hosted
-    needs: [test]
-    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    needs: [lint, test]
+    if: always() && (needs.lint.result == 'success' || needs.lint.result == 'skipped') && (needs.test.result == 'success' || needs.test.result == 'skipped')
     permissions:
       packages: write
     defaults:
@@ -105,6 +125,20 @@ jobs:
           NAMESPACE: ${{ steps.namespace.outputs.namespace }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: make ${{ inputs.build-target }}
+
+      - name: Security Scan Container
+        if: inputs.requires-docker-login
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}:${{ steps.version.outputs.version }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy Results to GitHub Security
+        if: inputs.requires-docker-login && always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: '${{ inputs.component }}/trivy-results.sarif'
 
       - name: Package
         if: inputs.package-target != ''

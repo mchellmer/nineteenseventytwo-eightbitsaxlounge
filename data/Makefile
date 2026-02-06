@@ -4,6 +4,11 @@ NAMESPACE ?= eightbitsaxlounge-dev
 IMAGE_BASE ?= ghcr.io/$(GITHUB_REPOSITORY_OWNER)/eightbitsaxlounge-couchdb-api
 GITHUB_REPOSITORY_OWNER ?= mchellmer
 
+# Lint Go code
+lint:
+	@echo "Running Go linter..."
+	docker run --rm -v "$(shell pwd):/data" -w /data/go golangci/golangci-lint:latest golangci-lint run ./...
+
 # Run Go tests in container
 test:
 	@echo "Running Go tests..."

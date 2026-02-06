@@ -32,6 +32,14 @@ help:
 	@echo "  GITHUB_REPOSITORY_OWNER=<owner>   - Container registry owner"
 
 # Standard CI/CD targets
+lint:
+	@echo "Running .NET linter..."
+	@if ! command -v dotnet >/dev/null 2>&1 || [ ! -d "$$HOME/.dotnet" ]; then \
+		echo "Installing .NET SDK to $$HOME/.dotnet..."; \
+		curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir $$HOME/.dotnet; \
+	fi
+	@$${HOME}/.dotnet/dotnet format NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --verify-no-changes --verbosity diagnostic
+
 test:
 	@echo "Setting up .NET and running tests..."
 	@if ! command -v dotnet >/dev/null 2>&1 || [ ! -d "$$HOME/.dotnet" ]; then \

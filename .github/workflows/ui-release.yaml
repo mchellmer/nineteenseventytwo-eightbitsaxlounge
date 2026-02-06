@@ -17,6 +17,7 @@ jobs:
     uses: ./.github/workflows/release-template.yaml
     with:
       component: 'ui'
+      lint-target: 'lint'
       test-target: 'test'
       build-target: 'build'
       deploy-target: 'deploy'
