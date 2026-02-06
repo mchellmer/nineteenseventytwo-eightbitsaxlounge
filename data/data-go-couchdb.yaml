@@ -92,6 +92,7 @@
         kubectl -n "$NAMESPACE" rollout status deploy/eightbitsaxlounge-data-api --timeout=180s
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+      when: lookup('env', 'VERSION_CHANGED') | default('true') == 'true'
 
     - name: Verify running image
       ansible.builtin.shell: |

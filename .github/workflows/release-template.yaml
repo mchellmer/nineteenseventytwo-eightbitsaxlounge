@@ -176,6 +176,7 @@ jobs:
       - name: Deploy
         env:
           VERSION: ${{ needs.build.outputs.version }}
+          VERSION_CHANGED: ${{ needs.build.outputs.version-changed }}
           NAMESPACE: ${{ needs.build.outputs.namespace }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           SECRETS_JSON: ${{ secrets.component-secrets }}
