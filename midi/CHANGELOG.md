@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.0.12]
+
+### Added
+- ResetDevice endpoint (`POST /api/Midi/ResetDevice/{deviceName}`) to restore all device settings to defaults
+- Resets feature: Effect settings can now specify dependent settings to reset when changed
+- Unit tests for Resets feature (ResetsFeatureTests) covering automatic reset behavior
+- Automatic pod restart in deployment workflow to pick up updated secrets
+- Environment-specific deployment: All workflows now use explicit environment input (dev/prod) instead of branch-based detection
+
+### Changed
+- Data management workflows (data-init, data-upload, request-seteffect) now require environment selection
+- Deployment workflow split environment variable assignment into conditional steps for proper secret interpolation
+- ResetDevice optimization: Only sends MIDI control change messages for settings that differ from defaults
+- Updated VentrisDualReverb configuration: ReverbEngineB Control1/Control2 default values changed from 0 to 10
+
+### Fixed
+- GitHub Actions secret interpolation in workflows by using YAML-level conditionals instead of bash if-statements
+- Pod environment variables not updating when secrets change - added rollout restart to deployment
+
 ## [2.0.9]
 
 ### Added

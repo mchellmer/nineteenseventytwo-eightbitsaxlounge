@@ -64,13 +64,17 @@ make deploy-pc-prod     # Deploy to C:\Services\Midi\prod (port 5001)
 
 **Data Management Workflows:**
 - **Data Initialization** (`midi-data-init.yml`): Creates CouchDB databases and views
+  - Manual trigger with environment selection (dev/prod)
 - **Data Upload** (`midi-data-upload.yml`): Uploads effects or device configurations
-  - Manual trigger with choice: `effects` or `devices`
+  - Manual trigger with environment selection (dev/prod) and data type choice: `effects` or `devices`
   - Authenticates with JWT token
-  - Uploads to environment based on branch (dev/prod)
 - **SetEffect Request** (`midi-request-seteffect.yml`): Sends effect change requests to devices
-  - Manual trigger with parameters: device, effect, setting, value/selection
+  - Manual trigger with environment selection (dev/prod)
+  - Parameters: device, effect, setting, value/selection
   - Translates high-level settings to MIDI control change messages
+
+**Deployment:**
+- Automatically restarts pods when secrets/configmaps are updated to ensure running containers pick up changes
 
 **Manual Deployment:**
 ```bash
@@ -172,6 +176,14 @@ GitHub Actions → K8s MIDI API (JWT auth)
     - `value` (optional): Integer value for continuous settings (0-127)
     - `selection` (optional): String value for discrete selector settings
   - Translates effect settings to MIDI control change messages using device configuration
+  - Supports Resets feature: Changing certain settings (e.g., ReverbEngine) automatically resets dependent settings to defaults
+  
+- `POST /api/Midi/ResetDevice/{deviceName}`: Reset all device settings to default values
+  - Authentication: Required (Bearer token)
+  - Parameter: `deviceName` (e.g., "VentrisDualReverb")
+  - Restores all effect settings and device states to DefaultValue/DefaultActive
+  - Optimization: Only sends MIDI control change messages for settings that differ from defaults
+  - Updates device state in data store after successful reset
   
 - `POST /api/Midi/InitializeDataModel`: Initialize CouchDB databases and views
   - Authentication: Required (Bearer token)
@@ -250,6 +262,7 @@ curl -X POST http://localhost:5000/api/Midi/SetEffect \
 **Architecture:**
 - Handler pattern with `IEndpointHandler<TRequest, TResponse>` interface
 - Endpoint handlers: `SendControlChangeMessageHandler`, `SetEffectHandler`, `InitializeDataModelHandler`, `UploadEffectsHandler`, `UploadDeviceHandler`, `ResetDeviceHandler`
+- Resets feature: Settings can specify dependencies that reset to defaults when changed (configured via `Resets` array in DeviceEffectSetting)
 - Service layer: `WinmmMidiDeviceService`, `EightBitSaxLoungeMidiDataService`
 
 **WinmmMidiDeviceService:**
@@ -272,6 +285,7 @@ curl -X POST http://localhost:5000/api/Midi/SetEffect \
 
 # Tests
 - Endpoint handler unit tests (SendControlChangeMessage, SetEffect, InitializeDataModel, UploadEffects, UploadDevice, ResetDevice)
+- Resets feature unit tests (ResetsFeatureTests) validating automatic reset behavior and optimization logic
 - Data service unit tests (EightBitSaxLoungeMidiDataService)
 - WinMM device service unit tests (WinmmMidiDeviceService)
 - Configuration model validation tests
