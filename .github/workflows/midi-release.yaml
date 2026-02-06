@@ -56,9 +56,23 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       namespace: ${{ steps.namespace.outputs.namespace }}
+      version-changed: ${{ steps.check-version.outputs.changed }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: check-version
+        run: |
+          if git diff HEAD^ HEAD --name-only | grep -q "^midi/version.txt$"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Version file changed - will build"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "Version file unchanged - will skip build"
+          fi
 
       - name: Read Version
         id: version
@@ -77,6 +91,7 @@ jobs:
           fi
 
       - name: Log in to GitHub Container Registry
+        if: steps.check-version.outputs.changed == 'true'
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
@@ -84,6 +99,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Container
+        if: steps.check-version.outputs.changed == 'true'
         working-directory: ./midi
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -92,6 +108,7 @@ jobs:
         run: make build-container
 
       - name: Security Scan MIDI Container
+        if: steps.check-version.outputs.changed == 'true'
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-midi:${{ steps.version.outputs.version }}'
@@ -99,10 +116,10 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy Results to GitHub Security
-        if: always()
-        uses: github/codeql-action/upload-sarif@v2
+        if: steps.check-version.outputs.changed == 'true' && always()
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: 'midi/trivy-results.sarif'
 
   # Windows PC build (runs in parallel with build-container after test)
   build-pc:
@@ -111,11 +128,26 @@ jobs:
     runs-on: self-hosted
     outputs:
       version: ${{ steps.version.outputs.version }}
+      version-changed: ${{ steps.check-version.outputs.changed }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+
+    - name: Check if version changed
+      id: check-version
+      run: |
+        if git diff HEAD^ HEAD --name-only | grep -q "^midi/version\.txt$"; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+          echo "Version file changed - will build"
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+          echo "Version file unchanged - will skip build"
+        fi
 
     - name: Setup .NET
+      if: steps.check-version.outputs.changed == 'true'
       run: |
         curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir $HOME/.dotnet
         echo "$HOME/.dotnet" >> $GITHUB_PATH
@@ -126,6 +158,7 @@ jobs:
       run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
 
     - name: Publish Windows application
+      if: steps.check-version.outputs.changed == 'true'
       working-directory: ./midi/NineteenSeventyTwo.EightBitSaxLounge.Midi
       run: |
         $HOME/.dotnet/dotnet publish NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi/NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.csproj \
@@ -137,10 +170,12 @@ jobs:
           --output ${{ github.workspace }}/midi/publish/bin
 
     - name: Create artifact archive
+      if: steps.check-version.outputs.changed == 'true'
       working-directory: ./midi/publish/bin
       run: tar -czf ../midi-api-${{ steps.version.outputs.version }}.tar.gz *
 
     - name: Upload artifact
+      if: steps.check-version.outputs.changed == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: midi-api-${{ steps.version.outputs.version }}
@@ -149,7 +184,7 @@ jobs:
         compression-level: 0
 
     - name: Create GitHub Release
-      if: github.ref_name == 'main'
+      if: steps.check-version.outputs.changed == 'true' && github.ref_name == 'main'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: midi-api-v${{ steps.version.outputs.version }}
@@ -179,6 +214,7 @@ jobs:
       working-directory: ./midi
       env:
         VERSION: ${{ needs.build-container.outputs.version }}
+        VERSION_CHANGED: ${{ needs.build-container.outputs.version-changed }}
         NAMESPACE: ${{ needs.build-container.outputs.namespace }}
         GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
         AUTH_SECRET_KEY: ${{ secrets.AUTHENTICATION_SECRETKEY }}
@@ -210,11 +246,23 @@ jobs:
       working-directory: ./midi
       run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
 
-    - name: Download artifact
+    - name: Download artifact from workflow (if just built)
+      if: needs.build-pc.outputs.version-changed == 'true'
       uses: actions/download-artifact@v4
       with:
         name: midi-api-${{ steps.version.outputs.version }}
         path: artifacts
+
+    - name: Download artifact from GitHub Release (if using existing version)
+      if: needs.build-pc.outputs.version-changed == 'false'
+      run: |
+        mkdir -p artifacts
+        gh release download midi-api-v${{ steps.version.outputs.version }} \
+          --pattern "midi-api-${{ steps.version.outputs.version }}.tar.gz" \
+          --dir artifacts \
+          --repo ${{ github.repository }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Deploy MIDI PC
       working-directory: ./midi
@@ -222,6 +270,7 @@ jobs:
         VERSION: ${{ steps.version.outputs.version }}
         GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
         ARTIFACT_PATH: ${{ github.workspace }}/artifacts/midi-api-${{ steps.version.outputs.version }}.tar.gz
+        VERSION_CHANGED: ${{ needs.build-pc.outputs.version-changed }}
         CONNECTIONSTRINGS__EIGHTBITSAXLOUNGEDATALAYER: ${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER }}
         AUTHENTICATION__TOKENEXPIRYINMINUTES: ${{ secrets.AUTHENTICATION_TOKENEXPIRYINMINUTES }}
         AUTHENTICATION__SECRETKEY: ${{ secrets.AUTHENTICATION_SECRETKEY }}

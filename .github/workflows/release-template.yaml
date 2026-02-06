@@ -89,9 +89,23 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       namespace: ${{ steps.namespace.outputs.namespace }}
+      version-changed: ${{ steps.check-version.outputs.changed }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: check-version
+        run: |
+          if git diff HEAD^ HEAD --name-only | grep -q "^${{ inputs.component }}/${{ inputs.version-file }}$"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Version file changed - will build"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "Version file unchanged - will skip build"
+          fi
 
       - name: Read Version
         id: version
@@ -112,7 +126,7 @@ jobs:
           echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
 
       - name: Log in to GitHub Container Registry
-        if: inputs.requires-docker-login
+        if: inputs.requires-docker-login && steps.check-version.outputs.changed == 'true'
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
@@ -120,6 +134,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
+        if: steps.check-version.outputs.changed == 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
           NAMESPACE: ${{ steps.namespace.outputs.namespace }}
@@ -127,7 +142,7 @@ jobs:
         run: make ${{ inputs.build-target }}
 
       - name: Security Scan Container
-        if: inputs.requires-docker-login
+        if: inputs.requires-docker-login && steps.check-version.outputs.changed == 'true'
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}:${{ steps.version.outputs.version }}'
@@ -135,13 +150,13 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy Results to GitHub Security
-        if: inputs.requires-docker-login && always()
-        uses: github/codeql-action/upload-sarif@v2
+        if: inputs.requires-docker-login && steps.check-version.outputs.changed == 'true' && always()
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: '${{ inputs.component }}/trivy-results.sarif'
 
       - name: Package
-        if: inputs.package-target != ''
+        if: inputs.package-target != '' && steps.check-version.outputs.changed == 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
           NAMESPACE: ${{ steps.namespace.outputs.namespace }}
