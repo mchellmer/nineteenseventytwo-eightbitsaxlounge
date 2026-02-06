@@ -39,7 +39,7 @@ test:
 		curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir $$HOME/.dotnet; \
 	fi
 	@echo "Running .NET tests in NineteenSeventyTwo.EightBitSaxLounge.Midi..."
-	cd NineteenSeventyTwo.EightBitSaxLounge.Midi && \
+	@cd NineteenSeventyTwo.EightBitSaxLounge.Midi && \
 	$${HOME}/.dotnet/dotnet restore NineteenSeventyTwo.EightBitSaxLounge.Midi.sln && \
 	$${HOME}/.dotnet/dotnet build NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-restore --configuration Release && \
 	$${HOME}/.dotnet/dotnet test NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-build --configuration Release --verbosity normal
