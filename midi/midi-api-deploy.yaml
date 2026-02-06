@@ -33,7 +33,15 @@
 
     - name: Debug CONNECTION_STRING before creating secret
       ansible.builtin.debug:
-        msg: "CONNECTION_STRING from env: {{ lookup('env', 'CONNECTION_STRING') }}"
+        msg: "CONNECTION_STRING from env: {{ lookup('env', 'CONNECTION_STRING_PROD') if lookup('env', 'NAMESPACE') == 'eightbitsaxlounge-prod' else lookup('env', 'CONNECTION_STRING_DEV') }}"
+
+    - name: Set connection string based on namespace
+      ansible.builtin.set_fact:
+        connection_string: "{{ lookup('env', 'CONNECTION_STRING_PROD') if lookup('env', 'NAMESPACE') == 'eightbitsaxlounge-prod' else lookup('env', 'CONNECTION_STRING_DEV') }}"
+
+    - name: Set device service URL based on namespace
+      ansible.builtin.set_fact:
+        device_service_url: "{{ lookup('env', 'DEVICE_SERVICE_URL_PROD') if lookup('env', 'NAMESPACE') == 'eightbitsaxlounge-prod' else lookup('env', 'DEVICE_SERVICE_URL_DEV') }}"
 
     - name: Create MIDI Secrets
       ansible.builtin.shell: |
@@ -57,7 +65,7 @@
         AUTH_CLIENT_0_SECRET: "{{ lookup('env', 'AUTH_CLIENT_0_SECRET') }}"
         AUTH_CLIENT_1_ID: "{{ lookup('env', 'AUTH_CLIENT_1_ID') }}"
         AUTH_CLIENT_1_SECRET: "{{ lookup('env', 'AUTH_CLIENT_1_SECRET') }}"
-        CONNECTION_STRING: "{{ lookup('env', 'CONNECTION_STRING') }}"
+        CONNECTION_STRING: "{{ connection_string }}"
         DEVICE_BYPASS_KEY: "{{ lookup('env', 'DEVICE_BYPASS_KEY') }}"
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 
@@ -69,7 +77,7 @@
           --namespace $NAMESPACE \
           --dry-run=client -o yaml | kubectl apply -f -
       environment:
-        DEVICE_SERVICE_URL: "{{ lookup('env', 'DEVICE_SERVICE_URL') }}"
+        DEVICE_SERVICE_URL: "{{ device_service_url }}"
         TOKEN_EXPIRY: "{{ lookup('env', 'TOKEN_EXPIRY') | default('60', true) }}"
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 
