@@ -8,8 +8,8 @@
         suffix: longhorn
       register: tempdir
 
-    - name: Copy iSCSI prerequisite manifest to master
-      ansible.builtin.copy:
+    - name: Template iSCSI prerequisite manifest
+      ansible.builtin.template:
         src: templates/longhorn-iscsi-prereqs.yaml
         dest: "{{ tempdir.path }}/longhorn-iscsi-prereqs.yaml"
 
