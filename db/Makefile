@@ -1,7 +1,7 @@
 # Variables
 VERSION ?= $(shell cat version.txt)
 NAMESPACE ?= eightbitsaxlounge-dev
-IMAGE_BASE ?= ghcr.io/$(GITHUB_REPOSITORY_OWNER)/eightbitsaxlounge-couchdb
+IMAGE_BASE ?= ghcr.io/$(GITHUB_REPOSITORY_OWNER)/eightbitsaxlounge-db
 GITHUB_REPOSITORY_OWNER ?= mchellmer
 
 # Validate Dockerfile and version

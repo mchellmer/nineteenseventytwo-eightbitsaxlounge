@@ -15,7 +15,7 @@
         service_port: "{{ '5000' if lookup('env', 'ENVIRONMENT') == 'dev' else '5001' }}"
         version: "{{ lookup('env', 'VERSION') }}"
         artifact_path: "{{ lookup('env', 'ARTIFACT_PATH') }}"
-        version_changed: "{{ lookup('env', 'VERSION_CHANGED') | default('true') }}"
+        version_changed: "{{ lookup('env', 'NEEDS_BUILD') | default('true') }}"
 
     - name: Display deployment info
       ansible.builtin.debug:

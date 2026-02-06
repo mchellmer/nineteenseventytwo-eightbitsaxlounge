@@ -14,8 +14,8 @@
         msg:
           - "Deploying MIDI API version {{ lookup('env', 'VERSION') }}"
           - "Namespace: {{ lookup('env', 'NAMESPACE') }}"
-          - "Version changed: {{ lookup('env', 'VERSION_CHANGED') | default('true') }}"
-          - "Deployment type: {{ 'Full (new container)' if lookup('env', 'VERSION_CHANGED') | default('true') == 'true' else 'Config-only (existing container)' }}"
+          - "Version changed: {{ lookup('env', 'NEEDS_BUILD') | default('true') }}"
+          - "Deployment type: {{ 'Full (new container)' if lookup('env', 'NEEDS_BUILD') | default('true') == 'true' else 'Config-only (existing container)' }}"
 
     - name: Create a temporary directory for manifests
       ansible.builtin.tempfile:

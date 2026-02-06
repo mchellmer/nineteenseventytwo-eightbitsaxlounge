@@ -26,10 +26,11 @@ jobs:
         working-directory: ./midi
         run: make lint
 
-  # Shared test job
   test:
     name: Run .NET Tests
     runs-on: self-hosted
+    needs: [build-container, build-pc]
+    if: needs.build-container.outputs.needs-build == 'true' || needs.build-pc.outputs.needs-build == 'true'
     env:
       # Dummy configuration for tests
       Authentication__SecretKey: "dummySecretKeyForTestingOnly1234567890123456789012"
@@ -45,10 +46,10 @@ jobs:
         working-directory: ./midi
         run: make test
 
-  # Kubernetes container build (runs in parallel with build-pc after test)
+  # Kubernetes container build
   build-container:
     name: Build MIDI Container
-    needs: [lint, test]
+    needs: [lint]
     runs-on: self-hosted
     permissions:
       packages: write
@@ -56,23 +57,10 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       namespace: ${{ steps.namespace.outputs.namespace }}
-      version-changed: ${{ steps.check-version.outputs.changed }}
+      needs-build: ${{ steps.check-artifact.outputs.needs-build }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-
-      - name: Check if version changed
-        id: check-version
-        run: |
-          if git diff HEAD^ HEAD --name-only | grep -q "^midi/version.txt$"; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "Version file changed - will build"
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "Version file unchanged - will skip build"
-          fi
 
       - name: Read Version
         id: version
@@ -90,8 +78,28 @@ jobs:
             echo "namespace=eightbitsaxlounge-dev" >> $GITHUB_OUTPUT
           fi
 
+      - name: Check if container image exists
+        id: check-artifact
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          IMAGE="ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-midi:${{ steps.version.outputs.version }}"
+          echo "Checking if container image exists: $IMAGE"
+          
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://ghcr.io/v2/${{ github.repository_owner }}/eightbitsaxlounge-midi/manifests/${{ steps.version.outputs.version }}")
+          
+          if [ "$RESPONSE" = "200" ]; then
+            echo "needs-build=false" >> $GITHUB_OUTPUT
+            echo "✓ Container image exists - will skip build"
+          else
+            echo "needs-build=true" >> $GITHUB_OUTPUT
+            echo "✗ Container image not found - will build"
+          fi
+
       - name: Log in to GitHub Container Registry
-        if: steps.check-version.outputs.changed == 'true'
+        if: steps.check-artifact.outputs.needs-build == 'true'
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
@@ -99,7 +107,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push Container
-        if: steps.check-version.outputs.changed == 'true'
+        if: steps.check-artifact.outputs.needs-build == 'true'
         working-directory: ./midi
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -108,7 +116,6 @@ jobs:
         run: make build-container
 
       - name: Security Scan MIDI Container
-        if: steps.check-version.outputs.changed == 'true'
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-midi:${{ steps.version.outputs.version }}'
@@ -116,49 +123,55 @@ jobs:
           output: 'midi/trivy-results.sarif'
 
       - name: Upload Trivy Results to GitHub Security
-        if: steps.check-version.outputs.changed == 'true' && always()
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'midi/trivy-results.sarif'
 
-  # Windows PC build (runs in parallel with build-container after test)
+  # Windows PC build
   build-pc:
     name: Build Windows PC Package
-    needs: [lint, test]
+    needs: [lint]
     runs-on: self-hosted
     outputs:
       version: ${{ steps.version.outputs.version }}
-      version-changed: ${{ steps.check-version.outputs.changed }}
+      needs-build: ${{ steps.check-artifact.outputs.needs-build }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
-      with:
-        fetch-depth: 2
-
-    - name: Check if version changed
-      id: check-version
-      run: |
-        if git diff HEAD^ HEAD --name-only | grep -q "^midi/version\.txt$"; then
-          echo "changed=true" >> $GITHUB_OUTPUT
-          echo "Version file changed - will build"
-        else
-          echo "changed=false" >> $GITHUB_OUTPUT
-          echo "Version file unchanged - will skip build"
-        fi
-
-    - name: Setup .NET
-      if: steps.check-version.outputs.changed == 'true'
-      run: |
-        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir $HOME/.dotnet
-        echo "$HOME/.dotnet" >> $GITHUB_PATH
 
     - name: Read version
       id: version
       working-directory: ./midi
       run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
 
+    - name: Check if GitHub Release exists
+      id: check-artifact
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        TAG="midi-api-v${{ steps.version.outputs.version }}"
+        echo "Checking if GitHub Release exists: $TAG"
+        
+        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: Bearer $GITHUB_TOKEN" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG")
+        
+        if [ "$RESPONSE" = "200" ]; then
+          echo "needs-build=false" >> $GITHUB_OUTPUT
+          echo "✓ GitHub Release exists - will skip build"
+        else
+          echo "needs-build=true" >> $GITHUB_OUTPUT
+          echo "✗ GitHub Release not found - will build"
+        fi
+
+    - name: Setup .NET
+      if: steps.check-artifact.outputs.needs-build == 'true'
+      run: |
+        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir $HOME/.dotnet
+        echo "$HOME/.dotnet" >> $GITHUB_PATH
+
     - name: Publish Windows application
-      if: steps.check-version.outputs.changed == 'true'
+      if: steps.check-artifact.outputs.needs-build == 'true'
       working-directory: ./midi/NineteenSeventyTwo.EightBitSaxLounge.Midi
       run: |
         $HOME/.dotnet/dotnet publish NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi/NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.csproj \
@@ -170,12 +183,12 @@ jobs:
           --output ${{ github.workspace }}/midi/publish/bin
 
     - name: Create artifact archive
-      if: steps.check-version.outputs.changed == 'true'
+      if: steps.check-artifact.outputs.needs-build == 'true'
       working-directory: ./midi/publish/bin
       run: tar -czf ../midi-api-${{ steps.version.outputs.version }}.tar.gz *
 
     - name: Upload artifact
-      if: steps.check-version.outputs.changed == 'true'
+      if: steps.check-artifact.outputs.needs-build == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: midi-api-${{ steps.version.outputs.version }}
@@ -184,7 +197,7 @@ jobs:
         compression-level: 0
 
     - name: Create GitHub Release
-      if: steps.check-version.outputs.changed == 'true' && github.ref_name == 'main'
+      if: steps.check-artifact.outputs.needs-build == 'true' && github.ref_name == 'main'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: midi-api-v${{ steps.version.outputs.version }}
@@ -204,7 +217,8 @@ jobs:
   # Kubernetes deployment (runs in parallel with deploy-pc after both builds complete)
   deploy-k8s:
     name: Deploy MIDI to Kubernetes
-    needs: [build-container, build-pc]
+    needs: [build-container, build-pc, test]
+    if: always() && needs.build-container.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     runs-on: self-hosted
     steps:
     - name: Checkout Code
@@ -214,7 +228,7 @@ jobs:
       working-directory: ./midi
       env:
         VERSION: ${{ needs.build-container.outputs.version }}
-        VERSION_CHANGED: ${{ needs.build-container.outputs.version-changed }}
+        NEEDS_BUILD: ${{ needs.build-container.outputs.needs-build }}
         NAMESPACE: ${{ needs.build-container.outputs.namespace }}
         GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
         AUTH_SECRET_KEY: ${{ secrets.AUTHENTICATION_SECRETKEY }}
@@ -235,7 +249,8 @@ jobs:
   # Windows PC deployment (runs in parallel with deploy-k8s after both builds complete)
   deploy-pc:
     name: Deploy to Windows PC
-    needs: [build-container, build-pc]
+    needs: [build-container, build-pc, test]
+    if: always() && needs.build-pc.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     runs-on: self-hosted
     steps:
     - name: Checkout Code
@@ -247,14 +262,14 @@ jobs:
       run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
 
     - name: Download artifact from workflow (if just built)
-      if: needs.build-pc.outputs.version-changed == 'true'
+      if: needs.build-pc.outputs.needs-build == 'true'
       uses: actions/download-artifact@v4
       with:
         name: midi-api-${{ steps.version.outputs.version }}
         path: artifacts
 
     - name: Download artifact from GitHub Release (if using existing version)
-      if: needs.build-pc.outputs.version-changed == 'false'
+      if: needs.build-pc.outputs.needs-build == 'false'
       run: |
         mkdir -p artifacts
         curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
@@ -271,7 +286,7 @@ jobs:
         VERSION: ${{ steps.version.outputs.version }}
         GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
         ARTIFACT_PATH: ${{ github.workspace }}/artifacts/midi-api-${{ steps.version.outputs.version }}.tar.gz
-        VERSION_CHANGED: ${{ needs.build-pc.outputs.version-changed }}
+        NEEDS_BUILD: ${{ needs.build-pc.outputs.needs-build }}
         CONNECTIONSTRINGS__EIGHTBITSAXLOUNGEDATALAYER: ${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER }}
         AUTHENTICATION__TOKENEXPIRYINMINUTES: ${{ secrets.AUTHENTICATION_TOKENEXPIRYINMINUTES }}
         AUTHENTICATION__SECRETKEY: ${{ secrets.AUTHENTICATION_SECRETKEY }}

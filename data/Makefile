@@ -1,7 +1,7 @@
 # Variables
 VERSION ?= $(shell cat version.txt)
 NAMESPACE ?= eightbitsaxlounge-dev
-IMAGE_BASE ?= ghcr.io/$(GITHUB_REPOSITORY_OWNER)/eightbitsaxlounge-couchdb-api
+IMAGE_BASE ?= ghcr.io/$(GITHUB_REPOSITORY_OWNER)/eightbitsaxlounge-data
 GITHUB_REPOSITORY_OWNER ?= mchellmer
 
 # Lint Go code
