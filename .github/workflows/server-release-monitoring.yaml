@@ -1,4 +1,4 @@
-name: Deploy Monitoring
+name: Server Release - Deploy Monitoring
 
 on:
   workflow_dispatch:
