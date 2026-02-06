@@ -1,0 +1,67 @@
+---
+- name: Install Longhorn distributed storage for Kubernetes
+  hosts: master
+  tasks:
+    - name: Install open-iscsi on all nodes (required for Longhorn)
+      ansible.builtin.shell: |
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: longhorn-prereqs
+          namespace: kube-system
+        data:
+          install-iscsi.sh: |
+            #!/bin/bash
+            apt-get update
+            apt-get install -y open-iscsi nfs-common
+            systemctl enable iscsid
+            systemctl start iscsid
+        EOF
+      delegate_to: localhost
+      run_once: true
+
+    - name: Add Longhorn Helm repository
+      ansible.builtin.shell: |
+        helm repo add longhorn https://charts.longhorn.io
+        helm repo update
+      register: helm_repo
+
+    - name: Install Longhorn via Helm
+      ansible.builtin.shell: |
+        helm upgrade --install longhorn longhorn/longhorn \
+          --namespace longhorn-system \
+          --create-namespace \
+          --version 1.6.0 \
+          --set defaultSettings.defaultDataPath="/var/lib/longhorn" \
+          --set defaultSettings.defaultReplicaCount=2
+      register: longhorn_install
+
+    - name: Wait for Longhorn to be ready
+      ansible.builtin.shell: |
+        kubectl -n longhorn-system wait --for=condition=ready pod -l app=longhorn-manager --timeout=300s
+      register: wait_result
+
+    - name: Verify Longhorn storage class
+      ansible.builtin.shell: |
+        kubectl get storageclass longhorn
+      register: sc_result
+
+    - name: Set Longhorn as default storage class
+      ansible.builtin.shell: |
+        kubectl patch storageclass longhorn -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+      register: default_sc
+
+    - name: Get Longhorn UI access information
+      ansible.builtin.shell: |
+        echo "Longhorn UI can be accessed via port-forward:"
+        echo "kubectl port-forward -n longhorn-system svc/longhorn-frontend 8080:80"
+        echo "Then open http://localhost:8080"
+      register: ui_info
+
+    - name: Display installation summary
+      ansible.builtin.debug:
+        msg:
+          - "Longhorn installation complete!"
+          - "Storage class: {{ sc_result.stdout_lines }}"
+          - "{{ ui_info.stdout_lines }}"

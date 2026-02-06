@@ -78,7 +78,19 @@ iaas and kubernetes cluster config for 1972
     make deploy-namespaces
     ```
 
-6. Deploy Monitoring
+6. Deploy Storage
+  - Install Longhorn distributed storage system for persistent volumes
+  - Provides replicated storage across worker nodes with web UI management
+    ```bash
+    make deploy-storage
+    ```
+  - Access Longhorn UI:
+    ```bash
+    kubectl port-forward -n longhorn-system svc/longhorn-frontend 8080:80
+    # Open http://localhost:8080
+    ```
+
+7. Deploy Monitoring
   - kubernetes monitoring via grafana
   - setup grafana account and activate kubernetes monitoring
   - set server name and options in ansible playbook - use Kubernetes > Configuration in Grafana to generate scripts
@@ -87,6 +99,74 @@ iaas and kubernetes cluster config for 1972
   make deploy-monitoring
   ```
   - releases: increment versions/monitoring.txt and push change
+
+---
+
+## Cluster Infrastructure Choices
+
+### Storage: Longhorn
+
+**What it does**: Provides distributed block storage with automatic replication across worker nodes.
+
+**Why Longhorn:**
+- Cloud-native storage designed for bare-metal and edge deployments (Raspberry Pi friendly)
+- Automatic data replication (2 replicas across worker nodes for high availability)
+- Dynamic provisioning - automatically creates PersistentVolumes when applications request storage via PersistentVolumeClaims
+- Web UI for monitoring volumes, replicas, and node health
+- Snapshots and backup support for disaster recovery
+
+**How it works:**
+1. Applications create a PersistentVolumeClaim (PVC) requesting storage with `storageClassName: longhorn`
+2. Longhorn automatically provisions a PersistentVolume (PV) from the storage pool (`/var/lib/longhorn` on each worker)
+3. Data is replicated in real-time across multiple nodes (default: 2 replicas)
+4. If a node fails, data remains accessible from replicas on other nodes
+
+**Management:**
+```bash
+# Access Longhorn UI
+kubectl port-forward -n longhorn-system svc/longhorn-frontend 8080:80
+# Open http://localhost:8080
+
+# Check storage class
+kubectl get storageclass
+
+# View persistent volumes
+kubectl get pv
+kubectl get pvc -A
+```
+
+### CNI: Flannel
+
+**What it does**: Container Network Interface - handles pod-to-pod networking across nodes.
+
+**Why Flannel:**
+- Simple, lightweight CNI plugin ideal for small clusters
+- Proven reliability and minimal resource overhead
+- Easy to troubleshoot and maintain
+- Supports ARM architecture (Raspberry Pi)
+
+**How it works:**
+- Creates an overlay network using VXLAN tunneling
+- Assigns pod IP ranges to each node from the cluster CIDR
+- Routes traffic between pods across nodes transparently
+- No additional configuration needed for most workloads
+
+### Monitoring: Grafana Cloud
+
+**What it does**: External monitoring and observability platform for cluster metrics and logs.
+
+**Why Grafana Cloud:**
+- Zero infrastructure overhead - hosted service
+- Pre-built Kubernetes dashboards
+- Integrates with Prometheus for metrics collection
+- Free tier suitable for small clusters
+- Professional alerting and visualization
+
+**How it works:**
+1. Grafana agent runs as DaemonSet on each node
+2. Collects metrics from kubelet, cAdvisor, and kube-state-metrics
+3. Ships metrics to Grafana Cloud for storage and analysis
+4. Access dashboards via Grafana Cloud web UI
 
 
 # Test
