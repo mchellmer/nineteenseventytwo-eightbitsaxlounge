@@ -34,41 +34,58 @@ jobs:
         working-directory: ./midi
         run: make test
 
-  # Container release for Kubernetes (runs in parallel with build-pc after test)
-  release-k8s:
-    name: Release MIDI Container (K8s)
+  # Kubernetes container build (runs in parallel with build-pc after test)
+  build-container:
+    name: Build MIDI Container
     needs: test
+    runs-on: self-hosted
     permissions:
       packages: write
-    uses: ./.github/workflows/release-template.yaml
-    with:
-      component: 'midi'
-      build-target: 'build-container'
-      deploy-target: 'deploy-k8s'
-      requires-docker-login: true
-    secrets:
-      component-secrets: |
-        {
-          "AUTH_SECRET_KEY": "${{ secrets.AUTHENTICATION_SECRETKEY }}",
-          "AUTH_ISSUER": "${{ secrets.AUTHENTICATION_ISSUER }}",
-          "AUTH_AUDIENCE": "${{ secrets.AUTHENTICATION_AUDIENCE }}",
-          "AUTH_CLIENT_0_ID": "${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTID }}",
-          "AUTH_CLIENT_0_SECRET": "${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTSECRET }}",
-          "AUTH_CLIENT_1_ID": "${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTID }}",
-          "AUTH_CLIENT_1_SECRET": "${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTSECRET }}",
-          "CONNECTION_STRING_DEV": "${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER_DEV }}",
-          "CONNECTION_STRING_PROD": "${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER_PROD }}",
-          "DEVICE_SERVICE_URL_DEV": "${{ secrets.MIDI_DEVICE_URL_DEV }}",
-          "DEVICE_SERVICE_URL_PROD": "${{ secrets.MIDI_DEVICE_URL_PROD }}",
-          "DEVICE_BYPASS_KEY": "${{ secrets.MIDI_DEVICE_BYPASS_KEY }}",
-          "TOKEN_EXPIRY": "${{ secrets.AUTHENTICATION_TOKENEXPIRYINMINUTES }}"
-        }
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      namespace: ${{ steps.namespace.outputs.namespace }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-  # Windows PC build (runs in parallel with release-k8s after test)
+      - name: Read Version
+        id: version
+        working-directory: ./midi
+        run: |
+          VERSION=$(cat version.txt)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set Namespace
+        id: namespace
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "namespace=eightbitsaxlounge-prod" >> $GITHUB_OUTPUT
+          else
+            echo "namespace=eightbitsaxlounge-dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Container
+        working-directory: ./midi
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          NAMESPACE: ${{ steps.namespace.outputs.namespace }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: make build-container
+
+  # Windows PC build (runs in parallel with build-container after test)
   build-pc:
     name: Build Windows PC Package
     needs: test
     runs-on: self-hosted
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -124,9 +141,40 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Kubernetes deployment (runs in parallel with deploy-pc after both builds complete)
+  deploy-k8s:
+    name: Deploy MIDI to Kubernetes
+    needs: [build-container, build-pc]
+    runs-on: self-hosted
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Deploy to Kubernetes
+      working-directory: ./midi
+      env:
+        VERSION: ${{ needs.build-container.outputs.version }}
+        NAMESPACE: ${{ needs.build-container.outputs.namespace }}
+        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        AUTH_SECRET_KEY: ${{ secrets.AUTHENTICATION_SECRETKEY }}
+        AUTH_ISSUER: ${{ secrets.AUTHENTICATION_ISSUER }}
+        AUTH_AUDIENCE: ${{ secrets.AUTHENTICATION_AUDIENCE }}
+        AUTH_CLIENT_0_ID: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTID }}
+        AUTH_CLIENT_0_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTSECRET }}
+        AUTH_CLIENT_1_ID: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTID }}
+        AUTH_CLIENT_1_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTSECRET }}
+        CONNECTION_STRING_DEV: ${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER_DEV }}
+        CONNECTION_STRING_PROD: ${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER_PROD }}
+        DEVICE_SERVICE_URL_DEV: ${{ secrets.MIDI_DEVICE_URL_DEV }}
+        DEVICE_SERVICE_URL_PROD: ${{ secrets.MIDI_DEVICE_URL_PROD }}
+        DEVICE_BYPASS_KEY: ${{ secrets.MIDI_DEVICE_BYPASS_KEY }}
+        TOKEN_EXPIRY: ${{ secrets.AUTHENTICATION_TOKENEXPIRYINMINUTES }}
+      run: make deploy-k8s
+
+  # Windows PC deployment (runs in parallel with deploy-k8s after both builds complete)
   deploy-pc:
     name: Deploy to Windows PC
-    needs: build-pc
+    needs: [build-container, build-pc]
     runs-on: self-hosted
     steps:
     - name: Checkout Code
