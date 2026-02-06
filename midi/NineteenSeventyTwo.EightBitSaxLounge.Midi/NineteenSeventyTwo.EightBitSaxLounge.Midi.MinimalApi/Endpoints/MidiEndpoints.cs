@@ -49,5 +49,12 @@ public static class MidiEndpoints
             .RequireAuthorization()
             .WithName("SetEffect")
             .WithTags("Device");
+
+        app.MapPost("api/Midi/ResetDevice/{deviceName}",
+                async (string deviceName, ResetDeviceHandler handler) =>
+                    await handler.HandleAsync(deviceName))
+            .RequireAuthorization()
+            .WithName("ResetDevice")
+            .WithTags("Device");
     }
 }

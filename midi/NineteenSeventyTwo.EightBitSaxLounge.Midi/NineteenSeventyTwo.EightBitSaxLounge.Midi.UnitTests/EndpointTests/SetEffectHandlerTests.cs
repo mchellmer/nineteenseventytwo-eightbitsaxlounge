@@ -49,6 +49,8 @@ public class SetEffectHandlerTests : TestBase
         };
 
         dataServiceMock.Setup(m => m.GetDeviceByNameAsync("VentrisDualReverb")).ReturnsAsync(device);
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync("VentrisDualReverb", "ReverbEngineA", "Time", 64))
+            .ReturnsAsync(new ControlChangeMessage { Address = 10, Value = 64 });
         
         var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
         var request = new SetEffectRequest("VentrisDualReverb", "ReverbEngineA", "Time", Value: 64);
@@ -93,6 +95,8 @@ public class SetEffectHandlerTests : TestBase
         };
 
         dataServiceMock.Setup(m => m.GetDeviceByNameAsync("VentrisDualReverb")).ReturnsAsync(device);
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync("VentrisDualReverb", "ReverbEngineA", "Time", 64))
+            .ThrowsAsync(new InvalidOperationException("Midi configuration 'Time' not found"));
         
         var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
         var request = new SetEffectRequest("VentrisDualReverb", "ReverbEngineA", "Time", Value: 64);
@@ -142,6 +146,8 @@ public class SetEffectHandlerTests : TestBase
         };
 
         dataServiceMock.Setup(m => m.GetDeviceByNameAsync("VentrisDualReverb")).ReturnsAsync(device);
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync("VentrisDualReverb", "ReverbEngineA", "Time", 64))
+            .ThrowsAsync(new InvalidOperationException("No control change addresses defined"));
         
         var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
         var request = new SetEffectRequest("VentrisDualReverb", "ReverbEngineA", "Time", Value: 64);
@@ -226,6 +232,8 @@ public class SetEffectHandlerTests : TestBase
 
         dataServiceMock.Setup(m => m.GetDeviceByNameAsync("VentrisDualReverb")).ReturnsAsync(device);
         dataServiceMock.Setup(m => m.GetSelectorByNameAsync("ReverbEngine")).ReturnsAsync(selector);
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingSelectionAsync("VentrisDualReverb", "ReverbEngineA", "ReverbEngine", "Room"))
+            .ReturnsAsync(new ControlChangeMessage { Address = 1, Value = 0 });
         
         var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
         var request = new SetEffectRequest("VentrisDualReverb", "ReverbEngineA", "ReverbEngine", Selection: "Room");
@@ -326,6 +334,8 @@ public class SetEffectHandlerTests : TestBase
         dataServiceMock.Setup(m => m.GetDeviceByNameAsync(deviceName)).ReturnsAsync(device);
         dataServiceMock.Setup(m => m.GetSelectorByNameAsync(dependencyName)).ReturnsAsync(selector);
         dataServiceMock.Setup(m => m.GetEffectByNameAsync(dependentEffectName)).ReturnsAsync(dependentEffect);
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync(deviceName, effectName, settingName, 127))
+            .ReturnsAsync(new ControlChangeMessage { Address = 15, Value = 127 });
         
         var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
         var request = new SetEffectRequest(deviceName, effectName, settingName, Value: 127);

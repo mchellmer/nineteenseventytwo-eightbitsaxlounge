@@ -30,4 +30,5 @@ public interface IMidiDataService
     // Control Change Message Data
     Task<ControlChangeMessage> GetControlChangeMessageToActivateDeviceEffectAsync(string deviceName, string effectName, bool activate);
     Task<ControlChangeMessage> GetControlChangeMessageToSetDeviceEffectSettingAsync(string deviceName, string deviceEffectName, string deviceEffectSettingName, int settingValue);
+    Task<ControlChangeMessage> GetControlChangeMessageToSetDeviceEffectSettingSelectionAsync(string deviceName, string deviceEffectName, string deviceEffectSettingName, string selection);
 }

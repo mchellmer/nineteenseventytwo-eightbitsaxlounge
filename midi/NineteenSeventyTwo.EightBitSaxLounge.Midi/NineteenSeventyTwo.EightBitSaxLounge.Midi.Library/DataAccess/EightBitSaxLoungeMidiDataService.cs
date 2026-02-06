@@ -447,18 +447,6 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             _logger.LogError(msg);
             throw new InvalidOperationException(msg);
         }
-
-        //TODO: wip to improve logic based on updated data model
-        // MidiConfiguration? settingMidiConfiguration;
-        // if (deviceEffectSetting.DeviceEffectSettingDependencyName == null)
-        // {
-        //     settingMidiConfiguration = device.MidiImplementation.FirstOrDefault(
-        //         midiConfiguration => midiConfiguration.Name == deviceEffectSetting.Name);
-        // }
-        // else
-        // {
-        //     settingMidiConfiguration = await GetDeviceMidiConfigurationNameForDependentEffect(deviceEffectSetting);
-        // }
         
         MidiConfiguration settingMidiConfiguration = await GetDeviceMidiConfigurationForEffectSetting(
             device, deviceEffectSettingName, deviceEffect, deviceEffectSetting);
@@ -482,7 +470,6 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             throw new InvalidOperationException(msg);
         }
         
-        //TODO: validate setting value
         return new ControlChangeMessage
         {
             Address = settingAddress.Value,
@@ -490,11 +477,25 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         };
     }
 
-    // TODO: wip
-    // private async Task<MidiConfiguration?> GetDeviceMidiConfigurationNameForDependentEffect(DeviceEffectSetting deviceEffectSetting)
-    // {
-    //     var dependentEffectSetting = 
-    // }
+    public async Task<ControlChangeMessage> GetControlChangeMessageToSetDeviceEffectSettingSelectionAsync(
+        string deviceName, string deviceEffectName, string deviceEffectSettingName, string selection)
+    {
+        Selector selector = await GetSelectorByNameAsync(deviceEffectSettingName)
+            ?? throw new InvalidOperationException($"Selector '{deviceEffectSettingName}' not found.");
+        
+        MidiSelection? midiSelection = selector.Selections.FirstOrDefault(
+            s => s.Name.Equals(selection, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException($"Selection '{selection}' not found in selector '{deviceEffectSettingName}'.");
+        
+        if (!midiSelection.ControlChangeMessageValue.HasValue)
+        {
+            throw new InvalidOperationException($"Control change message value not defined for selection '{selection}' in selector '{deviceEffectSettingName}'.");
+        }
+
+        return await GetControlChangeMessageToSetDeviceEffectSettingAsync(
+            deviceName, deviceEffectName, deviceEffectSettingName, midiSelection.ControlChangeMessageValue.Value);
+    }
+
 
     /// <summary>
     /// Gets the <see cref="MidiConfiguration"/> for a <see cref="DeviceEffectSetting"/>.
