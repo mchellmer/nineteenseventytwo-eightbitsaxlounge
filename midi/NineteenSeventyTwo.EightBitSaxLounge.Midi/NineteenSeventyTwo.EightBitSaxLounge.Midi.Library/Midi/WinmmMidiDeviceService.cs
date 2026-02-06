@@ -57,7 +57,8 @@ public class WinmmMidiDeviceService : IMidiDeviceService, IMidiProxyService
     
     public async Task SendControlChangeMessageByDeviceMidiConnectNameAsync(string midiConnectName, ControlChangeMessage controlChangeMessage)
     {
-        _logger.LogInformation("Sending control change message to device {DeviceName}", midiConnectName);
+        _logger.LogInformation("Sending control change message to device {DeviceName}: Address={Address}, Value={Value}", 
+            midiConnectName, controlChangeMessage.Address, controlChangeMessage.Value);
         
         // Check if this request is already a proxied request to prevent infinite recursion
         var isAlreadyProxied = _httpContextAccessor?.HttpContext?.Request.Headers.ContainsKey(ProxyHeaderName) ?? false;

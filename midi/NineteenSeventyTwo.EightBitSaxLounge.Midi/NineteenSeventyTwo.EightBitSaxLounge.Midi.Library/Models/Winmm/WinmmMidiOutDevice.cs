@@ -8,7 +8,7 @@ using System.Threading;
 /// A class representing a MIDI output device.
 /// Handles opening, closing, and sending messages to a midi capable device via winmm.dll.
 /// </summary>
-public class MidiOutDevice : MidiDevice, IMidiOutDevice
+public class WinmmMidiOutDevice : WinmmMidiDevice, IMidiOutDevice
 {
     /// <summary>
     /// The identifier of the MIDI output device.
@@ -140,7 +140,7 @@ public class MidiOutDevice : MidiDevice, IMidiOutDevice
     /// <param name="midiConnectName">
     /// The friendly name of the MIDI output device to connect to.
     /// </param>
-    public MidiOutDevice(string midiConnectName)
+    public WinmmMidiOutDevice(string midiConnectName)
     {
         UInt32 numDevs = midiOutGetNumDevs();
         DeviceId = uint.MaxValue;
@@ -327,7 +327,7 @@ public class MidiOutDevice : MidiDevice, IMidiOutDevice
     /// <summary>
     /// Finalizer for the MidiOutDevice class.
     /// </summary>
-    ~MidiOutDevice()
+    ~WinmmMidiOutDevice()
     {
         Close();
     }

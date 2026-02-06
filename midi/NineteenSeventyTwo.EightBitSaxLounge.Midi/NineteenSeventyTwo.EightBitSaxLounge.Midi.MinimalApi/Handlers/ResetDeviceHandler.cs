@@ -1,5 +1,6 @@
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -10,6 +11,7 @@ public class ResetDeviceHandler : IEndpointHandler<string, IResult>
     private readonly ILogger<ResetDeviceHandler> _logger;
     private readonly IMidiDeviceService _midiDeviceService;
     private readonly IMidiDataService _midiDataService;
+    private readonly HandlerHelper _handlerHelper;
 
     public ResetDeviceHandler(
         ILogger<ResetDeviceHandler> logger,
@@ -19,6 +21,7 @@ public class ResetDeviceHandler : IEndpointHandler<string, IResult>
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _midiDeviceService = midiDeviceService ?? throw new ArgumentNullException(nameof(midiDeviceService));
         _midiDataService = midiDataService ?? throw new ArgumentNullException(nameof(midiDataService));
+        _handlerHelper = new HandlerHelper(_logger, _midiDeviceService, _midiDataService);
     }
 
     public async Task<IResult> HandleAsync(string deviceName)
@@ -38,17 +41,24 @@ public class ResetDeviceHandler : IEndpointHandler<string, IResult>
         {
             try
             {
-                _logger.LogInformation("Resetting effect default active state {DefaultActive} for effect {Effect} on device {Device}", effect.DefaultActive, effect.Name, deviceName);
+                if (effect.Active == effect.DefaultActive)
+                {
+                    _logger.LogInformation("Effect {Effect} is already in default active state {DefaultActive}, skipping MIDI message", effect.Name, effect.DefaultActive);
+                }
+                else
+                {
+                    _logger.LogInformation("Resetting effect default active state {DefaultActive} for effect {Effect} on device {Device}", effect.DefaultActive, effect.Name, deviceName);
 
-                var activateMessage = await _midiDataService.GetControlChangeMessageToActivateDeviceEffectAsync(deviceName, effect.Name, effect.DefaultActive);
-                await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(midiDevice.MidiConnectName, activateMessage);
-                _logger.LogInformation("Effect default state reset on device");
+                    var activateMessage = await _midiDataService.GetControlChangeMessageToActivateDeviceEffectAsync(deviceName, effect.Name, effect.DefaultActive);
+                    await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(midiDevice.MidiConnectName, activateMessage);
+                    _logger.LogInformation("Effect default state reset on device");
+                }
 
                 try
                 {
-                    _logger.LogInformation("Resetting active state data for device");
+                    _logger.LogInformation("Resetting active state data for device {Device}", deviceName);
                     await _midiDataService.UpdateDeviceEffectActiveStateAsync(deviceName, effect.Name, effect.DefaultActive);
-                    _logger.LogInformation("Effect active state data updated");
+                    _logger.LogInformation("Effect active state data updated for {Device}", deviceName);
                 }
                 catch (Exception e)
                 {
@@ -90,16 +100,34 @@ public class ResetDeviceHandler : IEndpointHandler<string, IResult>
 
             foreach (var setting in effect.EffectSettings)
             {
+                if (setting.Value == setting.DefaultValue)
+                {
+                    _logger.LogInformation("Setting {Setting} is already at default value {DefaultValue}, skipping MIDI message", setting.Name, setting.DefaultValue);
+                    continue;
+                }
+
+                int originalValue = setting.Value;
                 try
                 {
-                    await _midiDataService.GetControlChangeMessageToSetDeviceEffectSettingAsync(
+                    _logger.LogInformation("Resetting setting {Setting} to default value {DefaultValue} for effect {Effect} on device {Device}", 
+                        setting.Name, setting.DefaultValue, effect.Name, deviceName);
+                    
+                    var ccMessage = await _midiDataService.GetControlChangeMessageToSetDeviceEffectSettingAsync(
                         deviceName, effect.Name, setting.Name, setting.DefaultValue);
-                    //TODO: Send the setting message to the device
+
+                    await _handlerHelper.SendMessageAndUpdateDataWithRollbackAsync(
+                        midiDevice,
+                        ccMessage,
+                        originalValue,
+                        () => setting.Value = setting.DefaultValue,
+                        () => setting.Value = originalValue,
+                        () => _midiDataService.UpdateDeviceByNameAsync(midiDevice.Name, midiDevice),
+                        setting.Name);
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, 
-                        "Error getting setting message for setting {Setting} on effect {Effect} on device {Device}", 
+                        "Error resetting setting {Setting} on effect {Effect} on device {Device}", 
                         setting.Name, effect.Name, deviceName);
                     errorResettingDevice = true;
                 }

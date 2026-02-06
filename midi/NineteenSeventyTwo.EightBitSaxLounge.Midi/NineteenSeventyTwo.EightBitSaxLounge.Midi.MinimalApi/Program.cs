@@ -129,6 +129,7 @@ builder.Services.AddTransient<InitializeDataModelHandler>();
 builder.Services.AddTransient<UploadEffectsHandler>();
 builder.Services.AddTransient<UploadDeviceHandler>();
 builder.Services.AddTransient<ResetDeviceHandler>();
+builder.Services.AddTransient<SetEffectHandler>();
 
 // Auth
 builder.Services.AddAuthorization(opts =>

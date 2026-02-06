@@ -57,8 +57,12 @@ public class ResetDeviceHandlerTests : TestBase
 
         dataServiceMock.Setup(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true)).Returns(Task.CompletedTask);
 
-        dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync(TestDeviceName, TestEffectName, "SettingA", 3))
-            .ReturnsAsync(new ControlChangeMessage { Address = 2, Value = 3 });
+        var settingMsg = new ControlChangeMessage { Address = 2, Value = 0 };
+        dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync(TestDeviceName, TestEffectName, "SettingA", 0))
+            .ReturnsAsync(settingMsg);
+        
+        deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, settingMsg)).Returns(Task.FromResult(settingMsg));
+        dataServiceMock.Setup(m => m.UpdateDeviceByNameAsync(TestDeviceName, TestDevice)).Returns(Task.CompletedTask);
 
         var handler = new ResetDeviceHandler(loggerMock.Object, deviceServiceMock.Object, dataServiceMock.Object);
 
@@ -70,8 +74,10 @@ public class ResetDeviceHandlerTests : TestBase
         Assert.Equal(200, status);
         Assert.Contains("reset to default settings successfully.", body);
 
-        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, It.IsAny<ControlChangeMessage>()), Times.Once);
+        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, activateMsg), Times.Once);
+        deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, settingMsg), Times.Once);
         dataServiceMock.Verify(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true), Times.Once);
+        dataServiceMock.Verify(m => m.UpdateDeviceByNameAsync(TestDeviceName, TestDevice), Times.Once);
     }
 
     [Fact]
@@ -91,10 +97,10 @@ public class ResetDeviceHandlerTests : TestBase
         dataServiceMock.Setup(m => m.GetControlChangeMessageToActivateDeviceEffectAsync(TestDeviceName, TestEffectName, false)).ReturnsAsync(revertMsg);
 
         // Capture sent messages to assert later
-        ControlChangeMessage? capturedSent = null;
+        var capturedMessages = new List<ControlChangeMessage>();
         deviceServiceMock
             .Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(It.Is<string>(s => s == TestMidiConnectName), It.IsAny<ControlChangeMessage>()))
-            .Callback<string, ControlChangeMessage>((_, msg) => capturedSent = msg)
+            .Callback<string, ControlChangeMessage>((_, msg) => capturedMessages.Add(msg))
             .Returns((string _, ControlChangeMessage m) => Task.FromResult(m));
 
         // Simulate DB update failure so revert path is executed
@@ -111,7 +117,7 @@ public class ResetDeviceHandlerTests : TestBase
         Assert.Contains("Device reset completed with errors", body);
 
         deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, It.IsAny<ControlChangeMessage>()), Times.AtLeastOnce);
-        Assert.NotNull(capturedSent);
+        Assert.NotEmpty(capturedMessages);
         dataServiceMock.Verify(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true), Times.Once);
     }
 
