@@ -26,7 +26,7 @@ public class SetEffectHandler : IEndpointHandler<SetEffectRequest, IResult>
 
     public async Task<IResult> HandleAsync(SetEffectRequest request)
     {
-        _logger.LogInformation("Setting effect: Device={DeviceName}, Effect={EffectName}, Setting={SettingName}, Value={Value}, Selection={Selection}", 
+        _logger.LogInformation("Setting effect: Device={DeviceName}, Effect={EffectName}, Setting={SettingName}, Value={Value}, Selection={Selection}",
             request.DeviceName, request.DeviceEffectName, request.DeviceEffectSettingName, request.Value, request.Selection);
 
         try
@@ -53,12 +53,12 @@ public class SetEffectHandler : IEndpointHandler<SetEffectRequest, IResult>
                 return Results.NotFound(new { Message = $"Setting '{request.DeviceEffectSettingName}' not found for effect '{request.DeviceEffectName}'." });
             }
 
-            _logger.LogInformation("Found setting {SettingName} for effect {EffectName} on device {DeviceName}", 
+            _logger.LogInformation("Found setting {SettingName} for effect {EffectName} on device {DeviceName}",
                 deviceEffectSetting.Name, deviceEffect.Name, device.Name);
 
             // Capture original value to support rollback if data persistence fails
             int originalValue = deviceEffectSetting.Value;
-            
+
             ControlChangeMessage? ccMessage = null;
             try
             {
@@ -80,19 +80,19 @@ public class SetEffectHandler : IEndpointHandler<SetEffectRequest, IResult>
                 _logger.LogWarning(ex, "Failed to generate MIDI message for {DeviceName}", request.DeviceName);
                 return Results.NotFound(new { Message = ex.Message });
             }
-            
+
             if (ccMessage == null)
             {
                 return Results.BadRequest(new { Message = "Either Value or Selection must be provided." });
             }
-            
+
             try
             {
                 await _handlerHelper.SendMessageAndUpdateDataWithRollbackAsync(
                     device,
                     ccMessage,
                     originalValue,
-                    () => 
+                    () =>
                     {
                         deviceEffectSetting.Value = ccMessage.Value;
                         if (deviceEffectSetting.Resets != null)
@@ -102,7 +102,7 @@ public class SetEffectHandler : IEndpointHandler<SetEffectRequest, IResult>
                                 var settingToReset = deviceEffect.EffectSettings.FirstOrDefault(s => s.Name.Equals(resetSettingName, StringComparison.OrdinalIgnoreCase));
                                 if (settingToReset != null)
                                 {
-                                    _logger.LogInformation("Resetting setting {SettingName} to default value {DefaultValue} due to change in {TriggerSetting}", 
+                                    _logger.LogInformation("Resetting setting {SettingName} to default value {DefaultValue} due to change in {TriggerSetting}",
                                         settingToReset.Name, settingToReset.DefaultValue, deviceEffectSetting.Name);
                                     settingToReset.Value = settingToReset.DefaultValue;
                                 }

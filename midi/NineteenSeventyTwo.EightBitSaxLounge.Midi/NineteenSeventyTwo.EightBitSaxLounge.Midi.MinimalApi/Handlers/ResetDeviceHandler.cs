@@ -65,8 +65,8 @@ public class ResetDeviceHandler : IEndpointHandler<string, IResult>
                     _logger.LogError(e, "Error updating active state data for device {Device}", deviceName);
                     try
                     {
-                        _logger.LogInformation("Reverting effect active state for effect {Effect} on device {Device}", 
-                            effect.Name, 
+                        _logger.LogInformation("Reverting effect active state for effect {Effect} on device {Device}",
+                            effect.Name,
                             deviceName);
                         errorResettingDevice = true;
                         var revertMessage = await _midiDataService.GetControlChangeMessageToActivateDeviceEffectAsync(
@@ -78,9 +78,9 @@ public class ResetDeviceHandler : IEndpointHandler<string, IResult>
                     catch (Exception exception)
                     {
                         _logger.LogError(
-                            exception, 
-                            "Error reverting effect active state for effect {Effect} on device {Device}: database and device out of sync", 
-                            effect.Name, 
+                            exception,
+                            "Error reverting effect active state for effect {Effect} on device {Device}: database and device out of sync",
+                            effect.Name,
                             deviceName);
 
                         var problem = Results.Problem(
@@ -109,9 +109,9 @@ public class ResetDeviceHandler : IEndpointHandler<string, IResult>
                 int originalValue = setting.Value;
                 try
                 {
-                    _logger.LogInformation("Resetting setting {Setting} to default value {DefaultValue} for effect {Effect} on device {Device}", 
+                    _logger.LogInformation("Resetting setting {Setting} to default value {DefaultValue} for effect {Effect} on device {Device}",
                         setting.Name, setting.DefaultValue, effect.Name, deviceName);
-                    
+
                     var ccMessage = await _midiDataService.GetControlChangeMessageToSetDeviceEffectSettingAsync(
                         deviceName, effect.Name, setting.Name, setting.DefaultValue);
 
@@ -126,8 +126,8 @@ public class ResetDeviceHandler : IEndpointHandler<string, IResult>
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError(e, 
-                        "Error resetting setting {Setting} on effect {Effect} on device {Device}", 
+                    _logger.LogError(e,
+                        "Error resetting setting {Setting} on effect {Effect} on device {Device}",
                         setting.Name, effect.Name, deviceName);
                     errorResettingDevice = true;
                 }

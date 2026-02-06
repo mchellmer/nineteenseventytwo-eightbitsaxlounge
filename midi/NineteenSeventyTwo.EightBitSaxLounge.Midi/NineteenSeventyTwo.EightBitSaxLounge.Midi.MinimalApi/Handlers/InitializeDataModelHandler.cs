@@ -25,9 +25,9 @@ public class InitializeDataModelHandler : IMidiEndpointHandler<IResult>
     public async Task<IResult> HandleAsync()
     {
         _logger.LogInformation("Initializing MIDI data model");
-        
+
         var databases = _databaseOptions.Value.Names;
-        
+
         foreach (var db in databases)
         {
             try
@@ -45,7 +45,7 @@ public class InitializeDataModelHandler : IMidiEndpointHandler<IResult>
                     statusCode: 500);
             }
         }
-        
-        return Results.Ok(new { Message = $"MIDI data model initialized successfully. Databases created: {string.Join(", ", databases)}" } );
+
+        return Results.Ok(new { Message = $"MIDI data model initialized successfully. Databases created: {string.Join(", ", databases)}" });
     }
 }

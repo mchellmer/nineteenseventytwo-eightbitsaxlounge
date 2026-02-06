@@ -151,7 +151,7 @@ public class EightbitSaxLoungeDataAccessTests
             ItExpr.Is<HttpRequestMessage>(req => req.Method == HttpMethod.Post && req.RequestUri == expectedUri),
             ItExpr.IsAny<CancellationToken>());
     }
-    
+
     [Fact]
     public async Task SaveDataAsync_Put_Succeeds()
     {
