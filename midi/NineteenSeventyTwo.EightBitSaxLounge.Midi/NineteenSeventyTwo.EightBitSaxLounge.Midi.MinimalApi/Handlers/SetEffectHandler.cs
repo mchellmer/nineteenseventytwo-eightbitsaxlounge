@@ -92,7 +92,23 @@ public class SetEffectHandler : IEndpointHandler<SetEffectRequest, IResult>
                     device,
                     ccMessage,
                     originalValue,
-                    () => deviceEffectSetting.Value = ccMessage.Value,
+                    () => 
+                    {
+                        deviceEffectSetting.Value = ccMessage.Value;
+                        if (deviceEffectSetting.Resets != null)
+                        {
+                            foreach (var resetSettingName in deviceEffectSetting.Resets)
+                            {
+                                var settingToReset = deviceEffect.EffectSettings.FirstOrDefault(s => s.Name.Equals(resetSettingName, StringComparison.OrdinalIgnoreCase));
+                                if (settingToReset != null)
+                                {
+                                    _logger.LogInformation("Resetting setting {SettingName} to default value {DefaultValue} due to change in {TriggerSetting}", 
+                                        settingToReset.Name, settingToReset.DefaultValue, deviceEffectSetting.Name);
+                                    settingToReset.Value = settingToReset.DefaultValue;
+                                }
+                            }
+                        }
+                    },
                     () => deviceEffectSetting.Value = originalValue,
                     () => _midiDataService.UpdateDeviceByNameAsync(device.Name, device),
                     request.DeviceName);

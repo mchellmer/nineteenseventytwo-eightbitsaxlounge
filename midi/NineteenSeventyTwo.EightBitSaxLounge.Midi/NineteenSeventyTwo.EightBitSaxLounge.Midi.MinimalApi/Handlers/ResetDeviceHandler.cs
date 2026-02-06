@@ -41,17 +41,24 @@ public class ResetDeviceHandler : IEndpointHandler<string, IResult>
         {
             try
             {
-                _logger.LogInformation("Resetting effect default active state {DefaultActive} for effect {Effect} on device {Device}", effect.DefaultActive, effect.Name, deviceName);
+                if (effect.Active == effect.DefaultActive)
+                {
+                    _logger.LogInformation("Effect {Effect} is already in default active state {DefaultActive}, skipping MIDI message", effect.Name, effect.DefaultActive);
+                }
+                else
+                {
+                    _logger.LogInformation("Resetting effect default active state {DefaultActive} for effect {Effect} on device {Device}", effect.DefaultActive, effect.Name, deviceName);
 
-                var activateMessage = await _midiDataService.GetControlChangeMessageToActivateDeviceEffectAsync(deviceName, effect.Name, effect.DefaultActive);
-                await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(midiDevice.MidiConnectName, activateMessage);
-                _logger.LogInformation("Effect default state reset on device");
+                    var activateMessage = await _midiDataService.GetControlChangeMessageToActivateDeviceEffectAsync(deviceName, effect.Name, effect.DefaultActive);
+                    await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(midiDevice.MidiConnectName, activateMessage);
+                    _logger.LogInformation("Effect default state reset on device");
+                }
 
                 try
                 {
-                    _logger.LogInformation("Resetting active state data for device");
+                    _logger.LogInformation("Resetting active state data for device {Device}", deviceName);
                     await _midiDataService.UpdateDeviceEffectActiveStateAsync(deviceName, effect.Name, effect.DefaultActive);
-                    _logger.LogInformation("Effect active state data updated");
+                    _logger.LogInformation("Effect active state data updated for {Device}", deviceName);
                 }
                 catch (Exception e)
                 {
@@ -93,6 +100,12 @@ public class ResetDeviceHandler : IEndpointHandler<string, IResult>
 
             foreach (var setting in effect.EffectSettings)
             {
+                if (setting.Value == setting.DefaultValue)
+                {
+                    _logger.LogInformation("Setting {Setting} is already at default value {DefaultValue}, skipping MIDI message", setting.Name, setting.DefaultValue);
+                    continue;
+                }
+
                 int originalValue = setting.Value;
                 try
                 {

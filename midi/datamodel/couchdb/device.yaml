@@ -32,6 +32,11 @@ ventrisdualreverb:
       - Name: ReverbEngine
         DefaultValue: 0 # default engine is Room
         Value: 8 # engine set to Echoverb
+        Resets:
+          - PreDelay
+          - Time
+          - Control1
+          - Control2
       - Name: PreDelay
         DefaultValue: 10 # default pre-delay to a small amount
         Value: 0 # no pre-delay

@@ -74,7 +74,8 @@ public static class TestObjects
             Name = src.Name,
             DeviceEffectSettingDependencyName = src.DeviceEffectSettingDependencyName,
             DefaultValue = src.DefaultValue,
-            Value = src.Value
+            Value = src.Value,
+            Resets = src.Resets?.ToList()
         };
     }
 
@@ -109,14 +110,16 @@ public static class TestObjects
     public static DeviceEffectSetting BuildSetting(string name,
         int value = 0,
         int defaultValue = 0,
-        string? dependencyName = null)
+        string? dependencyName = null,
+        List<string>? resets = null)
     {
         return new DeviceEffectSetting
         {
             Name = name,
             Value = value,
             DefaultValue = defaultValue,
-            DeviceEffectSettingDependencyName = dependencyName
+            DeviceEffectSettingDependencyName = dependencyName,
+            Resets = resets
         };
     }
 }
