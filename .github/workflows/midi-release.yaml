@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - midi/*
+      - server/cicdOptimisation
     paths:
       - 'midi/version.txt'
 
