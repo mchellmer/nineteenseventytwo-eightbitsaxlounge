@@ -5,94 +5,27 @@ on:
   push:
     branches:
       - main
+      - ui/*
     paths:
       - 'ui/version.txt'
 
-permissions:
-  contents: read
-  packages: write
-
 jobs:
-  test:
-    name: Run Python Tests
-    runs-on: self-hosted
-    defaults:
-      run:
-        working-directory: ./ui
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        run: |
-          python3 --version
-          pip3 --version
-
-      - name: Install dependencies
-        run: |
-          pip3 install -r requirements.txt --break-system-packages
-          pip3 install -r requirements-dev.txt --break-system-packages
-
-      - name: Run tests
-        run: |
-          python3 -m pytest tests/ --cov=src --cov-report=xml --cov-report=term --junitxml=test-results.xml
-
-  build-and-push:
-    name: Build and Push UI Image
-    needs: test
-    runs-on: self-hosted
+  release:
+    name: Release UI Component
     permissions:
       packages: write
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
-
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Build and Push Docker Image
-      working-directory: ./ui
-      run: |
-        VERSION=$(cat version.txt)
-        IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-ui
-        docker build -t "$IMAGE_BASE:$VERSION" -t "$IMAGE_BASE:latest" .
-        docker push "$IMAGE_BASE:$VERSION"
-        docker push "$IMAGE_BASE:latest"
-        echo "IMAGE_VERSION=$VERSION" >> $GITHUB_ENV
-
-  deploy:
-    name: Deploy UI to Kubernetes
-    needs: build-and-push
-    runs-on: self-hosted
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
-
-    - name: Set Namespace Based on Branch
-      id: set-namespace
-      run: |
-        if [[ "${{ github.ref_name }}" == "main" ]]; then
-          echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
-        else
-          echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
-        fi
-
-    - name: Read Version
-      run: |
-        echo "VERSION=$(cat ui/version.txt)" >> $GITHUB_ENV
-
-    - name: Deploy UI via Ansible
-      working-directory: ./ui
-      env:
-        NAMESPACE: ${{ env.NAMESPACE }}
-        VERSION: ${{ env.VERSION }}
-        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-        TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
-        TWITCH_TOKEN: ${{ secrets.TWITCH_TOKEN }}
-        MIDI_CLIENT_ID: ${{ secrets.MIDI_CLIENT_ID }}
-        MIDI_CLIENT_SECRET: ${{ secrets.MIDI_CLIENT_SECRET }}
-      run: make deploy-ui
+    uses: ./.github/workflows/release-template.yaml
+    with:
+      component: 'ui'
+      test-target: 'test'
+      build-target: 'build'
+      deploy-target: 'deploy'
+      requires-docker-login: true
+    secrets:
+      component-secrets: |
+        {
+          "TWITCH_CLIENT_ID": "${{ secrets.TWITCH_CLIENT_ID }}",
+          "TWITCH_TOKEN": "${{ secrets.TWITCH_TOKEN }}",
+          "MIDI_CLIENT_ID": "${{ secrets.MIDI_CLIENT_ID }}",
+          "MIDI_CLIENT_SECRET": "${{ secrets.MIDI_CLIENT_SECRET }}"
+        }

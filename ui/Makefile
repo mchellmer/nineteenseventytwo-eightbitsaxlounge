@@ -1,21 +1,31 @@
-# Simple Makefile for local development
-# CI/CD handled by GitHub Actions
+# Variables
+VERSION ?= $(shell cat version.txt)
+NAMESPACE ?= eightbitsaxlounge-dev
+IMAGE_BASE ?= ghcr.io/$(GITHUB_REPOSITORY_OWNER)/eightbitsaxlounge-ui
+GITHUB_REPOSITORY_OWNER ?= mchellmer
 
-.PHONY: help install install-dev dev test test-ci clean docker-build docker-run deploy-ui set-environment
+# Run Python tests with coverage
+test:
+	@echo "Running Python tests..."
+	pip3 install -r requirements.txt --break-system-packages || pip3 install -r requirements.txt
+	pip3 install -r requirements-dev.txt --break-system-packages || pip3 install -r requirements-dev.txt
+	python3 -m pytest tests/ --cov=src --cov-report=xml --cov-report=term --junitxml=test-results.xml
+	@echo "All tests passed"
 
-help:
-	@echo "Available targets:"
-	@echo "  install         - Install Python dependencies"
-	@echo "  install-dev     - Install dev dependencies"
-	@echo "  dev             - Run bot locally"
-	@echo "  test            - Run all tests"
-	@echo "  test-ci         - Run tests with coverage (for CI)"
-	@echo "  clean           - Clean test artifacts"
-	@echo "  docker-build    - Build Docker image locally"
-	@echo "  docker-run      - Run Docker image locally"
-	@echo "  deploy-ui       - Deploy UI to Kubernetes via Ansible"
-	@echo "  set-environment - Switch active environment (dev/prod)"
+# Build Docker image and push to registry
+build:
+	docker build -t "$(IMAGE_BASE):$(VERSION)" -t "$(IMAGE_BASE):latest" .
+	docker push "$(IMAGE_BASE):$(VERSION)"
+	docker push "$(IMAGE_BASE):latest"
 
+# Deploy to Kubernetes via Ansible
+deploy:
+	ansible-playbook ui-deploy.yaml
+
+# Legacy targets for backwards compatibility
+deploy-ui: deploy
+
+# Local development targets
 install:
 	pip3 install -r requirements.txt
 
@@ -26,11 +36,8 @@ install-dev:
 dev:
 	python3 src/main.py
 
-test: install-dev
+test-local: install-dev
 	python3 -m pytest tests/ -v
-
-test-ci:
-	python3 -m pytest tests/ --cov=src --cov-report=xml --cov-report=term --junitxml=test-results.xml
 
 clean:
 	rm -rf .pytest_cache/
@@ -47,8 +54,30 @@ docker-build:
 docker-run:
 	docker run --rm -it --env-file .env eightbitsaxlounge-ui:local
 
-deploy-ui:
-	ansible-playbook ui-deploy.yaml
-
 set-environment:
-	ansible-playbook ui-set-environment.yaml
+\tansible-playbook ui-set-environment.yaml
+
+# Help target
+help:
+\t@echo \"Available targets:\"
+\t@echo \"  test               - Run tests with coverage (for CI)\"
+\t@echo \"  build              - Build and push Docker image\"
+\t@echo \"  deploy             - Deploy to Kubernetes cluster\"
+\t@echo \"  deploy-ui          - (deprecated) Same as deploy\"
+\t@echo \"\"
+\t@echo \"Local development:\"
+\t@echo \"  install            - Install Python dependencies\"
+\t@echo \"  install-dev        - Install dev dependencies\"
+\t@echo \"  dev                - Run bot locally\"
+\t@echo \"  test-local         - Run tests (verbose)\"
+\t@echo \"  clean              - Clean test artifacts\"
+\t@echo \"  docker-build       - Build Docker image locally\"
+\t@echo \"  docker-run         - Run Docker image locally\"
+\t@echo \"  set-environment    - Switch active environment (dev/prod)\"
+\t@echo \"\"
+\t@echo \"Environment variables:\"
+\t@echo \"  VERSION            - Image version (default: from version.txt)\"
+\t@echo \"  NAMESPACE          - K8s namespace (default: eightbitsaxlounge-dev)\"
+\t@echo \"  GITHUB_REPOSITORY_OWNER - Docker registry owner (default: mchellmer)\"
+
+.PHONY: test build deploy deploy-ui install install-dev dev test-local clean docker-build docker-run set-environment help

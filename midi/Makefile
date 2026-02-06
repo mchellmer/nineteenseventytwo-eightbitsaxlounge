@@ -1,13 +1,79 @@
+# CI/CD Variables (set by GitHub Actions)
+VERSION ?= $(shell cat version.txt)
+NAMESPACE ?= eightbitsaxlounge-dev
+GITHUB_REPOSITORY_OWNER ?= mchellmer
+IMAGE_BASE = ghcr.io/$(GITHUB_REPOSITORY_OWNER)/eightbitsaxlounge-midi
+
+.PHONY: help test build-container deploy-k8s build-pc deploy-pc
 .PHONY: init-midi-host deploy-midi-pc deploy-midi-api docker-build data-init data-upload request-seteffect
 
+help:
+	@echo "MIDI API - Build and Deployment Targets"
+	@echo ""
+	@echo "Standard CI/CD targets:"
+	@echo "  test             - Run .NET unit tests"
+	@echo "  build-container  - Build and push Docker container for K8s"
+	@echo "  deploy-k8s       - Deploy MIDI API to Kubernetes"
+	@echo "  build-pc         - Build Windows self-contained binary"
+	@echo "  deploy-pc        - Deploy MIDI to Windows PC"
+	@echo ""
+	@echo "Legacy targets (kept for compatibility):"
+	@echo "  init-midi-host   - Initialize MIDI host"
+	@echo "  deploy-midi-pc   - Alias for deploy-pc"
+	@echo "  deploy-midi-api  - Alias for deploy-k8s"
+	@echo "  docker-build     - Local Docker build (no push)"
+	@echo "  data-init        - Initialize MIDI data"
+	@echo "  data-upload      - Upload MIDI data (requires UPLOAD_TYPE)"
+	@echo "  request-seteffect - Send MIDI effect change request"
+	@echo ""
+	@echo "Environment Variables:"
+	@echo "  VERSION=<version>                 - Override version (default: from version.txt)"
+	@echo "  NAMESPACE=<namespace>             - K8s namespace (default: eightbitsaxlounge-dev)"
+	@echo "  GITHUB_REPOSITORY_OWNER=<owner>   - Container registry owner"
+
+# Standard CI/CD targets
+test:
+	@echo "Running .NET tests in NineteenSeventyTwo.EightBitSaxLounge.Midi..."
+	cd NineteenSeventyTwo.EightBitSaxLounge.Midi && \
+	dotnet restore NineteenSeventyTwo.EightBitSaxLounge.Midi.sln && \
+	dotnet build NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-restore --configuration Release && \
+	dotnet test NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-build --configuration Release --verbosity normal
+
+build-container:
+	@echo "Building and pushing MIDI container $(IMAGE_BASE):$(VERSION)..."
+	docker build -t "$(IMAGE_BASE):$(VERSION)" -t "$(IMAGE_BASE):latest" .
+	docker push "$(IMAGE_BASE):$(VERSION)"
+	docker push "$(IMAGE_BASE):latest"
+
+deploy-k8s:
+	@echo "Deploying MIDI API to Kubernetes namespace: $(NAMESPACE)..."
+	ansible-playbook midi-api-deploy.yaml -vv
+
+build-pc:
+	@echo "Building Windows self-contained binary version $(VERSION)..."
+	@mkdir -p publish
+	cd NineteenSeventyTwo.EightBitSaxLounge.Midi && \
+	dotnet publish NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi/NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.csproj \
+		--configuration Release \
+		--runtime win-x64 \
+		--self-contained true \
+		-p:PublishSingleFile=false \
+		-p:Version=$(VERSION) \
+		--output ../publish/bin
+	cd publish/bin && tar -czf ../midi-api-$(VERSION).tar.gz *
+	@echo "Package created: publish/midi-api-$(VERSION).tar.gz"
+
+deploy-pc:
+	@echo "Deploying MIDI to Windows PC..."
+	ansible-playbook midi-pc-deploy.yaml -vv
+
+# Legacy targets (kept for backward compatibility)
 init-midi-host:
 	ansible-playbook midi-init.yaml --ask-pass
 
-deploy-midi-pc:
-	ansible-playbook midi-pc-deploy.yaml -vv
+deploy-midi-pc: deploy-pc
 
-deploy-midi-api:
-	ansible-playbook midi-api-deploy.yaml -vv
+deploy-midi-api: deploy-k8s
 
 data-init:
 	ansible-playbook midi-data-init.yaml -vv

@@ -14,94 +14,72 @@ permissions:
   packages: write
 
 jobs:
-  test:
-    name: Run .NET Tests
-    runs-on: self-hosted
-    defaults:
-      run:
-        working-directory: ./midi
-    env:
-      # Dummy configuration for tests
-      Authentication__SecretKey: "dummySecretKeyForTestingOnly1234567890123456789012"
-      Authentication__Issuer: "Test"
-      Authentication__Audience: "Test"
-      Authentication__TokenExpiryInMinutes: "5"
-      ConnectionStrings__EightBitSaxLoungeDataLayer: "http://localhost:5000"
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+  # Container release for Kubernetes
+  release-k8s:
+    name: Release MIDI Container (K8s)
+    permissions:
+      packages: write
+    uses: ./.github/workflows/release-template.yaml
+    with:
+      component: 'midi'
+      test-target: 'test'
+      build-target: 'build-container'
+      deploy-target: 'deploy-k8s'
+      requires-docker-login: true
+    secrets:
+      component-secrets: |
+        {
+          "AUTH_SECRET_KEY": "${{ secrets.AUTHENTICATION_SECRETKEY }}",
+          "AUTH_ISSUER": "${{ secrets.AUTHENTICATION_ISSUER }}",
+          "AUTH_AUDIENCE": "${{ secrets.AUTHENTICATION_AUDIENCE }}",
+          "AUTH_CLIENT_0_ID": "${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTID }}",
+          "AUTH_CLIENT_0_SECRET": "${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTSECRET }}",
+          "AUTH_CLIENT_1_ID": "${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTID }}",
+          "AUTH_CLIENT_1_SECRET": "${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTSECRET }}",
+          "CONNECTION_STRING_DEV": "${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER_DEV }}",
+          "CONNECTION_STRING_PROD": "${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER_PROD }}",
+          "DEVICE_SERVICE_URL_DEV": "${{ secrets.MIDI_DEVICE_URL_DEV }}",
+          "DEVICE_SERVICE_URL_PROD": "${{ secrets.MIDI_DEVICE_URL_PROD }}",
+          "DEVICE_BYPASS_KEY": "${{ secrets.MIDI_DEVICE_BYPASS_KEY }}",
+          "TOKEN_EXPIRY": "${{ secrets.AUTHENTICATION_TOKENEXPIRYINMINUTES }}"
+        }
 
-      - name: Setup .NET (user install)
-        run: |
-          curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir $HOME/.dotnet
-          echo "$HOME/.dotnet" >> $GITHUB_PATH
-
-      - name: Verify .NET installation
-        run: dotnet --version
-
-      - name: Restore dependencies
-        run: dotnet restore NineteenSeventyTwo.EightBitSaxLounge.Midi.sln
-
-      - name: Build
-        run: dotnet build NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-restore --configuration Release
-
-      - name: Test
-        run: dotnet test NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-build --configuration Release --verbosity normal
-
-  build-and-package:
-    name: Build and Package Minimal API
-    needs: test
+  # Windows PC deployment  
+  build-pc:
+    name: Build Windows PC Package
+    needs: release-k8s
     runs-on: self-hosted
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Setup .NET (user install)
-      run: |
-        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir $HOME/.dotnet
-        echo "$HOME/.dotnet" >> $GITHUB_PATH
-
-    - name: Verify .NET installation
-      run: dotnet --version
-
     - name: Read version
       id: version
-      run: |
-        VERSION=$(cat midi/version.txt)
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
+      working-directory: ./midi
+      run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
 
-    - name: Publish self-contained application
-      working-directory: ./midi/NineteenSeventyTwo.EightBitSaxLounge.Midi
-      run: |
-        dotnet publish NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi/NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.csproj \
-          --configuration Release \
-          --runtime win-x64 \
-          --self-contained true \
-          -p:PublishSingleFile=false \
-          -p:Version=${{ steps.version.outputs.version }} \
-          --output ${{ github.workspace }}/publish
+    - name: Build Windows package
+      working-directory: ./midi
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
+        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+      run: make build-pc
 
-    - name: Create artifact archive
-      run: |
-        cd ${{ github.workspace }}/publish
-        tar -czf midi-api-${{ steps.version.outputs.version }}.tar.gz *
-
-    - name: Upload artifact to GitHub
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: midi-api-${{ steps.version.outputs.version }}
-        path: ${{ github.workspace }}/publish/midi-api-${{ steps.version.outputs.version }}.tar.gz
+        path: midi/publish/midi-api-${{ steps.version.outputs.version }}.tar.gz
         retention-days: 90
         compression-level: 0
 
-    - name: Create GitHub Release (prod only)
+    - name: Create GitHub Release
       if: github.ref_name == 'main'
       uses: softprops/action-gh-release@v1
       with:
         tag_name: midi-api-v${{ steps.version.outputs.version }}
         name: MIDI API v${{ steps.version.outputs.version }}
-        files: ${{ github.workspace }}/publish/midi-api-${{ steps.version.outputs.version }}.tar.gz
+        files: midi/publish/midi-api-${{ steps.version.outputs.version }}.tar.gz
         body: |
           ## MIDI API Release v${{ steps.version.outputs.version }}
           
@@ -113,9 +91,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy:
-    name: Deploy MIDI API to Windows PC
-    needs: [build-and-package, build-and-push-container]
+  deploy-pc:
+    name: Deploy to Windows PC
+    needs: build-pc
     runs-on: self-hosted
     steps:
     - name: Checkout Code
@@ -123,33 +101,21 @@ jobs:
 
     - name: Read version
       id: version
-      run: |
-        VERSION=$(cat midi/version.txt)
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-    - name: Set environment based on branch
-      id: set-env
-      run: |
-        if [[ "${{ github.ref_name }}" == "main" ]]; then
-          echo "ENVIRONMENT=prod" >> $GITHUB_ENV
-        else
-          echo "ENVIRONMENT=dev" >> $GITHUB_ENV
-        fi
+      working-directory: ./midi
+      run: echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
 
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
         name: midi-api-${{ steps.version.outputs.version }}
-        path: ${{ github.workspace }}/artifacts
+        path: artifacts
 
-    - name: Deploy MIDI API
+    - name: Deploy MIDI PC
       working-directory: ./midi
       env:
         VERSION: ${{ steps.version.outputs.version }}
-        ENVIRONMENT: ${{ env.ENVIRONMENT }}
+        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
         ARTIFACT_PATH: ${{ github.workspace }}/artifacts/midi-api-${{ steps.version.outputs.version }}.tar.gz
-        # Application configuration from secrets
         CONNECTIONSTRINGS__EIGHTBITSAXLOUNGEDATALAYER: ${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER }}
         AUTHENTICATION__TOKENEXPIRYINMINUTES: ${{ secrets.AUTHENTICATION_TOKENEXPIRYINMINUTES }}
         AUTHENTICATION__SECRETKEY: ${{ secrets.AUTHENTICATION_SECRETKEY }}
@@ -160,87 +126,4 @@ jobs:
         AUTHENTICATION__CLIENTS__1__CLIENTID: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTID }}
         AUTHENTICATION__CLIENTS__1__CLIENTSECRET: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTSECRET }}
         MIDIDEVICESERVICE__BYPASSKEY: ${{ secrets.MIDI_DEVICE_BYPASS_KEY }}
-      run: make deploy-midi-pc
-  build-and-push-container:
-    name: Build and Push MIDI Container
-    needs: test
-    runs-on: self-hosted
-    permissions:
-      packages: write
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
-
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Build and Push Docker Image
-      working-directory: ./midi
-      run: |
-        VERSION=$(cat version.txt)
-        IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-midi
-        docker build -t "$IMAGE_BASE:$VERSION" -t "$IMAGE_BASE:latest" .
-        docker push "$IMAGE_BASE:$VERSION"
-        docker push "$IMAGE_BASE:latest"
-
-  deploy-k8s:
-    name: Deploy MIDI to Kubernetes
-    needs: [build-and-package, build-and-push-container]
-    runs-on: self-hosted
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
-
-    - name: Set Namespace and URLs for main branch
-      if: github.ref_name == 'main'
-      run: |
-        echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
-        echo "DEVICE_SERVICE_URL=${{ secrets.MIDI_DEVICE_URL_PROD }}" >> $GITHUB_ENV
-        echo "CONNECTION_STRING=${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER_PROD }}" >> $GITHUB_ENV
-
-    - name: Set Namespace and URLs for dev branch
-      if: github.ref_name != 'main'
-      run: |
-        echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
-        echo "DEVICE_SERVICE_URL=${{ secrets.MIDI_DEVICE_URL_DEV }}" >> $GITHUB_ENV
-        echo "CONNECTION_STRING=${{ secrets.CONNECTIONSTRINGS_EIGHTBITSAXLOUNGEDATALAYER_DEV }}" >> $GITHUB_ENV
-
-    - name: Read Version
-      run: |
-        echo "VERSION=$(cat midi/version.txt)" >> $GITHUB_ENV
-
-    - name: Debug environment variables
-      run: |
-        echo "NAMESPACE: ${{ env.NAMESPACE }}"
-        echo "DEVICE_SERVICE_URL: ${{ env.DEVICE_SERVICE_URL }}"
-        echo "CONNECTION_STRING length: ${#CONNECTION_STRING}"
-        if [ -z "$CONNECTION_STRING" ]; then
-          echo "WARNING: CONNECTION_STRING is empty!"
-        else
-          echo "CONNECTION_STRING is set (not showing value for security)"
-        fi
-      env:
-        CONNECTION_STRING: ${{ env.CONNECTION_STRING }}
-
-    - name: Deploy MIDI via Ansible
-      working-directory: ./midi
-      env:
-        NAMESPACE: ${{ env.NAMESPACE }}
-        VERSION: ${{ env.VERSION }}
-        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-        AUTH_SECRET_KEY: ${{ secrets.AUTHENTICATION_SECRETKEY }}
-        AUTH_ISSUER: ${{ secrets.AUTHENTICATION_ISSUER }}
-        AUTH_AUDIENCE: ${{ secrets.AUTHENTICATION_AUDIENCE }}
-        AUTH_CLIENT_0_ID: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTID }}
-        AUTH_CLIENT_0_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_0_CLIENTSECRET }}
-        AUTH_CLIENT_1_ID: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTID }}
-        AUTH_CLIENT_1_SECRET: ${{ secrets.AUTHENTICATION_CLIENTS_1_CLIENTSECRET }}
-        CONNECTION_STRING: ${{ env.CONNECTION_STRING }}
-        DEVICE_SERVICE_URL: ${{ env.DEVICE_SERVICE_URL }}
-        DEVICE_BYPASS_KEY: ${{ secrets.MIDI_DEVICE_BYPASS_KEY }}
-        TOKEN_EXPIRY: ${{ secrets.AUTHENTICATION_TOKENEXPIRYINMINUTES }}
-      run: make deploy-midi-api
+      run: make deploy-pc
