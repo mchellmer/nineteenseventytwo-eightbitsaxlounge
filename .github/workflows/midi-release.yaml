@@ -53,6 +53,7 @@ jobs:
     runs-on: self-hosted
     permissions:
       packages: write
+      security-events: write
     outputs:
       version: ${{ steps.version.outputs.version }}
       namespace: ${{ steps.namespace.outputs.namespace }}
@@ -113,11 +114,11 @@ jobs:
         with:
           image-ref: 'ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-midi:${{ steps.version.outputs.version }}'
           format: 'sarif'
-          output: 'trivy-results.sarif'
+          output: 'midi/trivy-results.sarif'
 
       - name: Upload Trivy Results to GitHub Security
         if: steps.check-version.outputs.changed == 'true' && always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'midi/trivy-results.sarif'
 
