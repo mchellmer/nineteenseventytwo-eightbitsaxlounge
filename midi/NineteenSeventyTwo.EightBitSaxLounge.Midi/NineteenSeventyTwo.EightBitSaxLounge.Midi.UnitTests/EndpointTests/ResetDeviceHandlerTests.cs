@@ -60,7 +60,7 @@ public class ResetDeviceHandlerTests : TestBase
         var settingMsg = new ControlChangeMessage { Address = 2, Value = 0 };
         dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync(TestDeviceName, TestEffectName, "SettingA", 0))
             .ReturnsAsync(settingMsg);
-        
+
         deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, settingMsg)).Returns(Task.FromResult(settingMsg));
         dataServiceMock.Setup(m => m.UpdateDeviceByNameAsync(TestDeviceName, TestDevice)).Returns(Task.CompletedTask);
 

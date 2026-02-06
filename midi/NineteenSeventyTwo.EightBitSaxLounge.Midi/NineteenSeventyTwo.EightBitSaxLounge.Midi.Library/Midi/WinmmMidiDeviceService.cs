@@ -17,10 +17,10 @@ public class WinmmMidiDeviceService : IMidiDeviceService, IMidiProxyService
     private readonly string? _bypassKey;
     public bool IsProxyEnabled { get; }
     public string? ProxyUrl => _proxyUrl;
-    
+
     private const string ProxyHeaderName = "X-Proxied-Request";
     private const string BypassKeyHeaderName = "X-Bypass-Key";
-    
+
     public WinmmMidiDeviceService(
         ILogger<WinmmMidiDeviceService> logger,
         IMidiOutDeviceFactory deviceFactory,
@@ -32,16 +32,16 @@ public class WinmmMidiDeviceService : IMidiDeviceService, IMidiProxyService
         _deviceFactory = deviceFactory;
         _httpClient = httpClient;
         _httpContextAccessor = httpContextAccessor;
-        
+
         var configuredUrl = configuration?["MidiDeviceService:Url"];
         _bypassKey = configuration?["MidiDeviceService:BypassKey"];
-        
+
         if (!string.IsNullOrWhiteSpace(configuredUrl))
         {
             _proxyUrl = configuredUrl.TrimEnd('/');
             IsProxyEnabled = true;
             _logger.LogInformation("MIDI Device Service configured to proxy to: {Url}", _proxyUrl);
-            
+
             if (!string.IsNullOrWhiteSpace(_bypassKey))
             {
                 _logger.LogInformation("Bypass authentication key configured for proxy requests");
@@ -54,15 +54,15 @@ public class WinmmMidiDeviceService : IMidiDeviceService, IMidiProxyService
             _logger.LogInformation("MIDI Device Service configured for local device access only");
         }
     }
-    
+
     public async Task SendControlChangeMessageByDeviceMidiConnectNameAsync(string midiConnectName, ControlChangeMessage controlChangeMessage)
     {
-        _logger.LogInformation("Sending control change message to device {DeviceName}: Address={Address}, Value={Value}", 
+        _logger.LogInformation("Sending control change message to device {DeviceName}: Address={Address}, Value={Value}",
             midiConnectName, controlChangeMessage.Address, controlChangeMessage.Value);
-        
+
         // Check if this request is already a proxied request to prevent infinite recursion
         var isAlreadyProxied = _httpContextAccessor?.HttpContext?.Request.Headers.ContainsKey(ProxyHeaderName) ?? false;
-        
+
         if (IsProxyEnabled && _httpClient != null && !isAlreadyProxied)
         {
             await SendViaProxyAsync(midiConnectName, controlChangeMessage);
@@ -93,10 +93,10 @@ public class WinmmMidiDeviceService : IMidiDeviceService, IMidiProxyService
             {
                 Content = JsonContent.Create(payload)
             };
-            
+
             // Add header to prevent infinite recursion
             request.Headers.Add(ProxyHeaderName, "true");
-            
+
             // Add bypass key if configured
             if (!string.IsNullOrWhiteSpace(_bypassKey))
             {

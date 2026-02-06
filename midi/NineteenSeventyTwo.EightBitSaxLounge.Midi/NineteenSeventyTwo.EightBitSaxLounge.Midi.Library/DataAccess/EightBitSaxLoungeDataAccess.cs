@@ -26,7 +26,7 @@ public class EightbitSaxLoungeDataAccess : IDataAccess
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _httpClient = httpClient ?? new HttpClient();
     }
-    
+
     public async Task<List<T>> LoadDataAsync<T, TU>(string dataFunction, TU parameters, string connectionStringName)
     {
         if (string.IsNullOrWhiteSpace(dataFunction))
@@ -121,7 +121,7 @@ public class EightbitSaxLoungeDataAccess : IDataAccess
         if (!success)
             throw new InvalidOperationException("Save operation failed without an HTTP error.");
     }
-    
+
     private async Task<List<T>> HandleResponse<T>(string requestUri, HttpResponseMessage response)
     {
         var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -193,7 +193,7 @@ public class EightbitSaxLoungeDataAccess : IDataAccess
 
         return result;
     }
-    
+
     private static void TryGetPropertyValue<TU>(TU parameters, string propertyName, out object? value)
     {
         value = null;

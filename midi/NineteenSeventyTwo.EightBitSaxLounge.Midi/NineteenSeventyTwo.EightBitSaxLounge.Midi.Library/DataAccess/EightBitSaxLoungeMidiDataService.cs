@@ -8,11 +8,11 @@ namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 public class EightBitSaxLoungeMidiDataService : IMidiDataService
 {
     private const string DataLayerConnectionStringName = "EightBitSaxLoungeDataLayer";
-    
+
     private readonly IEffectActivatorFactory _effectActivatorFactory;
     private readonly IDataAccess _eightBitSaxLoungeMidiDataAccess;
     private readonly ILogger<EightBitSaxLoungeMidiDataService> _logger;
-    
+
     public EightBitSaxLoungeMidiDataService(
         IEffectActivatorFactory effectActivatorFactory,
         IDataAccess eightBitSaxLoungeMidiDataAccess,
@@ -22,7 +22,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         _eightBitSaxLoungeMidiDataAccess = eightBitSaxLoungeMidiDataAccess;
         _logger = logger;
     }
-    
+
     public async Task CreateDatabaseAsync(string databaseName)
     {
         _logger.LogInformation($"Creating database: {databaseName}");
@@ -44,7 +44,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             throw new Exception($"Error creating database {databaseName}: {e.Message}");
         }
     }
-    
+
     public async Task CreateDeviceAsync(MidiDevice newDevice)
     {
         _logger.LogInformation($"Creating device: {newDevice.Name}");
@@ -81,7 +81,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                     RequestBody = null
                 },
                 DataLayerConnectionStringName);
-            
+
             if (response.Count > 1)
             {
                 _logger.LogError($"Multiple devices found with name {deviceName}");
@@ -112,7 +112,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
     public async Task UpdateDeviceByNameAsync(string deviceName, MidiDevice updatedDevice)
     {
         _logger.LogInformation($"Updating device by name: {deviceName}");
-        
+
         try
         {
             await _eightBitSaxLoungeMidiDataAccess.SaveDataAsync(
@@ -130,7 +130,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             throw new Exception($"Error updating device {deviceName}: {e.Message}");
         }
     }
-    
+
     public async Task UpdateDeviceEffectActiveStateAsync(string deviceName, string effectName, bool activate)
     {
         _logger.LogInformation(
@@ -209,7 +209,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                 _logger.LogWarning($"Effect with name {effectName} does not exist.");
                 return null;
             }
-            
+
             _logger.LogInformation($"Effect with name {effectName} retrieved successfully.");
             return response.First();
         }
@@ -311,7 +311,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                     RequestBody = null
                 },
                 DataLayerConnectionStringName);
-            
+
             if (response.Count == 0)
             {
                 _logger.LogWarning($"Selector with name {selectorName} does not exist.");
@@ -364,12 +364,12 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         string deviceName, string effectName, bool activate)
     {
         var device = await GetDeviceByNameAsync(deviceName);
-        
+
         if (device == null)
         {
             var msg = $"Get control change message failed. Device with name {deviceName} not found.";
             _logger.LogError(msg);
-            throw  new InvalidOperationException(msg);
+            throw new InvalidOperationException(msg);
         }
 
         var activator = _effectActivatorFactory.GetActivator(device.Name);
@@ -399,7 +399,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             throw new InvalidOperationException(err, ex);
         }
     }
-    
+
     /// <summary>
     /// Get MIDI control change message values to set a <see cref="DeviceEffect"/>>'s state.
     /// A <see cref="MidiDevice"/>'s midi implementation contains some <see cref="MidiConfiguration"/>"/>.
@@ -430,7 +430,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             _logger.LogError(msg);
             throw new InvalidOperationException(msg);
         }
-        
+
         var deviceEffect = device.DeviceEffects.FirstOrDefault(de => de.Name == deviceEffectName);
         if (deviceEffect == null)
         {
@@ -438,7 +438,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             _logger.LogError(msg);
             throw new InvalidOperationException(msg);
         }
-        
+
         var deviceEffectSetting = deviceEffect.EffectSettings
             .FirstOrDefault(des => des.Name == deviceEffectSettingName);
         if (deviceEffectSetting == null)
@@ -447,10 +447,10 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             _logger.LogError(msg);
             throw new InvalidOperationException(msg);
         }
-        
+
         MidiConfiguration settingMidiConfiguration = await GetDeviceMidiConfigurationForEffectSetting(
             device, deviceEffectSettingName, deviceEffect, deviceEffectSetting);
-        
+
         if (settingMidiConfiguration == null)
         {
             var msg = $"No MIDI implementation found for setting '{deviceEffectSettingName}' in device '{deviceName}'.";
@@ -458,18 +458,18 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             throw new InvalidOperationException(msg);
         }
 
-        var settingAddress = 
+        var settingAddress =
             (settingMidiConfiguration.ControlChangeAddresses ?? throw new InvalidOperationException
             ($"No MIDI implementation found for setting '{deviceEffectSettingName}' in device '{deviceName}'."))
             .FirstOrDefault(address => address.Name == deviceEffectName);
-        
+
         if (settingAddress == null)
         {
             var msg = $"No ControlChangeAddress found for effect '{deviceEffectName}' in setting '{deviceEffectSettingName}' for device '{deviceName}'.";
             _logger.LogError(msg);
             throw new InvalidOperationException(msg);
         }
-        
+
         return new ControlChangeMessage
         {
             Address = settingAddress.Value,
@@ -482,11 +482,11 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
     {
         Selector selector = await GetSelectorByNameAsync(deviceEffectSettingName)
             ?? throw new InvalidOperationException($"Selector '{deviceEffectSettingName}' not found.");
-        
+
         MidiSelection? midiSelection = selector.Selections.FirstOrDefault(
             s => s.Name.Equals(selection, StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidOperationException($"Selection '{selection}' not found in selector '{deviceEffectSettingName}'.");
-        
+
         if (!midiSelection.ControlChangeMessageValue.HasValue)
         {
             throw new InvalidOperationException($"Control change message value not defined for selection '{selection}' in selector '{deviceEffectSettingName}'.");
@@ -517,7 +517,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         DeviceEffectSetting deviceEffectSetting)
     {
         string settingMidiImplementationName;
-        
+
         // Some settings are dependent on others e.g. if a reverb engine is 'Room' then Control1 is 'Bass'
         // If the EffectSetting has a DeviceEffectSettingDependencyName, get that effect's ControlChangeAddress instead
         if (!string.IsNullOrEmpty(deviceEffectSetting.DeviceEffectSettingDependencyName))
@@ -548,7 +548,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                 _logger.LogError(msg);
                 throw new InvalidOperationException(msg);
             }
-            
+
             var dependentEffect = await GetEffectByNameAsync(dependentEffectName);
             if (dependentEffect == null)
             {
@@ -556,14 +556,14 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                 _logger.LogError(msg);
                 throw new InvalidOperationException(msg);
             }
-            
+
             if (dependentEffect.DeviceSettings == null)
             {
                 var msg = $"No device settings found for dependent effect '{dependentEffectName}' in device '{device.Name}'.";
                 _logger.LogError(msg);
                 throw new InvalidOperationException(msg);
             }
-            
+
             var effectDeviceSetting = dependentEffect.DeviceSettings.FirstOrDefault(
                 setting => setting.DeviceName == device.Name && setting.Name == settingName);
             if (effectDeviceSetting == null)
@@ -572,7 +572,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                 _logger.LogError(msg);
                 throw new InvalidOperationException(msg);
             }
-            
+
             settingMidiImplementationName = effectDeviceSetting.DeviceMidiImplementationName ?? effectDeviceSetting.EffectName;
             if (settingMidiImplementationName == null)
             {
@@ -580,7 +580,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
                 _logger.LogError(msg);
                 throw new InvalidOperationException(msg);
             }
-            
+
             _logger.LogInformation("Resolved dependent effect setting: Dependency={DependencyName}, Value={DependencyValue}, DependentEffect={DependentEffectName}, EffectName={EffectName}, MidiImplementationName={MidiImplementationName}",
                 deviceEffectSetting.DeviceEffectSettingDependencyName, deviceEffectSettingDependency.Value, dependentEffectName, effectDeviceSetting.EffectName, settingMidiImplementationName);
         }
@@ -588,7 +588,7 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         {
             settingMidiImplementationName = settingName;
         }
-        
+
         var settingMidiConfiguration = device.MidiImplementation
             .FirstOrDefault(configuration => configuration.Name == settingMidiImplementationName);
 

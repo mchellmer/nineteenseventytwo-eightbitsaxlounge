@@ -121,7 +121,7 @@ public class UploadDeviceHandler : IEndpointHandler<string, IResult>
                                     }
                                 }
                             }
-                            
+
                             // Update Description if provided in JSON
                             if (effectElement.TryGetProperty("Description", out var descElement))
                             {

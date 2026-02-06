@@ -14,11 +14,11 @@ public class UploadDeviceHandlerTests : TestBase
         // Arrange
         var loggerMock = new Mock<ILogger<UploadDeviceHandler>>();
         var dataServiceMock = new Mock<IMidiDataService>();
-        
+
         // Mock data service to return existing effects for the Ventris Dual Reverb upload
         dataServiceMock.Setup(m => m.GetEffectByNameAsync(It.IsAny<string>()))
             .ReturnsAsync((string name) => new Effect { Name = name, Description = "Test Description" });
-        
+
         dataServiceMock.Setup(m => m.GetDeviceByNameAsync(It.IsAny<string>())).ReturnsAsync((MidiDevice)null);
         dataServiceMock.Setup(m => m.GetSelectorByNameAsync(It.IsAny<string>())).ReturnsAsync((Selector)null);
 
@@ -143,15 +143,15 @@ public class UploadDeviceHandlerTests : TestBase
         {
             // Setup for Devices: existing one to update
             dataServiceMock.Setup(m => m.GetDeviceByNameAsync("TestDeviceUpload"))
-                .ReturnsAsync(new MidiDevice 
-                { 
-                    Name = "TestDeviceUpload", 
-                    Description = "Old", 
-                    MidiConnectName = "Old", 
+                .ReturnsAsync(new MidiDevice
+                {
+                    Name = "TestDeviceUpload",
+                    Description = "Old",
+                    MidiConnectName = "Old",
                     MidiImplementation = new List<MidiConfiguration>(),
                     DeviceEffects = new List<DeviceEffect>()
                 });
-            
+
             // Setup for Selectors: new one to create
             dataServiceMock.Setup(m => m.GetSelectorByNameAsync("TestSelector"))
                 .ReturnsAsync((Selector)null);
@@ -180,9 +180,9 @@ public class UploadDeviceHandlerTests : TestBase
             dataServiceMock.Verify(m => m.CreateSelectorAsync("TestSelector", It.IsAny<Selector>()), Times.Once);
 
             // Verify Effect Update/Merge
-            dataServiceMock.Verify(m => m.UpdateEffectByNameAsync("TestEffect", It.Is<Effect>(e => 
-                e.Description == "Updated Description" && 
-                e.DeviceSettings.Count == 1 && 
+            dataServiceMock.Verify(m => m.UpdateEffectByNameAsync("TestEffect", It.Is<Effect>(e =>
+                e.Description == "Updated Description" &&
+                e.DeviceSettings.Count == 1 &&
                 e.DeviceSettings[0].Name == "Control1" &&
                 e.DeviceSettings[0].DeviceName == "TestDeviceUpload")), Times.Once);
         }

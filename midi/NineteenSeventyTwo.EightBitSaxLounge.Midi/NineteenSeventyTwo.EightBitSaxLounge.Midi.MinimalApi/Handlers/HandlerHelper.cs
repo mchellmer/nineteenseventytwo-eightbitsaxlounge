@@ -30,7 +30,7 @@ public class HandlerHelper
         string contextName)
     {
         await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(device.MidiConnectName, ccMessage);
-        
+
         updateInMemoryModel();
 
         try

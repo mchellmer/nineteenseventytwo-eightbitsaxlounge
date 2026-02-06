@@ -15,6 +15,7 @@
         service_port: "{{ '5000' if lookup('env', 'ENVIRONMENT') == 'dev' else '5001' }}"
         version: "{{ lookup('env', 'VERSION') }}"
         artifact_path: "{{ lookup('env', 'ARTIFACT_PATH') }}"
+        version_changed: "{{ lookup('env', 'NEEDS_BUILD') | default('true') }}"
 
     - name: Display deployment info
       ansible.builtin.debug:
@@ -24,6 +25,8 @@
           - "Target directory: {{ target_dir }}"
           - "Service name: {{ service_name }}"
           - "Service port: {{ service_port }}"
+          - "Version changed: {{ version_changed }}"
+          - "Deployment type: {{ 'Full (new version)' if version_changed == 'true' else 'Config-only (existing version)' }}"
 
     # ========== Stop Service ==========
     - name: Check if service exists
@@ -48,17 +51,20 @@
       ansible.windows.win_file:
         path: "{{ target_dir }}\\{{ version }}"
         state: directory
+      when: version_changed == 'true'
 
     - name: Copy artifact to Windows PC
       ansible.windows.win_copy:
         src: "{{ artifact_path }}"
         dest: "{{ target_dir }}\\midi-api-{{ version }}.tar.gz"
+      when: version_changed == 'true'
 
     - name: Extract artifact
       ansible.windows.win_shell: |
         tar -xzf "{{ target_dir }}\midi-api-{{ version }}.tar.gz" -C "{{ target_dir }}\{{ version }}"
       args:
         creates: "{{ target_dir }}\\{{ version }}\\NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.exe"
+      when: version_changed == 'true'
 
     - name: Update current symlink
       ansible.windows.win_shell: |
@@ -68,6 +74,7 @@
         }
         New-Item -ItemType SymbolicLink -Path $linkPath -Target "{{ target_dir }}\{{ version }}" -Force | Out-Null
         Write-Output "Symlink updated to version {{ version }}"
+      when: version_changed == 'true'
 
     # ========== Configure Service ==========
     - name: Install/update service with NSSM

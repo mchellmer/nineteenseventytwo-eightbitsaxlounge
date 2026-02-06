@@ -1,7 +1,7 @@
 """Tests for TwitchBot."""
 
 import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
+from unittest.mock import Mock, AsyncMock, patch
 from bots.twitch_bot import TwitchBot
 
 

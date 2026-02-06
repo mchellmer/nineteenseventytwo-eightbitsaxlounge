@@ -19,12 +19,12 @@ public class WinmmMidiOutDevice : WinmmMidiDevice, IMidiOutDevice
     /// A handle to reference the device port in communications.
     /// </summary>
     internal IntPtr Handle;
-    
+
     /// <summary>
     /// A flag indicating whether the MIDI output device is open
     /// </summary>
     public bool IsOpen;
-    
+
     /// <summary>
     /// A semaphore to ensure thread-safe sending of MIDI messages.
     /// Limit device access to one thread at a time.
@@ -43,7 +43,7 @@ public class WinmmMidiOutDevice : WinmmMidiDevice, IMidiOutDevice
     /// </remarks>
     [DllImport("winmm.dll")]
     internal static extern MmResult midiOutClose(IntPtr handle);
-    
+
     /// <summary>
     /// Retrieves the capabilities of a specified MIDI output device.
     /// </summary>
@@ -58,7 +58,7 @@ public class WinmmMidiOutDevice : WinmmMidiDevice, IMidiOutDevice
     /// </remarks>
     [DllImport("winmm.dll", EntryPoint = "midiOutGetDevCaps")]
     private static extern MmResult midiOutGetDevCapsA(UInt32 devId, ref MidiOutCapabilities devCapabilities, UInt32 devCapsSize);
-    
+
     /// <summary>
     /// Get number of MIDI output devices on the system.
     /// </summary>
@@ -70,7 +70,7 @@ public class WinmmMidiOutDevice : WinmmMidiDevice, IMidiOutDevice
     /// </remarks>
     [DllImport("winmm.dll")]
     private static extern UInt32 midiOutGetNumDevs();
-    
+
     /// <summary>
     /// Opens the specified MIDI output device.
     /// </summary>
@@ -95,7 +95,7 @@ public class WinmmMidiOutDevice : WinmmMidiDevice, IMidiOutDevice
         IntPtr midiOutCallback,
         UInt32 instance,
         MidiCallbackFlags flags);
-    
+
     /// <summary>
     /// Sends a short MIDI message to the specified MIDI output device.
     /// </summary>
@@ -167,11 +167,11 @@ public class WinmmMidiOutDevice : WinmmMidiDevice, IMidiOutDevice
             throw new InvalidOperationException($"MIDI device '{midiConnectName}' not found.");
         }
     }
-    
+
     /// <summary>
     /// Closes the MIDI output device.
     /// </summary>
-    public override void Close() 
+    public override void Close()
     {
         MmResult result;
 
@@ -186,11 +186,11 @@ public class WinmmMidiOutDevice : WinmmMidiDevice, IMidiOutDevice
             }
         }
     }
-    
+
     /// <summary>
     /// Opens the MIDI output device.
     /// </summary>
-    public override void Open() 
+    public override void Open()
     {
         TryOpen();
     }

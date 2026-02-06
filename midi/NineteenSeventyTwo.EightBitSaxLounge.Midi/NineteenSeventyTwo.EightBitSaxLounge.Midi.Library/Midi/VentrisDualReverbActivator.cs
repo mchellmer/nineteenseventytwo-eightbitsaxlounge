@@ -18,12 +18,12 @@ public class VentrisDualReverbActivator : IEffectActivator
     {
         var targetReverbEngineEffect = device.DeviceEffects.FirstOrDefault(
             e => string.Equals(e.Name, effectName, StringComparison.OrdinalIgnoreCase));
-        
+
         var dependentReverbEngineEffect = device.DeviceEffects
             .First(e => (string.Equals(e.Name, "ReverbEngineA", StringComparison.OrdinalIgnoreCase) ||
                                   string.Equals(e.Name, "ReverbEngineB", StringComparison.OrdinalIgnoreCase)) &&
                                  !string.Equals(e.Name, effectName, StringComparison.OrdinalIgnoreCase));
-        
+
         if (targetReverbEngineEffect == null)
         {
             return Task.FromResult<ControlChangeMessage?>(null);

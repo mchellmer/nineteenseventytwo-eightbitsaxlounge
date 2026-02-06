@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.13]
+
+### Fixed
+- resolve lint issues
+
+
 ## [2.0.12]
 
 ### Added

@@ -114,8 +114,8 @@ if (!string.IsNullOrWhiteSpace(deviceServiceUrl))
             };
             return handler;
         });
-    
-    builder.Services.AddSingleton<IMidiDeviceService>(sp => 
+
+    builder.Services.AddSingleton<IMidiDeviceService>(sp =>
         ActivatorUtilities.CreateInstance<WinmmMidiDeviceService>(sp, sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<IHttpContextAccessor>()));
 }
 else

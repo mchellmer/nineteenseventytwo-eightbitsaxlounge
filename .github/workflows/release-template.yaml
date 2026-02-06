@@ -22,6 +22,11 @@ on:
         required: false
         type: string
         default: ''
+      lint-target:
+        description: 'Make target for linting (empty to skip)'
+        required: false
+        type: string
+        default: ''
       package-target:
         description: 'Make target for packaging (empty to skip)'
         required: false
@@ -42,10 +47,25 @@ on:
         required: false
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: self-hosted
+    if: false # Disabled - too slow on RPi
+    defaults:
+      run:
+        working-directory: ./${{ inputs.component }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run Lint
+        run: make ${{ inputs.lint-target }}
+
   test:
     name: Test
     runs-on: self-hosted
-    if: inputs.test-target != ''
+    needs: [build]
+    if: inputs.test-target != '' && needs.build.outputs.needs-build == 'true'
     defaults:
       run:
         working-directory: ./${{ inputs.component }}
@@ -59,16 +79,18 @@ jobs:
   build:
     name: Build and Package
     runs-on: self-hosted
-    needs: [test]
-    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    needs: [lint]
+    if: always() && (needs.lint.result == 'success' || needs.lint.result == 'skipped')
     permissions:
       packages: write
+      security-events: write
     defaults:
       run:
         working-directory: ./${{ inputs.component }}
     outputs:
       version: ${{ steps.version.outputs.version }}
       namespace: ${{ steps.namespace.outputs.namespace }}
+      needs-build: ${{ steps.check-artifact.outputs.needs-build }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -91,8 +113,29 @@ jobs:
           echo "namespace=$NAMESPACE" >> $GITHUB_OUTPUT
           echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
 
+      - name: Check if artifact exists
+        id: check-artifact
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          IMAGE="ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}:${{ steps.version.outputs.version }}"
+          echo "Checking if artifact exists: $IMAGE"
+          
+          # Try to get manifest using GitHub API
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://ghcr.io/v2/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}/manifests/${{ steps.version.outputs.version }}")
+          
+          if [ "$RESPONSE" = "200" ]; then
+            echo "needs-build=false" >> $GITHUB_OUTPUT
+            echo "✓ Artifact exists - will skip build"
+          else
+            echo "needs-build=true" >> $GITHUB_OUTPUT
+            echo "✗ Artifact not found - will build"
+          fi
+
       - name: Log in to GitHub Container Registry
-        if: inputs.requires-docker-login
+        if: inputs.requires-docker-login && steps.check-artifact.outputs.needs-build == 'true'
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
@@ -100,14 +143,29 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
+        if: steps.check-artifact.outputs.needs-build == 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
           NAMESPACE: ${{ steps.namespace.outputs.namespace }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: make ${{ inputs.build-target }}
 
+      - name: Security Scan Container
+        if: false # Disabled - too slow on RPi
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}:${{ steps.version.outputs.version }}'
+          format: 'sarif'
+          output: '${{ inputs.component }}/trivy-results.sarif'
+
+      - name: Upload Trivy Results to GitHub Security
+        if: false # Disabled - too slow on RPi
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: '${{ inputs.component }}/trivy-results.sarif'
+
       - name: Package
-        if: inputs.package-target != ''
+        if: inputs.package-target != '' && steps.check-artifact.outputs.needs-build == 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
           NAMESPACE: ${{ steps.namespace.outputs.namespace }}
@@ -116,7 +174,8 @@ jobs:
   deploy:
     name: Deploy
     runs-on: self-hosted
-    needs: [build]
+    needs: [build, test]
+    if: always() && inputs.deploy-target != '' && needs.build.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
     defaults:
       run:
         working-directory: ./${{ inputs.component }}
@@ -127,6 +186,7 @@ jobs:
       - name: Deploy
         env:
           VERSION: ${{ needs.build.outputs.version }}
+          NEEDS_BUILD: ${{ needs.build.outputs.needs-build }}
           NAMESPACE: ${{ needs.build.outputs.namespace }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           SECRETS_JSON: ${{ secrets.component-secrets }}

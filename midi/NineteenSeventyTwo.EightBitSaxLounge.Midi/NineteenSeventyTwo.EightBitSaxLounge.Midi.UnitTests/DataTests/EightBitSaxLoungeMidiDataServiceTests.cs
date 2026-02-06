@@ -267,12 +267,12 @@ public class EightBitSaxLoungeMidiDataServiceTests
                     Active = true,
                     EffectSettings = new List<DeviceEffectSetting>
                     {
-                        new DeviceEffectSetting 
-                        { 
-                            Name = settingName, 
-                            Value = 0, 
+                        new DeviceEffectSetting
+                        {
+                            Name = settingName,
+                            Value = 0,
                             DefaultValue = 0,
-                            DeviceEffectSettingDependencyName = dependencyName 
+                            DeviceEffectSettingDependencyName = dependencyName
                         },
                         new DeviceEffectSetting
                         {
@@ -365,12 +365,12 @@ public class EightBitSaxLoungeMidiDataServiceTests
                     Active = true,
                     EffectSettings = new List<DeviceEffectSetting>
                     {
-                        new DeviceEffectSetting 
-                        { 
-                            Name = settingName, 
-                            Value = 0, 
+                        new DeviceEffectSetting
+                        {
+                            Name = settingName,
+                            Value = 0,
                             DefaultValue = 0,
-                            DeviceEffectSettingDependencyName = dependencyName 
+                            DeviceEffectSettingDependencyName = dependencyName
                         },
                         new DeviceEffectSetting
                         {
