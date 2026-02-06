@@ -34,7 +34,7 @@ func (s *ProdCouchService) GetDocumentByDatabaseNameAndDocumentId(dbname string,
 	if err != nil {
 		return nil, fmt.Errorf("failed to send GET request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -69,7 +69,7 @@ func (s *ProdCouchService) CreateDocumentByDatabaseName(dbname string, doc map[s
 	if err != nil {
 		return fmt.Errorf("failed to send POST request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
@@ -115,7 +115,7 @@ func (s *ProdCouchService) UpdateDocumentByDatabaseNameAndDocumentId(dbname stri
 	if err != nil {
 		return fmt.Errorf("failed to send PUT request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Accept both 200 OK and 201 Created as success responses from CouchDB
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {

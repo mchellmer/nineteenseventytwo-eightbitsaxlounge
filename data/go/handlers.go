@@ -43,7 +43,9 @@ func GetDocumentByDatabaseNameAndDocumentIdHandler(svc CouchService) http.Handle
 			writeJSONError(w, http.StatusNotFound, "document_not_found", err)
 			return
 		}
-		json.NewEncoder(w).Encode(doc)
+		if err := json.NewEncoder(w).Encode(doc); err != nil {
+			log.Printf("failed to encode response: %v", err)
+		}
 	}
 }
 
@@ -144,7 +146,9 @@ func GetDatabaseByNameHandler(svc CouchService) http.HandlerFunc {
 			writeJSONError(w, http.StatusNotFound, "database_not_found", err)
 			return
 		}
-		json.NewEncoder(w).Encode(dbInfo)
+		if err := json.NewEncoder(w).Encode(dbInfo); err != nil {
+			log.Printf("failed to encode response: %v", err)
+		}
 	}
 }
 
@@ -180,6 +184,8 @@ func GetDocumentsByDatabaseNameHandler(svc CouchService) http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(docs)
+		if err := json.NewEncoder(w).Encode(docs); err != nil {
+			log.Printf("failed to encode response: %v", err)
+		}
 	}
 }

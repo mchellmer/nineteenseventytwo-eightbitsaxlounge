@@ -29,7 +29,6 @@ jobs:
   # Shared test job
   test:
     name: Run .NET Tests
-    needs: lint
     runs-on: self-hosted
     env:
       # Dummy configuration for tests
@@ -49,7 +48,7 @@ jobs:
   # Kubernetes container build (runs in parallel with build-pc after test)
   build-container:
     name: Build MIDI Container
-    needs: test
+    needs: [lint, test]
     runs-on: self-hosted
     permissions:
       packages: write
@@ -125,7 +124,7 @@ jobs:
   # Windows PC build (runs in parallel with build-container after test)
   build-pc:
     name: Build Windows PC Package
-    needs: test
+    needs: [lint, test]
     runs-on: self-hosted
     outputs:
       version: ${{ steps.version.outputs.version }}
