@@ -1,4 +1,4 @@
-name: MIDI API Release
+name: MIDI Release
 
 on:
   workflow_dispatch:
