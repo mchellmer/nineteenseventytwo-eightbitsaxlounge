@@ -88,6 +88,18 @@
         kubectl -n longhorn-system wait --for=condition=ready pod -l app=longhorn-manager --timeout=300s
       register: wait_result
 
+    - name: Wait for Longhorn storage class to be created
+      ansible.builtin.shell: |
+        for i in {1..30}; do
+          if kubectl get storageclass longhorn &>/dev/null; then
+            exit 0
+          fi
+          echo "Waiting for Longhorn storage class... attempt $i/30"
+          sleep 10
+        done
+        exit 1
+      register: sc_wait
+
     - name: Verify Longhorn storage class
       ansible.builtin.shell: |
         kubectl get storageclass longhorn
