@@ -13,7 +13,8 @@ The resources in this folder are designed to:
 
 - **`Dockerfile`**: Defines the steps to build a CouchDB container image.
 - **`k8s/`**: Contains Kubernetes manifests for deploying CouchDB:
-  - `deployment.yaml`: Defines the CouchDB deployment.
+  - `deployment.yaml`: Defines the CouchDB deployment with persistent volume.
+  - `persistentvolumeclaim.yaml`: 10GB persistent volume claim for data persistence.
   - `service.yaml`: Exposes the CouchDB deployment as a service within the cluster.
   - `ingress.yaml.j2`: Templated Ingress (host-based) to expose CouchDB/Fauxton externally.
 - **`.github/workflows/db-release.yaml`**: A GitHub Actions workflow to automate the build, push, and deployment process.
@@ -22,6 +23,18 @@ The resources in this folder are designed to:
   - Merging to main deploys to namespace `eightbitsaxlounge-prod`; other branches to `eightbitsaxlounge-dev`
 - **`db-couchdb.yaml`**: An Ansible playbook for deployment db components to cluster
 - **`Makefile`**: Makefile defining steps to deploy db components
+- **`CHANGELOG.md`**: Version history and changes
+
+## Data Persistence
+
+CouchDB data is stored in a PersistentVolumeClaim (10GB) mounted at `/opt/couchdb/data`. This ensures data persists across:
+- Pod restarts
+- Deployment updates
+- Cluster shutdowns
+
+**Note**: When upgrading from a deployment without persistence, existing data will not be automatically migrated. You can either:
+1. Re-initialize databases using the MIDI data-init and data-upload workflows
+2. Manually backup and restore data before deploying the PVC update
 
 ## Prerequisites
 

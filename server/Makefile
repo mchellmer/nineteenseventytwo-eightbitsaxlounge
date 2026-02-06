@@ -31,6 +31,9 @@ deploy-monitoring:
 deploy-namespaces:
 	ansible-playbook k8s-namespaces.yaml
 
+deploy-storage:
+	ansible-playbook k8s-storage.yaml
+
 clean-cicd:
 	@echo "Cleaning up GitHub Actions Runner..."
 	cd ~/actions-runner && sudo ./svc.sh stop || true

@@ -5,62 +5,24 @@ on:
   push:
     branches:
       - main
+      - db/*
     paths:
-      - 'db/version.txt' 
+      - 'db/version.txt'
 
 jobs:
-  build-and-push:
-    name: Build and Push CouchDB Image
-    runs-on: self-hosted
+  release:
+    name: Release DB Component
     permissions:
       packages: write
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
-
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Build and Push Docker Image
-      working-directory: ./db
-      run: |
-        VERSION=$(cat version.txt)
-        IMAGE_BASE=ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-couchdb
-        docker build -t "$IMAGE_BASE:$VERSION" -t "$IMAGE_BASE:latest" .
-        docker push "$IMAGE_BASE:$VERSION"
-        docker push "$IMAGE_BASE:latest"
-        echo "IMAGE_VERSION=$VERSION" >> $GITHUB_ENV
-
-  deploy:
-    name: Deploy CouchDB to Kubernetes
-    needs: build-and-push
-    runs-on: self-hosted
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
-
-    - name: Set Namespace Based on Branch
-      id: set-namespace
-      run: |
-        if [[ "${{ github.ref_name }}" == "main" ]]; then
-          echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
-        else
-          echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV
-        fi
-
-    - name: Read version
-      run: |
-        echo "VERSION=$(cat db/version.txt)" >> $GITHUB_ENV
-
-    - name: Deploy CouchDB via Ansible
-      working-directory: ./db
-      env:
-        COUCHDB_PASSWORD: ${{ secrets.DB_COUCHDB_PASSWORD }}
-        NAMESPACE: ${{ env.NAMESPACE }}
-        VERSION: ${{ env.VERSION }}
-        GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-      run: make deploy-couchdb
+    uses: ./.github/workflows/release-template.yaml
+    with:
+      component: 'db'
+      test-target: 'test'
+      build-target: 'build'
+      deploy-target: 'deploy'
+      requires-docker-login: true
+    secrets:
+      component-secrets: |
+        {
+          "COUCHDB_PASSWORD": "${{ secrets.DB_COUCHDB_PASSWORD }}"
+        }
