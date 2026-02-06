@@ -1,7 +1,6 @@
 """Tests for StreamingBot interface."""
 
 import pytest
-from unittest.mock import AsyncMock
 from bots.streaming_bot import StreamingBot
 
 

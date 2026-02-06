@@ -102,7 +102,7 @@ class TwitchBot(StreamingBot):
             
         except Exception as e:
             logger.error(f'Error executing command {command}: {e}')
-            await ctx.send(f'❌ An error occurred while processing your command.')
+            await ctx.send('❌ An error occurred while processing your command.')
 
     async def _on_ready(self):
         """Called when the bot is ready."""
@@ -121,4 +121,4 @@ class TwitchBot(StreamingBot):
     async def _on_command_error(self, context, error):
         """Called when a command raises an error."""
         logger.error(f'Command error in {context.command}: {error}')
-        await context.send(f'❌ An error occurred while processing your command.')
+        await context.send('❌ An error occurred while processing your command.')
