@@ -32,6 +32,11 @@
         src: k8s/deployment.yaml
         dest: "{{ tempdir.path }}/deployment.yaml"
 
+    - name: Copy PersistentVolumeClaim manifest to temp directory
+      ansible.builtin.copy:
+        src: k8s/persistentvolumeclaim.yaml
+        dest: "{{ tempdir.path }}/persistentvolumeclaim.yaml"
+
     - name: Copy service manifest to temp directory
       ansible.builtin.copy:
         src: k8s/service.yaml
@@ -52,6 +57,12 @@
           --dry-run=client -o yaml | kubectl apply -f -
       environment:
         COUCHDB_PASSWORD: "{{ lookup('env', 'COUCHDB_PASSWORD') }}"
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Deploy CouchDB PersistentVolumeClaim
+      ansible.builtin.shell: |
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/persistentvolumeclaim.yaml
+      environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 
     - name: Deploy CouchDB Deployment
