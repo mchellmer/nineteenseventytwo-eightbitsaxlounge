@@ -10,7 +10,7 @@
 
     - name: Template iSCSI prerequisite manifest
       ansible.builtin.template:
-        src: templates/longhorn-iscsi-prereqs.yaml
+        src: longhorn-iscsi-prereqs.yaml
         dest: "{{ tempdir.path }}/longhorn-iscsi-prereqs.yaml"
 
     - name: Apply iSCSI prerequisite installer DaemonSet
