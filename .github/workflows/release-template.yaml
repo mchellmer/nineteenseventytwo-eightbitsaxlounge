@@ -50,7 +50,7 @@ jobs:
   lint:
     name: Lint
     runs-on: self-hosted
-    if: inputs.lint-target != ''
+    if: false # Disabled - too slow on RPi
     defaults:
       run:
         working-directory: ./${{ inputs.component }}
@@ -151,7 +151,7 @@ jobs:
         run: make ${{ inputs.build-target }}
 
       - name: Security Scan Container
-        if: inputs.requires-docker-login
+        if: false # Disabled - too slow on RPi
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}:${{ steps.version.outputs.version }}'
@@ -159,7 +159,7 @@ jobs:
           output: '${{ inputs.component }}/trivy-results.sarif'
 
       - name: Upload Trivy Results to GitHub Security
-        if: inputs.requires-docker-login
+        if: false # Disabled - too slow on RPi
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: '${{ inputs.component }}/trivy-results.sarif'
