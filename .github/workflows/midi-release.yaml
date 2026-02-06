@@ -257,12 +257,13 @@ jobs:
       if: needs.build-pc.outputs.version-changed == 'false'
       run: |
         mkdir -p artifacts
-        gh release download midi-api-v${{ steps.version.outputs.version }} \
-          --pattern "midi-api-${{ steps.version.outputs.version }}.tar.gz" \
-          --dir artifacts \
-          --repo ${{ github.repository }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/octet-stream" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/tags/midi-api-v${{ steps.version.outputs.version }}" \
+          | jq -r '.assets[] | select(.name == "midi-api-${{ steps.version.outputs.version }}.tar.gz") | .url' \
+          | xargs -I {} curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/octet-stream" {} \
+          -o artifacts/midi-api-${{ steps.version.outputs.version }}.tar.gz
 
     - name: Deploy MIDI PC
       working-directory: ./midi

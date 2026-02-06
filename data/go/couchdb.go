@@ -153,7 +153,7 @@ func (s *ProdCouchService) DeleteDocumentByDatabaseNameAndDocumentId(dbname stri
 	if err != nil {
 		return fmt.Errorf("failed to send DELETE request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -175,7 +175,7 @@ func (s *ProdCouchService) GetDatabaseByName(dbName string) (map[string]interfac
 	if err != nil {
 		return nil, fmt.Errorf("failed to send GET request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -202,7 +202,7 @@ func (s *ProdCouchService) CreateDatabaseByName(dbName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to send PUT request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusPreconditionFailed {
 		body, _ := io.ReadAll(resp.Body)
@@ -224,7 +224,7 @@ func (s *ProdCouchService) DeleteDatabaseByName(dbName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to send DELETE request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
