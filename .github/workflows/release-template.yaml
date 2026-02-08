@@ -65,11 +65,21 @@ jobs:
     name: Test
     runs-on: self-hosted
     needs: [build]
-    if: inputs.test-target != '' && needs.build.outputs.needs-build == 'true'
+    if: |
+      always() && 
+      needs.build.result == 'success' && 
+      inputs.test-target != '' && 
+      needs.build.outputs.needs-build == 'true'
     defaults:
       run:
         working-directory: ./${{ inputs.component }}
     steps:
+      - name: Debug - Show build outputs
+        run: |
+          echo "Build result: ${{ needs.build.result }}"
+          echo "Test target: ${{ inputs.test-target }}"
+          echo "Needs build: ${{ needs.build.outputs.needs-build }}"
+      
       - name: Checkout Code
         uses: actions/checkout@v3
 
