@@ -130,9 +130,10 @@ class TwitchBot(StreamingBot):
                 for i, message in enumerate(response):
                     logger.debug(f'Sending message {i+1}/{len(response)}: {message[:50]}...')
                     await ctx.send(message)
-                    # Add small delay between messages to avoid rate limiting
+                    # Add delay between messages to avoid Twitch rate limiting
+                    # Twitch drops messages if sent too quickly
                     if i < len(response) - 1:
-                        await asyncio.sleep(0.5)
+                        await asyncio.sleep(1.5)
                 logger.info(f'Successfully sent all {len(response)} messages for !{command}')
             else:
                 await ctx.send(response)

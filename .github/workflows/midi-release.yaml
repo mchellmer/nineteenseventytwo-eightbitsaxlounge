@@ -61,6 +61,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "Checking for MIDI container version: $VERSION"
+          
           # Use GitHub Packages API to check if the version exists
           # This is more reliable than the Docker registry API
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
@@ -76,7 +79,9 @@ jobs:
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/users/${{ github.repository_owner }}/packages/container/eightbitsaxlounge-midi/versions" \
-              | jq -r '.[] | .metadata.container.tags[] | select(. == "${{ steps.version.outputs.version }}")' | head -n 1)
+              | jq -r --arg ver "$VERSION" '.[] | .metadata.container.tags[] | select(. == $ver)' | head -n 1)
+            
+            echo "Found matching tag: '$VERSION_EXISTS'"
             
             if [ -n "$VERSION_EXISTS" ]; then
               echo "needs-build=false" >> $GITHUB_OUTPUT

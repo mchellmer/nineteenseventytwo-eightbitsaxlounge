@@ -36,13 +36,12 @@ class HelpHandler(CommandHandler):
         # Get available engines dynamically from settings
         available_engines = ', '.join([e.lower() for e in settings.valid_engines])
         
-        # Return list of messages to be sent separately for multi-line effect
+        # Return condensed list of messages to avoid Twitch rate limiting
+        # Grouped into 3 messages instead of 7 for faster delivery
         return [
             "🎵 EightBitSaxLounge Bot Commands 🎵",
-            f"!engine <type> - Change reverb engine ({available_engines})",
-            "!time <0-10> - Set reverb time",
-            "!predelay <0-10> - Set pre-delay",
-            "!control1 <0-10> - Set control 1 parameter",
-            "!control2 <0-10> - Set control 2 parameter",
-            "!help - Show this help message"
+            f"!engine ({available_engines})",
+            "!time/!predelay/!control1/!control2 (0-10)",
+            "Type !<command> <value> to control the reverb",
+            "Examples: !time 7, !engine room"
         ]
