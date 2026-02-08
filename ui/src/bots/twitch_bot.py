@@ -118,14 +118,25 @@ class TwitchBot(StreamingBot):
     async def _execute_command(self, command: str, args: list, ctx):
         """Execute a command through the command registry."""
         try:
+            import asyncio
+            user = ctx.author.name if hasattr(ctx, 'author') else 'unknown'
+            logger.info(f'Executing !{command} command from {user} with args: {args}')
+            
             response = await self.command_registry.execute_command(command, args, ctx)
             
             # Handle both single string responses and list of messages
             if isinstance(response, list):
-                for message in response:
+                logger.info(f'Sending {len(response)} messages for !{command} command')
+                for i, message in enumerate(response):
+                    logger.debug(f'Sending message {i+1}/{len(response)}: {message[:50]}...')
                     await ctx.send(message)
+                    # Add small delay between messages to avoid rate limiting
+                    if i < len(response) - 1:
+                        await asyncio.sleep(0.5)
+                logger.info(f'Successfully sent all {len(response)} messages for !{command}')
             else:
                 await ctx.send(response)
+                logger.info(f'Successfully executed !{command} command')
             
         except Exception as e:
             logger.error(f'Error executing command {command}: {e}')
@@ -141,7 +152,11 @@ class TwitchBot(StreamingBot):
         if message.echo:
             return
         
-        logger.debug(f'Message from {message.author.name}: {message.content}')
+        # Log commands at INFO level, regular messages at DEBUG level
+        if message.content.startswith(settings.twitch_prefix):
+            logger.info(f'Command received from {message.author.name}: {message.content}')
+        else:
+            logger.debug(f'Message from {message.author.name}: {message.content}')
         
         await self.twitchio.handle_commands(message)
     
