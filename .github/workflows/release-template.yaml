@@ -121,17 +121,34 @@ jobs:
           IMAGE="ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}:${{ steps.version.outputs.version }}"
           echo "Checking if artifact exists: $IMAGE"
           
-          # Try to get manifest using GitHub API
+          # Use GitHub Packages API to check if the version exists
+          # This is more reliable than the Docker registry API
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
-            "https://ghcr.io/v2/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}/manifests/${{ steps.version.outputs.version }}")
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/users/${{ github.repository_owner }}/packages/container/eightbitsaxlounge-${{ inputs.component }}/versions")
+          
+          echo "API Response Code: $RESPONSE"
           
           if [ "$RESPONSE" = "200" ]; then
-            echo "needs-build=false" >> $GITHUB_OUTPUT
-            echo "✓ Artifact exists - will skip build"
+            # Get the list of versions and check if our version exists
+            VERSION_EXISTS=$(curl -s \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/users/${{ github.repository_owner }}/packages/container/eightbitsaxlounge-${{ inputs.component }}/versions" \
+              | jq -r '.[] | .metadata.container.tags[] | select(. == "${{ steps.version.outputs.version }}")' | head -n 1)
+            
+            if [ -n "$VERSION_EXISTS" ]; then
+              echo "needs-build=false" >> $GITHUB_OUTPUT
+              echo "✓ Artifact exists - will skip build and tests"
+            else
+              echo "needs-build=true" >> $GITHUB_OUTPUT
+              echo "✗ Artifact not found - will build and test"
+            fi
           else
+            # If we can't access the API (404, 403, etc.), assume it doesn't exist and build
             echo "needs-build=true" >> $GITHUB_OUTPUT
-            echo "✗ Artifact not found - will build"
+            echo "✗ Could not check artifact (HTTP $RESPONSE) - will build and test"
           fi
 
       - name: Log in to GitHub Container Registry

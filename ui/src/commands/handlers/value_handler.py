@@ -114,7 +114,10 @@ class ValueHandler(MidiBaseHandler):
             )
             
             logger.info(f"{self._command_name} set to {input_value} (MIDI: {midi_value}) by {requester}")
-            return f"🎵 {self._command_name.capitalize()} set to {input_value}! 🎵"
+            
+            # Format display value to show integers without decimal point
+            display_value = int(input_value) if input_value == int(input_value) else input_value
+            return f"🎵 {self._command_name.capitalize()} set to {display_value}! 🎵"
             
         except ValueError as e:
             if "outside the range" in str(e):
