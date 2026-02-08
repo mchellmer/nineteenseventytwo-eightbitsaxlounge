@@ -24,7 +24,8 @@ class TwitchBot(StreamingBot):
             client_id=settings.twitch_client_id,
             nick=settings.bot_name.lower(),
             prefix=settings.twitch_prefix,
-            initial_channels=[settings.twitch_channel]
+            initial_channels=[settings.twitch_channel],
+            case_insensitive=True
         )
         
         self.command_registry = CommandRegistry()
@@ -39,6 +40,10 @@ class TwitchBot(StreamingBot):
         
         # Register 8bsl channel commands with TwitchIO
         self.twitchio.add_command(commands.Command(name='engine', func=self.engine_command))
+        self.twitchio.add_command(commands.Command(name='time', func=self.time_command))
+        self.twitchio.add_command(commands.Command(name='predelay', func=self.predelay_command))
+        self.twitchio.add_command(commands.Command(name='control1', func=self.control1_command))
+        self.twitchio.add_command(commands.Command(name='control2', func=self.control2_command))
         self.twitchio.add_command(commands.Command(name='help', func=self.help_command))
     
     # StreamingBot interface implementation
@@ -69,6 +74,22 @@ class TwitchBot(StreamingBot):
     async def engine_command(self, ctx, *args):
         """Handle !engine commands."""
         await self._execute_command('engine', list(args), ctx)
+    
+    async def time_command(self, ctx, *args):
+        """Handle !time commands."""
+        await self._execute_command('time', list(args), ctx)
+    
+    async def predelay_command(self, ctx, *args):
+        """Handle !predelay commands."""
+        await self._execute_command('predelay', list(args), ctx)
+    
+    async def control1_command(self, ctx, *args):
+        """Handle !control1 commands."""
+        await self._execute_command('control1', list(args), ctx)
+    
+    async def control2_command(self, ctx, *args):
+        """Handle !control2 commands."""
+        await self._execute_command('control2', list(args), ctx)
     
     async def help_command(self, ctx, *args):
         """Handle !help command."""

@@ -41,6 +41,7 @@ def mock_midi_client():
     client = Mock()
     client.authenticate = AsyncMock(return_value="test_token")
     client.send_control_change_message = AsyncMock(return_value={"success": True})
+    client.set_effect = AsyncMock(return_value={"success": True})
     client.get = AsyncMock(return_value={"status": "ok"})
     client.post = AsyncMock(return_value={"success": True})
     return client

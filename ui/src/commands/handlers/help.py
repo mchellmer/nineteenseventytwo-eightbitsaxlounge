@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from commands.handlers.command_handler import CommandHandler
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +33,16 @@ class HelpHandler(CommandHandler):
         Returns:
             Response message for chat with command list
         """
+        # Get available engines dynamically from settings
+        available_engines = ', '.join([e.lower() for e in settings.valid_engines])
+        
         help_text = [
             "🎵 EightBitSaxLounge Bot Commands 🎵",
-            "!engine <type> - Change MIDI engine (room, jazz, ambient, rock, electronic)",
+            f"!engine <type> - Change reverb engine ({available_engines})",
+            "!time <0-10> - Set reverb time",
+            "!predelay <0-10> - Set pre-delay",
+            "!control1 <0-10> - Set custom engine control 1",
+            "!control2 <0-10> - Set custom engine control 2",
             "!help - Show this help message"
         ]
         return " | ".join(help_text)
