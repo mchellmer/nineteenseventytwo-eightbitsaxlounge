@@ -22,7 +22,7 @@ class HelpHandler(CommandHandler):
         """Get the command description."""
         return "Show available bot commands and usage information"
     
-    async def handle(self, args: list[str], context: Any) -> str:
+    async def handle(self, args: list[str], context: Any) -> list[str]:
         """
         Handle !help commands.
         
@@ -31,14 +31,18 @@ class HelpHandler(CommandHandler):
             context: Command context (Twitch context)
             
         Returns:
-            Response message for chat with command list
+            List of response messages for chat (sent as separate messages)
         """
         # Get available engines dynamically from settings
         available_engines = ', '.join([e.lower() for e in settings.valid_engines])
         
-        # Compact format with grouped commands for better readability in chat
-        help_text = (
-            f"🎵 Commands: !engine ({available_engines}) • "
-            f"!time/!predelay/!control1/!control2 (0-10) • !help"
-        )
-        return help_text
+        # Return list of messages to be sent separately for multi-line effect
+        return [
+            "🎵 EightBitSaxLounge Bot Commands 🎵",
+            f"!engine <type> - Change reverb engine ({available_engines})",
+            "!time <0-10> - Set reverb time",
+            "!predelay <0-10> - Set pre-delay",
+            "!control1 <0-10> - Set control 1 parameter",
+            "!control2 <0-10> - Set control 2 parameter",
+            "!help - Show this help message"
+        ]

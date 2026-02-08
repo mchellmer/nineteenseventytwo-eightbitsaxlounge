@@ -119,7 +119,13 @@ class TwitchBot(StreamingBot):
         """Execute a command through the command registry."""
         try:
             response = await self.command_registry.execute_command(command, args, ctx)
-            await ctx.send(response)
+            
+            # Handle both single string responses and list of messages
+            if isinstance(response, list):
+                for message in response:
+                    await ctx.send(message)
+            else:
+                await ctx.send(response)
             
         except Exception as e:
             logger.error(f'Error executing command {command}: {e}')

@@ -4,7 +4,7 @@ Maps command names to their handler methods.
 """
 
 import logging
-from typing import Dict, Tuple, Callable, List, Any
+from typing import Dict, Tuple, Callable, List, Any, Union
 
 from config.settings import settings
 from services.midi_client import MidiClient
@@ -103,7 +103,7 @@ class CommandRegistry:
             ),
         }
     
-    async def execute_command(self, command_name: str, args: List[str], context: Any) -> str:
+    async def execute_command(self, command_name: str, args: List[str], context: Any) -> Union[str, List[str]]:
         """
         Execute a command with the given arguments and context.
         
@@ -113,7 +113,7 @@ class CommandRegistry:
             context: The command context (typically a Twitch context object)
             
         Returns:
-            The response message to send to chat
+            The response message(s) to send to chat (string or list of strings)
             
         Raises:
             ValueError: If the command is not found
