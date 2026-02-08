@@ -22,11 +22,15 @@ UI elements viewers can interact with are mapped to elements defined in ./src/co
 
 Register a new command in ./src/commands/command_registry.py and create a handler in ./src/commands/handlers that implements CommandHandler.
 
-Configured commands:
+Configured commands (case-insensitive):
 - General
-    - `help` - Shows available commands
+    - `!help` - Shows available commands
 - Ventris Dual Reverb
-    - `engine <engine name>` - Sets reverb engine A
+    - `!engine <engine name>` - Sets reverb engine A (e.g., room, hall, plate, spring, reverse, modulate, echo)
+    - `!time <0-10>` - Set reverb decay time (scales to MIDI 0-127)
+    - `!predelay <0-10>` - Set reverb pre-delay (scales to MIDI 0-127)
+    - `!control1 <0-10>` - Set custom control 1 (scales to MIDI 0-127)
+    - `!control2 <0-10>` - Set custom control 2 (scales to MIDI 0-127)
 
 #### App Services
 
