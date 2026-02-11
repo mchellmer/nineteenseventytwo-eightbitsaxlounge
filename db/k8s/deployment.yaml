@@ -18,12 +18,35 @@ spec:
       labels:
         app: eightbitsaxlounge
         component: db
+        version: "{{ lookup('env', 'VERSION') | default('latest', true) }}"
     spec:
       containers:
       - name: couchdb
         image: ghcr.io/mchellmer/eightbitsaxlounge-couchdb:latest
         ports:
         - containerPort: 5984
+          name: http
+        startupProbe:
+          httpGet:
+            path: /_up
+            port: 5984
+          periodSeconds: 2
+          failureThreshold: 60
+          timeoutSeconds: 3
+        livenessProbe:
+          httpGet:
+            path: /_up
+            port: 5984
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /_up
+            port: 5984
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
         env:
         - name: COUCHDB_USER
           value: admin

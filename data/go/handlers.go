@@ -28,6 +28,27 @@ func writeJSONError(w http.ResponseWriter, status int, code string, err error) {
 	})
 }
 
+// HealthCheckHandler handles:
+//
+//	GET /health
+//
+// Returns 200 OK if service is healthy and can connect to CouchDB.
+// Used by Kubernetes liveness and readiness probes.
+func HealthCheckHandler(svc CouchService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Check if we can connect to CouchDB using _up endpoint
+		err := svc.CheckHealth()
+		if err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte("Service Unavailable\n"))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK\n"))
+	}
+}
+
 // GetDocumentByDatabaseNameAndDocumentIdHandler handles:
 //
 //	GET /data/{dbname}/{id}

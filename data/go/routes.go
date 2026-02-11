@@ -24,6 +24,9 @@ import (
 func SetupRoutes(svc CouchService) http.Handler {
 	r := chi.NewRouter()
 
+	// Health endpoint for Kubernetes probes
+	r.Get("/health", HealthCheckHandler(svc))
+
 	// Database-level endpoints (host root based)
 	r.Put("/{dbname}", CreateDatabaseByNameHandler(svc))
 	r.Get("/{dbname}", GetDatabaseByNameHandler(svc))

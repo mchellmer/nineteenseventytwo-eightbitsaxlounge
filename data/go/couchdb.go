@@ -268,6 +268,25 @@ func (s *ProdCouchService) GetDocumentsByDatabaseName(dbName string) ([]map[stri
 	return docs, nil
 }
 
+// CheckHealth performs: GET /_up
+// Checks if CouchDB is accessible and responding.
+// Returns nil if healthy (200 OK), error otherwise.
+func (s *ProdCouchService) CheckHealth() error {
+	upURL := fmt.Sprintf("%s/_up", couchURL())
+	resp, err := httpClient.Get(upURL)
+	if err != nil {
+		return fmt.Errorf("failed to connect to CouchDB: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("CouchDB health check failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
 // couchURL builds the base CouchDB URL with embedded basic-auth credentials.
 //
 //	http://COUCHDB_USER:COUCHDB_PASSWORD@COUCHDB_ENDPOINT

@@ -10,4 +10,5 @@ type CouchService interface {
 	GetDatabaseByName(dbname string) (map[string]interface{}, error)
 	CreateDatabaseByName(dbname string) error
 	DeleteDatabaseByName(dbname string) error
+	CheckHealth() error
 }

@@ -16,6 +16,7 @@ This layer deploys comprehensive monitoring infrastructure to the Kubernetes clu
 - Node and pod metrics collection
 - OpenCost integration for cost tracking
 - Kepler for power consumption monitoring
+- **Health Probes**: All services now have liveness and readiness probes configured
 
 ### Cluster Events
 - Kubernetes event collection and forwarding
@@ -23,11 +24,13 @@ This layer deploys comprehensive monitoring infrastructure to the Kubernetes clu
 ### Pod Logs
 - Application log collection from all pods
 - Structured log forwarding to Grafana Loki
+- **INFO-level logging** enabled across all services for detailed monitoring
 
 ### Application Observability
 - OTLP receiver for traces (gRPC port 4317, HTTP port 4318)
 - Zipkin receiver (port 9411)
 - Support for distributed tracing
+- **Version labels** on all pods for deployment tracking
 
 ### Alloy Agents
 - **alloy-metrics** - Metrics collection with remote configuration
@@ -70,6 +73,19 @@ The monitoring stack sends data to three Grafana Cloud endpoints:
 - **Prometheus** - Metrics at prometheus-prod-55-prod-gb-south-1.grafana.net
 - **Loki** - Logs at logs-prod-035.grafana.net
 - **OTLP Gateway** - Traces, metrics, and logs at otlp-gateway-prod-gb-south-1.grafana.net
+
+## Grafana Setup
+
+For detailed instructions on setting up dashboards, log queries, alerts, and managing free tier limits, see:
+
+**[Grafana Cloud Configuration Guide](GRAFANA_SETUP.md)**
+
+This guide includes:
+- Log query examples (by service, severity, patterns)
+- Dashboard configurations (System Health, Logs, Usage)
+- Alert setups for critical issues
+- Free tier optimization strategies
+- Vulnerability scanning integration
 
 ## Fleet Management
 

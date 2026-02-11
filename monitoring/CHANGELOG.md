@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.0.2] - 2026-02-11
+
+### Added
+- Comprehensive Grafana Cloud setup guide (GRAFANA_SETUP.md)
+- Health probes for all service layers:
+  - UI: HTTP health endpoints (/health, /ready)
+  - Data: /health endpoint with CouchDB connectivity check
+  - DB: CouchDB built-in /_up endpoint
+  - MIDI: Already had /health endpoint
+- Kubernetes liveness and readiness probes for all deployments
+- Version labels on all pods for tracking deployments in Grafana
+- Dashboard configurations for:
+  - System Health (pod status, restarts, versions, resource usage)
+  - Logs (errors, volume, command tracking)
+- LogQL and PromQL query examples
+- Alert configurations for critical issues
+- Free tier optimization strategies and usage monitoring
+- Health check server for UI Python bot
+
+### Documentation
+- Log query patterns by service and severity
+- Grafana dashboard setup instructions
+- Alert configuration guidance
+- Free tier limit management
+- Vulnerability scanning integration guide
+
 ## [0.0.1] - 2026-02-11
 
 ### Added

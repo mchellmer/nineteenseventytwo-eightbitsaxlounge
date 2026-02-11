@@ -102,6 +102,13 @@ func (m *mockCouchService) GetDocumentsByDatabaseName(dbname string) ([]map[stri
 	}, nil
 }
 
+func (m *mockCouchService) CheckHealth() error {
+	if m.returnError {
+		return errors.New("health check error")
+	}
+	return nil
+}
+
 func TestGetDocumentByDatabaseNameAndDocumentIdHandler_Success(t *testing.T) {
 	req := httptest.NewRequest("GET", "/testdb/123", nil)
 	req = setChiURLParams(req, map[string]string{"dbname": "testdb", "id": "123"})
@@ -367,5 +374,39 @@ func TestDeleteDatabaseByNameHandler_Error(t *testing.T) {
 
 	if rr.Code != http.StatusInternalServerError {
 		t.Fatalf("expected 500, got %d", rr.Code)
+	}
+}
+
+func TestHealthCheckHandler_Healthy(t *testing.T) {
+	req := httptest.NewRequest("GET", "/health", nil)
+	rr := httptest.NewRecorder()
+
+	handler := HealthCheckHandler(&mockCouchService{returnError: false})
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+
+	expected := "OK\n"
+	if rr.Body.String() != expected {
+		t.Errorf("expected body %q, got %q", expected, rr.Body.String())
+	}
+}
+
+func TestHealthCheckHandler_Unhealthy(t *testing.T) {
+	req := httptest.NewRequest("GET", "/health", nil)
+	rr := httptest.NewRecorder()
+
+	handler := HealthCheckHandler(&mockCouchService{returnError: true})
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503, got %d", rr.Code)
+	}
+
+	expected := "Service Unavailable\n"
+	if rr.Body.String() != expected {
+		t.Errorf("expected body %q, got %q", expected, rr.Body.String())
 	}
 }
