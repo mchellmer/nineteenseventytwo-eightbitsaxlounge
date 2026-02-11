@@ -10,13 +10,25 @@ on:
       - 'monitoring/version.txt'
 
 jobs:
-  release:
-    name: Release Monitoring Component
-    permissions:
-      packages: write
-      security-events: write
-    uses: ./.github/workflows/release-template.yaml
-    with:
-      component: 'monitoring'
-      deploy-target: 'deploy'
-      requires-docker-login: false
+  deploy:
+    name: Deploy Monitoring Stack
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: ./monitoring
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Make vault available to runner
+        working-directory: ./server
+        run: |
+          if [ -f "$HOME/nineteenseventytwo-eightbitsaxlounge/server/group_vars/all/vault.yml" ]; then
+            cp -f "$HOME/nineteenseventytwo-eightbitsaxlounge/server/group_vars/all/vault.yml" ./group_vars/all/vault.yml
+          fi
+
+      - name: Deploy Monitoring
+        run: make deploy
+
+      - name: Verify Deployment
+        run: make verify
