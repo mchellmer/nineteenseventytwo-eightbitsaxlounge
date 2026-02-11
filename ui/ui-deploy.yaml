@@ -35,6 +35,25 @@
           - lookup('env','MIDI_CLIENT_SECRET') | length > 0
         fail_msg: "Missing required environment variables. Ensure the workflow passes all required secrets."
 
+    - name: Verify image exists in registry
+      ansible.builtin.shell: |
+        IMAGE_BASE=${IMAGE_BASE:-ghcr.io/${GITHUB_REPOSITORY_OWNER}/eightbitsaxlounge-ui}
+        IMAGE="${IMAGE_BASE}:${VERSION}"
+        echo "Verifying image exists: $IMAGE"
+        
+        if ! docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+          echo "ERROR: Image $IMAGE does not exist in registry"
+          echo "Please build and push the image before deploying"
+          exit 1
+        fi
+        
+        echo "✓ Image verified: $IMAGE"
+      environment:
+        VERSION: "{{ lookup('env', 'VERSION') }}"
+        GITHUB_REPOSITORY_OWNER: "{{ lookup('env', 'GITHUB_REPOSITORY_OWNER') | default('mchellmer', true) }}"
+        IMAGE_BASE: "{{ lookup('env', 'IMAGE_BASE') | default('', true) }}"
+      changed_when: false
+
     - name: Create a temporary directory for manifests
       ansible.builtin.tempfile:
         state: directory
