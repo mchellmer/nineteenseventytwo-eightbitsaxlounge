@@ -7,32 +7,16 @@ on:
       - main
       - monitoring/*
     paths:
-      - 'server/versions/monitoring.txt'
+      - 'monitoring/version.txt'
 
 jobs:
-  deploy-monitoring:
-    runs-on: self-hosted
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Debug environment info
-        run: |
-          echo "Workflow: ${{ github.workflow }}"
-          echo "Job: ${{ github.job }}"
-          echo "Runner OS: ${{ runner.os }}"
-          echo "Runner Name: ${{ runner.name }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Actor: ${{ github.actor }}"
-
-      - name: Make vault available to runner
-        working-directory: ./server
-        run: |
-          if [ -f "$HOME/nineteenseventytwo-eightbitsaxlounge/server/group_vars/all/vault.yml" ]; then
-            cp -f "$HOME/nineteenseventytwo-eightbitsaxlounge/server/group_vars/all/vault.yml" ./group_vars/all/vault.yml
-          fi
-
-      - name: Deploy monitoring
-        working-directory: ./server
-        run: make deploy-monitoring
+  release:
+    name: Release Monitoring Component
+    permissions:
+      packages: write
+      security-events: write
+    uses: ./.github/workflows/release-template.yaml
+    with:
+      component: 'monitoring'
+      deploy-target: 'deploy'
+      requires-docker-login: false

@@ -7,7 +7,13 @@ PLAYBOOK_DIR ?= ../server
 # Deploy monitoring stack
 deploy:
 	@echo "Deploying monitoring stack version $(VERSION)..."
-	cd $(PLAYBOOK_DIR) && ansible-playbook monitoring/k8s-monitoring.yaml --ask-vault-pass
+	@if [ -f ~/.vault_pass ]; then \
+		echo "Using vault password file for CI/CD deployment"; \
+		cd $(PLAYBOOK_DIR) && ansible-playbook monitoring/k8s-monitoring.yaml --vault-password-file ~/.vault_pass; \
+	else \
+		echo "Prompting for vault password"; \
+		cd $(PLAYBOOK_DIR) && ansible-playbook monitoring/k8s-monitoring.yaml --ask-vault-pass; \
+	fi
 
 # Deploy without vault password prompt (for CI/CD)
 deploy-ci:
@@ -51,8 +57,8 @@ show-config:
 # Help
 help:
 	@echo "Monitoring Makefile targets:"
-	@echo "  deploy        - Deploy monitoring stack (prompts for vault password)"
-	@echo "  deploy-ci     - Deploy monitoring stack using vault file (for CI/CD)"
+	@echo "  deploy        - Deploy monitoring stack (auto-detects CI/CD or interactive mode)"
+	@echo "  deploy-ci     - Deploy monitoring stack using vault file (deprecated, use deploy)"
 	@echo "  check-helm    - Check Helm version on cluster nodes"
 	@echo "  verify        - Check status of monitoring pods"
 	@echo "  check-alloy   - Check Alloy agent pod status"
