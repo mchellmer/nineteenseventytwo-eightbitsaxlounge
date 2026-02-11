@@ -25,9 +25,6 @@ deploy-ingress:
 deploy-loadbalancer:
 	ansible-playbook k8s-metallb.yaml
 
-deploy-monitoring:
-	ansible-playbook k8s-monitoring.yaml
-
 deploy-namespaces:
 	ansible-playbook k8s-namespaces.yaml
 

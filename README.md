@@ -10,7 +10,7 @@ A deliberately overengineered Kubernetes-based platform for live music streaming
 
 ## Architecture Overview
 
-The system is composed of five main layers, each running as containerized services in a Kubernetes cluster:
+The system is split into layers:
 
 ### **UI Layer** ([ui/](ui/))
 Python-based Twitch chatbot that monitors chat and responds to viewer commands. Supports case-insensitive commands like `!engine`, `!time`, `!predelay` to control audio effects. Communicates with the MIDI layer to translate chat commands into hardware control signals.
@@ -23,6 +23,9 @@ Go-based data service providing a RESTful API for MIDI device configurations, pr
 
 ### **DB Layer** ([db/](db/))
 CouchDB instance serving as the source of truth for device configurations, presets, and application state. Ensures consistent state across UI, MIDI devices, and chat interactions.
+
+### **Monitoring Layer** ([monitoring/](monitoring/))
+Grafana Cloud-based observability stack with Alloy agents for comprehensive monitoring. Collects metrics, logs, and traces from all cluster components. Includes OpenCost for cost tracking and Kepler for energy monitoring.
 
 ### **Server Layer** ([server/](server/))
 Ansible-based infrastructure as code managing the Kubernetes cluster across Raspberry Pi nodes and a PC. Handles cluster provisioning, configuration, deployments, and maintenance.
@@ -49,6 +52,7 @@ Each layer has detailed documentation in its respective README:
 - [MIDI Layer Documentation](midi/README.md)
 - [Data Layer Documentation](data/README.md)
 - [DB Layer Documentation](db/README.md)
+- [Monitoring Layer Documentation](monitoring/README.md)
 - [Server Layer Documentation](server/README.md)
 
 ## Feature Roadmap
@@ -67,10 +71,9 @@ Db layer
 - source of true state -> UI and device track
 
 Monitoring layer
-- grafana
-  - all containers enforced probes for health monitoring
-  - dashboard - service versions/states, device state
-  - vulnerabilities
+- all containers enforced probes for health monitoring
+- dashboard - service versions/states, device state
+- vulnerabilitiesbilities
   - logging
 
 Server layer
