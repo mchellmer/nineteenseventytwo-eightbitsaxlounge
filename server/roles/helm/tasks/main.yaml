@@ -7,10 +7,11 @@
 
 - name: Install Helm using official script
   ansible.builtin.shell:
-    cmd: /tmp/get-helm-4.sh --version {{ helm_version }} {{ '--no-sudo' if not helm_install_become else '' }}
+    cmd: /tmp/get-helm-4.sh --version {{ helm_version }} --no-sudo
   environment:
     HELM_INSTALL_DIR: "{{ helm_install_dir }}"
-    USE_SUDO: "{{ 'true' if helm_install_become else 'false' }}"
+    USE_SUDO: "false"
+  become: "{{ helm_install_become }}"
 
 - name: Clean up installation script
   ansible.builtin.file:
