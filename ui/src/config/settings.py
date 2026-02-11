@@ -29,6 +29,24 @@ class Settings(BaseSettings):
     # MIDI Device Configuration
     midi_device_name: str = "One Series Ventris Reverb"
     
+    # Valid engine names for VentrisDualReverb
+    valid_engines: list[str] = [
+        "Room",
+        "Hall",
+        "EDome",
+        "TrueSpring",
+        "Plate",
+        "LoFi",
+        "ModVerb",
+        "Shimmer",
+        "EchoVerb",
+        "Swell",
+        "Offspring",
+        "Reverse",
+        "OutboardSpring",
+        "MetalBox"
+    ]
+    
     # Bot Configuration
     bot_name: str = "EightBitSaxBot"
     log_level: str = "INFO"

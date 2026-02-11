@@ -13,8 +13,6 @@ logger = logging.getLogger(__name__)
 class EngineHandler(MidiBaseHandler):
     """Handler for engine-related commands."""
     
-    VALID_ENGINES = ["room"]
-    
     def __init__(self, midi_client: MidiClient):
         """Initialize engine handler with MIDI client.
         
@@ -31,7 +29,9 @@ class EngineHandler(MidiBaseHandler):
     @property
     def description(self) -> str:
         """Get the command description."""
-        return f"Change MIDI engine. Usage: !engine <type>. Available: {', '.join(self.VALID_ENGINES)}"
+        # Convert engine names to lowercase for display
+        available = ', '.join([e.lower() for e in settings.valid_engines])
+        return f"Change MIDI engine. Usage: !engine <type>. Available: {available}"
     
     async def handle(self, args: list[str], context: Any) -> str:
         """
@@ -44,33 +44,36 @@ class EngineHandler(MidiBaseHandler):
         Returns:
             Response message for chat
         """
+        # Convert valid engines to lowercase for comparison
+        valid_engines_lower = [e.lower() for e in settings.valid_engines]
+        
         if not args:
-            return f"Usage: !engine <type>. Available engines: {', '.join(self.VALID_ENGINES)}"
+            return f"Usage: !engine <type>. Available engines: {', '.join(valid_engines_lower)}"
         
         engine_type = args[0].lower()
         
-        if engine_type not in self.VALID_ENGINES:
-            return f"Invalid engine type: {engine_type}. Available engines: {', '.join(self.VALID_ENGINES)}"
+        # Find the matching engine name (case-insensitive)
+        matching_engine = None
+        for valid_engine in settings.valid_engines:
+            if valid_engine.lower() == engine_type:
+                matching_engine = valid_engine
+                break
+        
+        if not matching_engine:
+            return f"Invalid engine type: {engine_type}. Available engines: {', '.join(valid_engines_lower)}"
         
         try:
             requester = context.author.name if hasattr(context, 'author') else "chatbot"
             
-            # Map engine types to MIDI control values
-            # For now, "room" engine sends control change: address=1, value=8
-            engine_midi_values = {
-                "room": (1, 8)
-            }
-            
-            address, value = engine_midi_values[engine_type]
-            
-            # Send MIDI control change message (will auto-authenticate if needed)
-            await self.midi_client.send_control_change_message(
-                device_midi_connect_name=settings.midi_device_name,
-                address=address,
-                value=value
+            # Call SetEffect endpoint with static values except for selection
+            await self.midi_client.set_effect(
+                device_name="VentrisDualReverb",
+                device_effect_name="ReverbEngineA",
+                device_effect_setting_name="ReverbEngine",
+                selection=matching_engine
             )
             
-            logger.info(f"Engine changed to {engine_type} by {requester} (CC {address}={value})")
+            logger.info(f"Engine changed to {matching_engine} by {requester}")
             return f"🎵 Engine set to '{engine_type}' mode! 🎵"
             
         except Exception as e:

@@ -189,6 +189,57 @@ class MidiClient:
             authenticated=True
         )
     
+    async def set_effect(
+        self,
+        device_name: str,
+        device_effect_name: str,
+        device_effect_setting_name: str,
+        selection: Optional[str] = None,
+        value: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """
+        Set an effect on a MIDI device.
+        Automatically authenticates if not already authenticated.
+        
+        Args:
+            device_name: Name of the MIDI device
+            device_effect_name: Name of the device effect
+            device_effect_setting_name: Name of the device effect setting
+            selection: Optional selection value (e.g., engine name)
+            value: Optional numeric value
+            
+        Returns:
+            Response from the MIDI service
+            
+        Raises:
+            ValueError: If neither selection nor value is provided
+            Exception: If the request fails
+        """
+        # Validate that at least one of selection or value is provided
+        if selection is None and value is None:
+            raise ValueError("Either 'selection' or 'value' must be provided for set_effect")
+        
+        if not self._token:
+            await self._ensure_authenticated()
+        
+        payload = {
+            'deviceName': device_name,
+            'deviceEffectName': device_effect_name,
+            'deviceEffectSettingName': device_effect_setting_name
+        }
+        
+        if selection is not None:
+            payload['selection'] = selection
+        
+        if value is not None:
+            payload['value'] = value
+        
+        return await self.post(
+            'api/Midi/SetEffect',
+            payload,
+            authenticated=True
+        )
+    
     async def _ensure_authenticated(self) -> None:
         """
         Ensure the client is authenticated, refreshing token if needed.
