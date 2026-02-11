@@ -9,25 +9,6 @@
           - lookup('env','VERSION') | length > 0
         fail_msg: "Missing required env vars: NAMESPACE and/or VERSION. Ensure the workflow passes them to Ansible."
 
-    - name: Verify image exists in registry
-      ansible.builtin.shell: |
-        IMAGE_BASE=${IMAGE_BASE:-ghcr.io/${GITHUB_REPOSITORY_OWNER}/eightbitsaxlounge-couchdb}
-        IMAGE="${IMAGE_BASE}:${VERSION}"
-        echo "Verifying image exists: $IMAGE"
-        
-        if ! docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
-          echo "ERROR: Image $IMAGE does not exist in registry"
-          echo "Please build and push the image before deploying"
-          exit 1
-        fi
-        
-        echo "✓ Image verified: $IMAGE"
-      environment:
-        VERSION: "{{ lookup('env', 'VERSION') }}"
-        GITHUB_REPOSITORY_OWNER: "{{ lookup('env', 'GITHUB_REPOSITORY_OWNER') | default('mchellmer', true) }}"
-        IMAGE_BASE: "{{ lookup('env', 'IMAGE_BASE') | default('', true) }}"
-      changed_when: false
-
     - name: Determine Ingress Controller external IP (MetalLB)
       ansible.builtin.shell: |
         kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
