@@ -3,7 +3,8 @@
   hosts: master
   become: false
   vars:
-    grafana_cluster: nineteenseventytwo 
+    grafana_cluster: nineteenseventytwo
+    helm_version: "4.1.1"
 
   tasks:
     - name: Check if Helm is installed
@@ -12,10 +13,17 @@
       register: helm_check
       ignore_errors: true
 
-    - name: Include Helm role if Helm is not installed
+    - name: Extract installed Helm version
+      ansible.builtin.set_fact:
+        installed_helm_version: "{{ helm_check.stdout | regex_search('Version:\"v([0-9.]+)\"', '\\1') | first | default('') }}"
+      when: helm_check.rc == 0
+
+    - name: Include Helm role if Helm is not installed or version mismatch
       include_role:
         name: helm
-      when: helm_check.rc != 0
+      vars:
+        helm_version: "v{{ helm_version }}"
+      when: helm_check.rc != 0 or installed_helm_version != helm_version
 
     - name: Add Grafana Helm repository
       ansible.builtin.shell:
