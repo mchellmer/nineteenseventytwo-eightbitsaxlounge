@@ -138,6 +138,14 @@ jobs:
           echo "🔍 Verifying built image"
           make test-image
 
+      - name: Re-authenticate before push (prevent concurrent pipeline conflicts)
+        if: inputs.requires-docker-login && steps.check-artifact.outputs.needs-build == 'true'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Push Image to Registry
         if: steps.check-artifact.outputs.needs-build == 'true'
         env:

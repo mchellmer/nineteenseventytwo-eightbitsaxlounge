@@ -42,21 +42,22 @@ public class MidiLogFormatter : ConsoleFormatter
             }
         }, (object?)null);
 
-        // Add [midi] prefix
+        // Add [midi] prefix and log level
         textWriter.Write($"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff} ");
         textWriter.Write($"[{logEntry.LogLevel}] ");
         textWriter.Write("[midi] ");
-            
-        if (!string.IsNullOrEmpty(correlationId))
-        {
-            textWriter.Write($"[{correlationId}] ");
-        }
-
+        
         textWriter.Write(message);
 
         if (logEntry.Exception != null)
         {
             textWriter.Write($" Exception: {logEntry.Exception}");
+        }
+        
+        // Add correlation ID at the end if available
+        if (!string.IsNullOrEmpty(correlationId))
+        {
+            textWriter.Write($" correlationID={correlationId}");
         }
 
         textWriter.WriteLine();

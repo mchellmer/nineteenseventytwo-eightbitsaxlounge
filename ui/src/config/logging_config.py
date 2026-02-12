@@ -23,7 +23,19 @@ class UILogFilter(logging.Filter):
         """Add UI prefix and correlation ID to the log record."""
         correlation_id = correlation_id_var.get()
         
-        # Format the message with [ui] prefix and optional correlation ID
+        # Map Python log levels to standard names
+        level_map = {
+            'DEBUG': '[Debug]',
+            'INFO': '[Information]',
+            'WARNING': '[Warning]',
+            'ERROR': '[Error]',
+            'CRITICAL': '[Critical]'
+        }
+        
+        # Replace levelname with bracketed version
+        record.levelname = level_map.get(record.levelname, f'[{record.levelname}]')
+        
+        # Format the message with [ui] prefix and correlation ID at end
         if correlation_id:
             record.msg = f"[ui] {record.msg} correlationID={correlation_id}"
         else:
@@ -61,7 +73,8 @@ def configure_logging(log_level: str = "INFO") -> None:
     # Create root logger configuration
     logging.basicConfig(
         level=getattr(logging, log_level.upper()),
-        format='%(asctime)s - %(levelname)s - %(message)s',
+        format='%(asctime)s %(levelname)s %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
         force=True  # Override any existing configuration
     )
     

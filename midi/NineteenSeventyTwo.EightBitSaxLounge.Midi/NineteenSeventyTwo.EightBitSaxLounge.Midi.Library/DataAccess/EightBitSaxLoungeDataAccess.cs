@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
 using System.Net.Http;
+using Microsoft.AspNetCore.Http;
 
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 
@@ -14,17 +15,19 @@ public class EightbitSaxLoungeDataAccess : IDataAccess
 {
     private readonly IConfiguration _config;
     private readonly HttpClient _httpClient;
+    private readonly IHttpContextAccessor? _httpContextAccessor;
     private readonly JsonSerializerOptions _serializerOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    // Allow injecting HttpClient for tests (and IHttpClientFactory usage). If null, create a default one.
-    public EightbitSaxLoungeDataAccess(IConfiguration config, HttpClient? httpClient = null)
+    // Allow injecting HttpClient and IHttpContextAccessor for tests. If null, create defaults.
+    public EightbitSaxLoungeDataAccess(IConfiguration config, HttpClient? httpClient = null, IHttpContextAccessor? httpContextAccessor = null)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _httpClient = httpClient ?? new HttpClient();
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<List<T>> LoadDataAsync<T, TU>(string dataFunction, TU parameters, string connectionStringName)
@@ -49,7 +52,9 @@ public class EightbitSaxLoungeDataAccess : IDataAccess
         {
             requestUri = BuildRequestUri(baseUrl, routeObj);
 
-            using var response = await _httpClient.GetAsync(requestUri).ConfigureAwait(false);
+            using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+            AddCorrelationIdHeader(request);
+            using var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
             result = await HandleResponse<T>(requestUri, response).ConfigureAwait(false);
         }
         else if (method == "POST")
@@ -260,6 +265,10 @@ public class EightbitSaxLoungeDataAccess : IDataAccess
         };
 
         using var message = new HttpRequestMessage(httpMethod, requestUri);
+        
+        // Add correlation ID header from current HTTP context
+        AddCorrelationIdHeader(message);
+        
         if (body != null)
         {
             var json = JsonSerializer.Serialize(body, _serializerOptions);
@@ -275,5 +284,16 @@ public class EightbitSaxLoungeDataAccess : IDataAccess
     {
         var route = routeObj?.ToString() ?? string.Empty;
         return $"{baseUrl.TrimEnd('/')}/{route.TrimStart('/')}";
+    }
+
+    // Helper to add correlation ID header to outgoing requests
+    private void AddCorrelationIdHeader(HttpRequestMessage request)
+    {
+        // Get correlation ID from HttpContext.Items (set by CorrelationIdMiddleware)
+        var correlationId = _httpContextAccessor?.HttpContext?.Items["CorrelationId"] as string;
+        if (!string.IsNullOrEmpty(correlationId))
+        {
+            request.Headers.TryAddWithoutValidation("X-Correlation-ID", correlationId);
+        }
     }
 }

@@ -70,7 +70,11 @@ builder.Services.AddSwaggerGen(opts =>
 });
 
 // Inject models
-builder.Services.AddSingleton<IDataAccess, EightbitSaxLoungeDataAccess>();
+builder.Services.AddSingleton<IDataAccess>(sp => 
+    new EightbitSaxLoungeDataAccess(
+        sp.GetRequiredService<IConfiguration>(), 
+        null, 
+        sp.GetRequiredService<IHttpContextAccessor>()));
 builder.Services.AddSingleton<IEffectActivatorFactory, EffectActivatorFactory>();
 builder.Services.AddSingleton<IEffectActivator, VentrisDualReverbActivator>();
 builder.Services.AddSingleton<IMidiDataService, EightBitSaxLoungeMidiDataService>();
