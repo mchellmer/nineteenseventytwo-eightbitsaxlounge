@@ -2,17 +2,11 @@
 VERSION ?= $(shell cat version.txt)
 NAMESPACE ?= monitoring
 CLUSTER_NAME ?= nineteenseventytwo
-INVENTORY ?= ansible-hosts
 
 # Deploy monitoring stack
 deploy:
 	@echo "Deploying monitoring stack version $(VERSION)..."
 	ansible-playbook k8s-monitoring.yaml; \
-
-# Verify monitoring pods
-verify:
-	@echo "Checking monitoring pods status..."
-	kubectl get pods -n $(NAMESPACE)
 
 # Check Alloy agents
 check-alloy:

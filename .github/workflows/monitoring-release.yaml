@@ -37,7 +37,3 @@ jobs:
       - name: Deploy Monitoring
         working-directory: ./monitoring
         run: make deploy
-
-      - name: Verify Deployment
-        working-directory: ./monitoring
-        run: make verify
