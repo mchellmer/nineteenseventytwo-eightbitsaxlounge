@@ -249,23 +249,30 @@ func ExistingHandler() {
 |~ "correlationID=123e4567-e89b-12d3-a456-426614174000"
 ```
 
-### All UI layer logs
+### All logs excluding health checks
+```logql
+{namespace=~"eightbitsaxlounge-(dev|prod)"} 
+!~ ".*(/health|/ready|/_up).*"
+```
+
+### All UI layer logs (no health checks)
 ```logql
 {namespace=~"eightbitsaxlounge-(dev|prod)"} 
 |~ "\\[ui\\]"
+!~ ".*(/health|/ready).*"
 ```
 
 ### Error logs across all layers
 ```logql
 {namespace=~"eightbitsaxlounge-(dev|prod)"} 
 |~ "status=error"
-| label_format level="ERROR"
 ```
 
-### Specific operation across all layers
+### Specific operation across all layers  
 ```logql
 {namespace=~"eightbitsaxlounge-(dev|prod)"} 
 |~ "operation=set_effect"
+!~ ".*(/health|/ready|/_up).*"
 ```
 
 ## Benefits

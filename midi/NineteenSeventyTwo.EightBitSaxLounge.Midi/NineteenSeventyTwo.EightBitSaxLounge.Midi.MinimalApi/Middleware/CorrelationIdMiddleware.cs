@@ -38,20 +38,29 @@ namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Middleware
                 return Task.CompletedTask;
             });
 
+            // Skip logging for health check endpoints
+            bool isHealthCheck = context.Request.Path.StartsWithSegments("/health");
+
             using (_logger.BeginScope(new Dictionary<string, object>
             {
                 ["CorrelationId"] = correlationId
             }))
             {
-                // Log request with correlation ID
-                _logger.LogInformation("Request started: {Method} {Path}",
-                    context.Request.Method, context.Request.Path);
+                // Log request with correlation ID (except health checks)
+                if (!isHealthCheck)
+                {
+                    _logger.LogInformation("Request started: {Method} {Path}",
+                        context.Request.Method, context.Request.Path);
+                }
 
                 await _next(context);
 
-                // Log response with correlation ID
-                _logger.LogInformation("Request completed: {Method} {Path} {StatusCode}",
-                    context.Request.Method, context.Request.Path, context.Response.StatusCode);
+                // Log response with correlation ID (except health checks)
+                if (!isHealthCheck)
+                {
+                    _logger.LogInformation("Request completed: {Method} {Path} {StatusCode}",
+                        context.Request.Method, context.Request.Path, context.Response.StatusCode);
+                }
             }
         }
     }
