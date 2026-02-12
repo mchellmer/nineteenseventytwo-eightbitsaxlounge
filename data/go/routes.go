@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 // SetupRoutes returns a configured chi.Router.
@@ -23,6 +24,10 @@ import (
 //     sends all requests at path root '/' here, so no /data prefix is required.
 func SetupRoutes(svc CouchService) http.Handler {
 	r := chi.NewRouter()
+
+	// Logging middleware - logs all requests
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
 	// Health endpoint for Kubernetes probes
 	r.Get("/health", HealthCheckHandler(svc))

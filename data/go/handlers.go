@@ -64,6 +64,7 @@ func GetDocumentByDatabaseNameAndDocumentIdHandler(svc CouchService) http.Handle
 			writeJSONError(w, http.StatusNotFound, "document_not_found", err)
 			return
 		}
+		log.Printf("get doc db=%s id=%s - success", dbname, id)
 		if err := json.NewEncoder(w).Encode(doc); err != nil {
 			log.Printf("failed to encode response: %v", err)
 		}
@@ -83,6 +84,7 @@ func CreateDatabaseByNameHandler(svc CouchService) http.HandlerFunc {
 			writeJSONError(w, http.StatusInternalServerError, "create_database_failed", err)
 			return
 		}
+		log.Printf("create db db=%s - success", dbname)
 		w.WriteHeader(http.StatusCreated)
 	}
 }
