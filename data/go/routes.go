@@ -25,17 +25,13 @@ import (
 func SetupRoutes(svc CouchService) http.Handler {
 	r := chi.NewRouter()
 
-	// Correlation ID middleware - tracks requests across services
+	// Register all middleware before any routes
 	r.Use(CorrelationIDMiddleware)
-
-	// Recoverer middleware for panic handling
 	r.Use(middleware.Recoverer)
+	r.Use(middleware.Logger)
 
 	// Health endpoint for Kubernetes probes
 	r.Get("/health", HealthCheckHandler(svc))
-
-	// Logging middleware - applied after health endpoint to exclude it
-	r.Use(middleware.Logger)
 
 	// Database-level endpoints (host root based)
 	r.Put("/{dbname}", CreateDatabaseByNameHandler(svc))
