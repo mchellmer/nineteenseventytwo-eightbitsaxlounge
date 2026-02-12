@@ -12,7 +12,6 @@ package gofiles
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -58,15 +57,16 @@ func GetDocumentByDatabaseNameAndDocumentIdHandler(svc CouchService) http.Handle
 	return func(w http.ResponseWriter, r *http.Request) {
 		dbname := chi.URLParam(r, "dbname")
 		id := chi.URLParam(r, "id")
+		correlationID := GetCorrelationID(r.Context())
 		doc, err := svc.GetDocumentByDatabaseNameAndDocumentId(dbname, id)
 		if err != nil {
-			log.Printf("get doc db=%s id=%s error=%v", dbname, id, err)
+			Error("operation=get_document db=%s id=%s status=error error=%v correlationID=%s", dbname, id, err, correlationID)
 			writeJSONError(w, http.StatusNotFound, "document_not_found", err)
 			return
 		}
-		log.Printf("get doc db=%s id=%s - success", dbname, id)
+		Info("operation=get_document db=%s id=%s status=success correlationID=%s", dbname, id, correlationID)
 		if err := json.NewEncoder(w).Encode(doc); err != nil {
-			log.Printf("failed to encode response: %v", err)
+			Error("operation=encode_response status=error error=%v correlationID=%s", err, correlationID)
 		}
 	}
 }
@@ -79,12 +79,13 @@ func GetDocumentByDatabaseNameAndDocumentIdHandler(svc CouchService) http.Handle
 func CreateDatabaseByNameHandler(svc CouchService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dbname := chi.URLParam(r, "dbname")
+		correlationID := GetCorrelationID(r.Context())
 		if err := svc.CreateDatabaseByName(dbname); err != nil {
-			log.Printf("create db db=%s error=%v", dbname, err)
+			Error("operation=create_database db=%s status=error error=%v correlationID=%s", dbname, err, correlationID)
 			writeJSONError(w, http.StatusInternalServerError, "create_database_failed", err)
 			return
 		}
-		log.Printf("create db db=%s - success", dbname)
+		Info("operation=create_database db=%s status=success correlationID=%s", dbname, correlationID)
 		w.WriteHeader(http.StatusCreated)
 	}
 }
@@ -98,16 +99,18 @@ func CreateDatabaseByNameHandler(svc CouchService) http.HandlerFunc {
 func CreateDocumentByDatabaseNameHandler(svc CouchService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dbname := chi.URLParam(r, "dbname")
+		correlationID := GetCorrelationID(r.Context())
 		var doc map[string]interface{}
 		if err := json.NewDecoder(r.Body).Decode(&doc); err != nil {
 			writeJSONError(w, http.StatusBadRequest, "invalid_json", err)
 			return
 		}
 		if err := svc.CreateDocumentByDatabaseName(dbname, doc); err != nil {
-			log.Printf("create doc db=%s error=%v", dbname, err)
+			Error("operation=create_document db=%s status=error error=%v correlationID=%s", dbname, err, correlationID)
 			writeJSONError(w, http.StatusInternalServerError, "create_document_failed", err)
 			return
 		}
+		Info("operation=create_document db=%s status=success correlationID=%s", dbname, correlationID)
 		w.WriteHeader(http.StatusCreated)
 	}
 }
@@ -122,17 +125,19 @@ func UpdateDocumentByDatabaseNameAndDocumentIdHandler(svc CouchService) http.Han
 	return func(w http.ResponseWriter, r *http.Request) {
 		dbname := chi.URLParam(r, "dbname")
 		id := chi.URLParam(r, "id")
+		correlationID := GetCorrelationID(r.Context())
 		var doc map[string]interface{}
 		if err := json.NewDecoder(r.Body).Decode(&doc); err != nil {
 			writeJSONError(w, http.StatusBadRequest, "invalid_json", err)
 			return
 		}
 		if err := svc.UpdateDocumentByDatabaseNameAndDocumentId(dbname, id, doc); err != nil {
-			log.Printf("update doc db=%s id=%s error=%v", dbname, id, err)
+			Error("operation=update_document db=%s id=%s status=error error=%v correlationID=%s", dbname, id, err, correlationID)
 			// Later: distinguish 409 conflict by parsing err.Error()
 			writeJSONError(w, http.StatusInternalServerError, "update_document_failed", err)
 			return
 		}
+		Info("operation=update_document db=%s id=%s status=success correlationID=%s", dbname, id, correlationID)
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -146,11 +151,13 @@ func DeleteDocumentByDatabaseNameAndDocumentIdHandler(svc CouchService) http.Han
 	return func(w http.ResponseWriter, r *http.Request) {
 		dbname := chi.URLParam(r, "dbname")
 		id := chi.URLParam(r, "id")
+		correlationID := GetCorrelationID(r.Context())
 		if err := svc.DeleteDocumentByDatabaseNameAndDocumentId(dbname, id); err != nil {
-			log.Printf("delete doc db=%s id=%s error=%v", dbname, id, err)
+			Error("operation=delete_document db=%s id=%s status=error error=%v correlationID=%s", dbname, id, err, correlationID)
 			writeJSONError(w, http.StatusInternalServerError, "delete_document_failed", err)
 			return
 		}
+		Info("operation=delete_document db=%s id=%s status=success correlationID=%s", dbname, id, correlationID)
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -163,14 +170,16 @@ func DeleteDocumentByDatabaseNameAndDocumentIdHandler(svc CouchService) http.Han
 func GetDatabaseByNameHandler(svc CouchService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dbname := chi.URLParam(r, "dbname")
+		correlationID := GetCorrelationID(r.Context())
 		dbInfo, err := svc.GetDatabaseByName(dbname)
 		if err != nil {
-			log.Printf("get db db=%s error=%v", dbname, err)
+			Error("operation=get_database db=%s status=error error=%v correlationID=%s", dbname, err, correlationID)
 			writeJSONError(w, http.StatusNotFound, "database_not_found", err)
 			return
 		}
+		Info("operation=get_database db=%s status=success correlationID=%s", dbname, correlationID)
 		if err := json.NewEncoder(w).Encode(dbInfo); err != nil {
-			log.Printf("failed to encode response: %v", err)
+			Error("operation=encode_response status=error error=%v correlationID=%s", err, correlationID)
 		}
 	}
 }
@@ -183,11 +192,13 @@ func GetDatabaseByNameHandler(svc CouchService) http.HandlerFunc {
 func DeleteDatabaseByNameHandler(svc CouchService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dbname := chi.URLParam(r, "dbname")
+		correlationID := GetCorrelationID(r.Context())
 		if err := svc.DeleteDatabaseByName(dbname); err != nil {
-			log.Printf("delete db db=%s error=%v", dbname, err)
+			Error("operation=delete_database db=%s status=error error=%v correlationID=%s", dbname, err, correlationID)
 			writeJSONError(w, http.StatusInternalServerError, "delete_database_failed", err)
 			return
 		}
+		Info("operation=delete_database db=%s status=success correlationID=%s", dbname, correlationID)
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -200,15 +211,17 @@ func DeleteDatabaseByNameHandler(svc CouchService) http.HandlerFunc {
 func GetDocumentsByDatabaseNameHandler(svc CouchService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dbname := chi.URLParam(r, "dbname")
+		correlationID := GetCorrelationID(r.Context())
 		docs, err := svc.GetDocumentsByDatabaseName(dbname)
 		if err != nil {
-			log.Printf("list docs db=%s error=%v", dbname, err)
+			Error("operation=list_documents db=%s status=error error=%v correlationID=%s", dbname, err, correlationID)
 			writeJSONError(w, http.StatusInternalServerError, "list_documents_failed", err)
 			return
 		}
+		Info("operation=list_documents db=%s status=success correlationID=%s", dbname, correlationID)
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(docs); err != nil {
-			log.Printf("failed to encode response: %v", err)
+			Error("operation=encode_response status=error error=%v correlationID=%s", err, correlationID)
 		}
 	}
 }

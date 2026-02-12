@@ -25,7 +25,10 @@ import (
 func SetupRoutes(svc CouchService) http.Handler {
 	r := chi.NewRouter()
 
-	// Logging middleware - logs all requests
+	// Correlation ID middleware - tracks requests across services
+	r.Use(CorrelationIDMiddleware)
+
+	// Logging middleware - Alloy filters health checks at collector level
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 

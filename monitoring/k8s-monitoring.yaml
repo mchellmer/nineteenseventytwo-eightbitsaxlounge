@@ -99,6 +99,13 @@
             enabled: true
           podLogs:
             enabled: true
+            extraStages: |-
+              // Drop health check logs before sending to Loki
+              - match:
+                  selector: '{namespace=~"eightbitsaxlounge-(dev|prod)"}'
+                  stages:
+                    - drop:
+                        expression: '.*(/health|/ready|/_up).*'
           applicationObservability:
             enabled: true
             receivers:
