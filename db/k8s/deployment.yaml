@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: eightbitsaxlounge-couchdb
+  name: eightbitsaxlounge-db
   labels:
     app: eightbitsaxlounge
     component: db
@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: couchdb
-        image: ghcr.io/mchellmer/eightbitsaxlounge-couchdb:latest
+        image: ghcr.io/mchellmer/eightbitsaxlounge-db:latest
         ports:
         - containerPort: 5984
           name: http

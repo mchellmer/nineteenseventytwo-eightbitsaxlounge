@@ -96,7 +96,7 @@
 
     - name: Annotate Deployment with change cause
       ansible.builtin.shell: |
-        kubectl -n "$NAMESPACE" annotate deploy/eightbitsaxlounge-couchdb \
+        kubectl -n "$NAMESPACE" annotate deploy/eightbitsaxlounge-db \
           kubernetes.io/change-cause="couchdb ${VERSION}" --overwrite
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
@@ -104,13 +104,13 @@
 
     - name: Wait for rollout to complete
       ansible.builtin.shell: |
-        kubectl -n "$NAMESPACE" rollout status deploy/eightbitsaxlounge-couchdb --timeout=180s
+        kubectl -n "$NAMESPACE" rollout status deploy/eightbitsaxlounge-db --timeout=180s
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 
     - name: Verify running image
       ansible.builtin.shell: |
-        kubectl -n "$NAMESPACE" get deploy eightbitsaxlounge-couchdb -o jsonpath='{.spec.template.spec.containers[0].image}'
+        kubectl -n "$NAMESPACE" get deploy eightbitsaxlounge-db -o jsonpath='{.spec.template.spec.containers[0].image}'
       register: deploy_image
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"

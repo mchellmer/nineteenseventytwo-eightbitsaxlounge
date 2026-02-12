@@ -156,16 +156,21 @@ jobs:
           IMAGE="ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}:${VERSION}"
           echo "✅ Verifying image was published: $IMAGE"
           
-          # Wait a bit for registry to update
-          sleep 3
+          # Retry verification with backoff (registry propagation delay)
+          MAX_RETRIES=10
+          RETRY=0
+          while [ $RETRY -lt $MAX_RETRIES ]; do
+            if docker buildx imagetools inspect "$IMAGE" > /dev/null 2>&1; then
+              echo "✅ Image successfully published to registry (attempt $((RETRY+1)))"
+              exit 0
+            fi
+            RETRY=$((RETRY+1))
+            echo "⏳ Waiting for registry propagation... (attempt $RETRY/$MAX_RETRIES)"
+            sleep 2
+          done
           
-          # Direct remote registry check
-          if docker buildx imagetools inspect "$IMAGE" > /dev/null 2>&1; then
-            echo "✅ Image successfully published to registry"
-          else
-            echo "❌ ERROR: Image was not found in registry after build"
-            exit 1
-          fi
+          echo "❌ ERROR: Image was not found in registry after $MAX_RETRIES attempts"
+          exit 1
 
       - name: Final Image Status
         id: final-check
@@ -173,15 +178,25 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           IMAGE="ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}:${VERSION}"
           
-          # Direct remote registry check
-          if docker buildx imagetools inspect "$IMAGE" > /dev/null 2>&1; then
-            echo "image-exists=true" >> $GITHUB_OUTPUT
-            echo "✅ Ready for deployment: Image $VERSION exists in registry"
-          else
-            echo "image-exists=false" >> $GITHUB_OUTPUT
-            echo "❌ ERROR: Image $VERSION not found in registry"
-            exit 1
-          fi
+          # Direct remote registry check with retry
+          MAX_RETRIES=10
+          RETRY=0
+          while [ $RETRY -lt $MAX_RETRIES ]; do
+            if docker buildx imagetools inspect "$IMAGE" > /dev/null 2>&1; then
+              echo "image-exists=true" >> $GITHUB_OUTPUT
+              echo "✅ Ready for deployment: Image $VERSION exists in registry"
+              exit 0
+            fi
+            RETRY=$((RETRY+1))
+            if [ $RETRY -lt $MAX_RETRIES ]; then
+              echo "⏳ Waiting for registry... (attempt $RETRY/$MAX_RETRIES)"
+              sleep 2
+            fi
+          done
+          
+          echo "image-exists=false" >> $GITHUB_OUTPUT
+          echo "❌ ERROR: Image $VERSION not found in registry after $MAX_RETRIES attempts"
+          exit 1
 
   deploy:
     name: Deploy Configuration
