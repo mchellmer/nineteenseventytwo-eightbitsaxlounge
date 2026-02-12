@@ -24,7 +24,7 @@ spec:
         imagePullPolicy: Always
         env:
         - name: COUCHDB_ENDPOINT
-          value: db-service:5984
+          value: eightbitsaxlounge-db-service:5984
         - name: COUCHDB_USER
           value: admin
         - name: COUCHDB_PASSWORD
