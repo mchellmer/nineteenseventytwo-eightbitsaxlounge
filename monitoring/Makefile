@@ -2,28 +2,12 @@
 VERSION ?= $(shell cat version.txt)
 NAMESPACE ?= monitoring
 CLUSTER_NAME ?= nineteenseventytwo
-PLAYBOOK_DIR ?= ../server
+INVENTORY ?= ansible-hosts
 
 # Deploy monitoring stack
 deploy:
 	@echo "Deploying monitoring stack version $(VERSION)..."
-	@if [ -f ~/.vault_pass ]; then \
-		echo "Using vault password file for CI/CD deployment"; \
-		cd $(PLAYBOOK_DIR) && ansible-playbook ../monitoring/k8s-monitoring.yaml --vault-password-file ~/.vault_pass; \
-	else \
-		echo "Prompting for vault password"; \
-		cd $(PLAYBOOK_DIR) && ansible-playbook ../monitoring/k8s-monitoring.yaml --ask-vault-pass; \
-	fi
-
-# Deploy without vault password prompt (for CI/CD)
-deploy-ci:
-	@echo "Deploying monitoring stack version $(VERSION)..."
-	cd $(PLAYBOOK_DIR) && ansible-playbook ../monitoring/k8s-monitoring.yaml --vault-password-file ~/.vault_pass
-
-# Check Helm version on target
-check-helm:
-	@echo "Checking Helm version on cluster..."
-	cd $(PLAYBOOK_DIR) && ansible master -m shell -a "helm version --short"
+	ansible-playbook k8s-monitoring.yaml; \
 
 # Verify monitoring pods
 verify:
