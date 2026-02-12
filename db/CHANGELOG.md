@@ -1,4 +1,11 @@
 # Changelog
+## [2.0.3] - 2026-02-12
+
+### Changed
+- Unified log format: `[timestamp] [Information] [db] message correlationID=<id>`
+- Correlation ID propagation from Data layer
+- Grafana dashboard improvements for DB logs and health
+- Version labels on pods for deployment tracking
 
 ## [1.0.1]
 

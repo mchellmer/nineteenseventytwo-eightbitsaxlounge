@@ -97,3 +97,9 @@ go test -v
   - `COUCHDB_USER`
   - `COUCHDB_PASSWORD` (from secret `secret-db-couchdb`)
 - Ingress uses host-based routing; all requests at path root `/` for the host are routed to the API Service.
+
+## Monitoring & Logging
+- Unified log format: `[timestamp] [Information] [data] message correlationID=<id>`
+- Correlation ID is propagated from MIDI layer for end-to-end tracing in Grafana
+- Health check endpoints excluded from correlation ID logging
+- Version labels on pods for deployment tracking

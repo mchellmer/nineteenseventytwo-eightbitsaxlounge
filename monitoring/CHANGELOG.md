@@ -1,4 +1,13 @@
 # Changelog
+## [1.0.0] - 2026-02-12
+
+### Changed
+- Unified log format across all layers: `[timestamp] [Information] [layer] message correlationID=<id>`
+- Correlation ID propagation: UI → MIDI → Data → DB for end-to-end tracing
+- Health check log exclusion for correlation ID tracking
+- Grafana dashboards updated for pod/node/deployment health and correlation ID tracking
+- Table panel transformations for deployment status
+- CI/CD pipeline fixes for Docker push authentication
 
 ## [0.0.2] - 2026-02-11
 

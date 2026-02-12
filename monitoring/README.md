@@ -1,6 +1,6 @@
 # Monitoring Layer for EightBitSaxLounge
 
-Kubernetes monitoring configuration using Grafana Cloud and Alloy agents for metrics, logs, and traces collection.
+Kubernetes monitoring configuration using Grafana Cloud and Alloy agents for metrics, logs, traces, and unified correlation ID tracking across all layers.
 
 ## Overview
 
@@ -9,6 +9,7 @@ This layer deploys comprehensive monitoring infrastructure to the Kubernetes clu
 - **Alloy Agents** - Distributed collectors for metrics, logs, and traces
 - **OpenCost** - Kubernetes cost monitoring
 - **Kepler** - Energy efficiency monitoring
+- **Unified log format** - All layers now log with correlationID at the end for end-to-end tracing
 
 ## Components
 
@@ -24,6 +25,7 @@ This layer deploys comprehensive monitoring infrastructure to the Kubernetes clu
 ### Pod Logs
 - Application log collection from all pods
 - Structured log forwarding to Grafana Loki
+- **Unified log format**: `[timestamp] [Information] [layer] message correlationID=<id>`
 - **INFO-level logging** enabled across all services for detailed monitoring
 
 ### Application Observability
@@ -31,6 +33,7 @@ This layer deploys comprehensive monitoring infrastructure to the Kubernetes clu
 - Zipkin receiver (port 9411)
 - Support for distributed tracing
 - **Version labels** on all pods for deployment tracking
+- **Correlation ID propagation**: UI → MIDI → Data → DB for full request tracing
 
 ### Alloy Agents
 - **alloy-metrics** - Metrics collection with remote configuration
@@ -73,19 +76,6 @@ The monitoring stack sends data to three Grafana Cloud endpoints:
 - **Prometheus** - Metrics at prometheus-prod-55-prod-gb-south-1.grafana.net
 - **Loki** - Logs at logs-prod-035.grafana.net
 - **OTLP Gateway** - Traces, metrics, and logs at otlp-gateway-prod-gb-south-1.grafana.net
-
-## Grafana Setup
-
-For detailed instructions on setting up dashboards, log queries, alerts, and managing free tier limits, see:
-
-**[Grafana Cloud Configuration Guide](GRAFANA_SETUP.md)**
-
-This guide includes:
-- Log query examples (by service, severity, patterns)
-- Dashboard configurations (System Health, Logs, Usage)
-- Alert setups for critical issues
-- Free tier optimization strategies
-- Vulnerability scanning integration
 
 ## Fleet Management
 

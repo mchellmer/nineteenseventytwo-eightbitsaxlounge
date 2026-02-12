@@ -82,3 +82,8 @@ curl -s http://<cluster ip>:5984/
 # List DBs (requires admin)
 curl -s -u admin:$DB_COUCHDB_PASSWORD http://<cluster ip>:5984/_all_dbs
 ```
+
+## Monitoring & Logging
+- Unified log format: `[timestamp] [Information] [db] message correlationID=<id>`
+- Correlation ID is propagated from Data layer for end-to-end tracing in Grafana
+- Version labels on pods for deployment tracking

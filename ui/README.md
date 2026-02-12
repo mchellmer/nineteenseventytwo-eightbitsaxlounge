@@ -39,6 +39,7 @@ The 8bsl has several services that handle updating music hardware, state data, e
 Configured services:
 - midi_client - this handles requests to update midi data and devices inline with UI element state
 - twitch_client - handles monitoring token validity
+- All logs include correlationID for request tracing
 
 #### App config
 
@@ -81,3 +82,9 @@ Deployed to Kubernetes with separate dev and prod namespaces. GitHub Actions han
 # From cicd server
 make deploy-ui
 ```
+
+### Monitoring & Logging
+- Unified log format: `[timestamp] [Information] [ui] message correlationID=<id>`
+- Correlation ID is propagated to MIDI and Data layers for end-to-end tracing in Grafana
+- Health check endpoints excluded from correlation ID logging
+- Version labels on pods for deployment tracking
