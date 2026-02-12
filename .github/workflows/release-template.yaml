@@ -102,9 +102,8 @@ jobs:
           # Remove local image to force remote check
           docker rmi "$IMAGE" 2>/dev/null || true
           
-          # Now check remote registry (--insecure flag not available for manifest inspect)
-          # Use buildx imagetools which always queries remote
-          if docker buildx imagetools inspect "$IMAGE" > /dev/null 2>&1; then
+          # Check remote registry (uses docker login credentials)
+          if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
             echo "needs-build=false" >> $GITHUB_OUTPUT
             echo "✅ Image exists in remote registry - skipping build"
           else
@@ -160,7 +159,7 @@ jobs:
           MAX_RETRIES=10
           RETRY=0
           while [ $RETRY -lt $MAX_RETRIES ]; do
-            if docker buildx imagetools inspect "$IMAGE" > /dev/null 2>&1; then
+            if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
               echo "✅ Image successfully published to registry (attempt $((RETRY+1)))"
               exit 0
             fi
@@ -182,7 +181,7 @@ jobs:
           MAX_RETRIES=10
           RETRY=0
           while [ $RETRY -lt $MAX_RETRIES ]; do
-            if docker buildx imagetools inspect "$IMAGE" > /dev/null 2>&1; then
+            if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
               echo "image-exists=true" >> $GITHUB_OUTPUT
               echo "✅ Ready for deployment: Image $VERSION exists in registry"
               exit 0
