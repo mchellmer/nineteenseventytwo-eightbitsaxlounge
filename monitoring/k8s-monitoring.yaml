@@ -99,13 +99,13 @@
             enabled: true
           podLogs:
             enabled: true
-            extraStages: |-
-              // Drop health check logs before sending to Loki
-              - match:
-                  selector: '{namespace=~"eightbitsaxlounge-(dev|prod)"}'
-                  stages:
-                    - drop:
-                        expression: '.*(/health|/ready|/_up).*'
+            extraStages: |
+              stage.match {
+                selector = "{namespace=~\"eightbitsaxlounge-(dev|prod)\"}"
+                stage.drop {
+                  expression = ".*(/health|/ready|/_up).*"
+                }
+              }
           applicationObservability:
             enabled: true
             receivers:
@@ -238,3 +238,11 @@
                 type: basic
                 username: "1225361"
                 password: "{{ grafana_password }}"
+
+    - name: Restart Alloy logs daemonset to apply new configuration
+      ansible.builtin.command:
+        cmd: kubectl rollout restart daemonset/grafana-k8s-monitoring-alloy-logs -n monitoring
+
+    - name: Wait for Alloy logs rollout to complete
+      ansible.builtin.command:
+        cmd: kubectl rollout status daemonset/grafana-k8s-monitoring-alloy-logs -n monitoring --timeout=300s
