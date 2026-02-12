@@ -169,13 +169,34 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Container
+      - name: Build Container Image
         working-directory: ./midi
         env:
           VERSION: ${{ needs.check-artifacts.outputs.version }}
           NAMESPACE: ${{ needs.check-artifacts.outputs.namespace }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-        run: make build-container
+        run: make build-image
+
+      - name: Test Built Image
+        working-directory: ./midi
+        env:
+          VERSION: ${{ needs.check-artifacts.outputs.version }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: make test-image
+
+      - name: Re-authenticate before push (prevent concurrent pipeline conflicts)
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Container to Registry
+        working-directory: ./midi
+        env:
+          VERSION: ${{ needs.check-artifacts.outputs.version }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: make push
 
       - name: Security Scan MIDI Container
         if: false # Disabled - too slow on RPi

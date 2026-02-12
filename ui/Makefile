@@ -18,18 +18,28 @@ test:
 	python3 -m pytest tests/ --cov=src --cov-report=xml --cov-report=term --junitxml=test-results.xml
 	@echo "All tests passed"
 
-# Build Docker image and push to registry
-build:
+# Build Docker image locally
+build-image:
+	@echo "Building image $(IMAGE_BASE):$(VERSION)..."
 	docker build -t "$(IMAGE_BASE):$(VERSION)" -t "$(IMAGE_BASE):latest" .
+	@echo "✓ Image built successfully"
+
+# Test the built Docker image
+test-image:
+	@echo "Testing built image..."
+	@docker image inspect "$(IMAGE_BASE):$(VERSION)" > /dev/null || (echo "ERROR: Image not built" && exit 1)
+	@echo "✓ Image exists and is valid"
+
+# Push image to registry
+push:
+	@echo "Pushing image $(IMAGE_BASE):$(VERSION) to registry..."
 	docker push "$(IMAGE_BASE):$(VERSION)"
 	docker push "$(IMAGE_BASE):latest"
+	@echo "✓ Image pushed successfully"
 
 # Deploy to Kubernetes via Ansible
 deploy:
 	ansible-playbook ui-deploy.yaml
-
-# Legacy targets for backwards compatibility
-deploy-ui: deploy
 
 # Local development targets
 install:
@@ -66,10 +76,12 @@ set-environment:
 # Help target
 help:
 	@echo "Available targets:"
+	@echo "  lint               - Run Python linter"
 	@echo "  test               - Run tests with coverage (for CI)"
-	@echo "  build              - Build and push Docker image"
+	@echo "  build-image        - Build Docker image locally"
+	@echo "  test-image         - Verify built image exists"
+	@echo "  push               - Push image to registry"
 	@echo "  deploy             - Deploy to Kubernetes cluster"
-	@echo "  deploy-ui          - (deprecated) Same as deploy"
 	@echo ""
 	@echo "Local development:"
 	@echo "  install            - Install Python dependencies"
@@ -86,4 +98,4 @@ help:
 	@echo "  NAMESPACE          - K8s namespace (default: eightbitsaxlounge-dev)"
 	@echo "  GITHUB_REPOSITORY_OWNER - Docker registry owner (default: mchellmer)"
 
-.PHONY: test build deploy deploy-ui install install-dev dev test-local clean docker-build docker-run set-environment help
+.PHONY: lint test build-image test-image push deploy deploy-ui install install-dev dev test-local clean docker-build docker-run set-environment help

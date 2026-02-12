@@ -103,6 +103,14 @@ public class WinmmMidiDeviceService : IMidiDeviceService, IMidiProxyService
                 request.Headers.Add(BypassKeyHeaderName, _bypassKey);
             }
 
+            // Forward correlation ID if present
+            var correlationId = _httpContextAccessor?.HttpContext?.Request.Headers["X-Correlation-ID"].FirstOrDefault()
+                                ?? _httpContextAccessor?.HttpContext?.Items["CorrelationId"] as string;
+            if (!string.IsNullOrEmpty(correlationId))
+            {
+                request.Headers.Add("X-Correlation-ID", correlationId);
+            }
+
             var response = await _httpClient!.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {

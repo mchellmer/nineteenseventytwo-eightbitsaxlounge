@@ -3,6 +3,7 @@
 import aiohttp
 import logging
 from typing import Optional, Dict, Any
+from config.logging_config import get_correlation_id
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,9 @@ class MidiClient:
         """
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         
-        headers = {}
+        headers = {
+            'X-Correlation-ID': get_correlation_id()
+        }
         if authenticated and self._token:
             headers['Authorization'] = f'Bearer {self._token}'
         

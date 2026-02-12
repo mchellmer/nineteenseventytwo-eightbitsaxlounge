@@ -91,14 +91,13 @@ iaas and kubernetes cluster config for 1972
     ```
 
 7. Deploy Monitoring
-  - kubernetes monitoring via grafana
-  - setup grafana account and activate kubernetes monitoring
-  - set server name and options in ansible playbook - use Kubernetes > Configuration in Grafana to generate scripts
-  - init: run make command on console server and provide token
+  - Monitoring has been moved to its own layer
+  - See ../monitoring/README.md for deployment instructions
+  - Quick deploy:
   ```bash
-  make deploy-monitoring
+  cd ../monitoring
+  make deploy
   ```
-  - releases: increment versions/monitoring.txt and push change
 
 ---
 
@@ -150,24 +149,6 @@ kubectl get pvc -A
 - Assigns pod IP ranges to each node from the cluster CIDR
 - Routes traffic between pods across nodes transparently
 - No additional configuration needed for most workloads
-
-### Monitoring: Grafana Cloud
-
-**What it does**: External monitoring and observability platform for cluster metrics and logs.
-
-**Why Grafana Cloud:**
-- Zero infrastructure overhead - hosted service
-- Pre-built Kubernetes dashboards
-- Integrates with Prometheus for metrics collection
-- Free tier suitable for small clusters
-- Professional alerting and visualization
-
-**How it works:**
-1. Grafana agent runs as DaemonSet on each node
-2. Collects metrics from kubelet, cAdvisor, and kube-state-metrics
-3. Ships metrics to Grafana Cloud for storage and analysis
-4. Access dashboards via Grafana Cloud web UI
-
 
 # Test
 - ingress - apply the files/manifests/nginxtest.yaml and try to curl from nodes/another machine on the same subnet

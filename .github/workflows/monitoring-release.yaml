@@ -7,13 +7,14 @@ on:
       - main
       - monitoring/*
     paths:
-      - 'server/versions/monitoring.txt'
+      - 'monitoring/version.txt'
 
 jobs:
-  deploy-monitoring:
+  deploy:
+    name: Deploy Monitoring Stack
     runs-on: self-hosted
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Debug environment info
@@ -27,12 +28,12 @@ jobs:
           echo "Actor: ${{ github.actor }}"
 
       - name: Make vault available to runner
-        working-directory: ./server
+        working-directory: ./monitoring
         run: |
           if [ -f "$HOME/nineteenseventytwo-eightbitsaxlounge/server/group_vars/all/vault.yml" ]; then
             cp -f "$HOME/nineteenseventytwo-eightbitsaxlounge/server/group_vars/all/vault.yml" ./group_vars/all/vault.yml
           fi
 
-      - name: Deploy monitoring
-        working-directory: ./server
-        run: make deploy-monitoring
+      - name: Deploy Monitoring
+        working-directory: ./monitoring
+        run: make deploy

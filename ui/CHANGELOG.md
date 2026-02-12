@@ -1,4 +1,12 @@
 # Changelog
+## [3.0.10] - 2026-02-12
+
+### Changed
+- Unified log format: `[timestamp] [Information] [ui] message correlationID=<id>`
+- Correlation ID propagation to MIDI and Data layers
+- Health check log exclusion for correlation ID tracking
+- Grafana dashboard improvements for UI logs and health
+- Version labels on pods for deployment tracking
 
 ## [3.0.7] - 2026-02-08
 

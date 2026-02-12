@@ -10,6 +10,8 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
 
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Logging;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Middleware;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,8 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("appsettings.Effects.json", optional: false, reloadOnChange: true);
 
 // Configure logging
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
+builder.Logging.ConfigureMidiLogging();
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 builder.Services.AddLogging();
@@ -69,7 +70,11 @@ builder.Services.AddSwaggerGen(opts =>
 });
 
 // Inject models
-builder.Services.AddSingleton<IDataAccess, EightbitSaxLoungeDataAccess>();
+builder.Services.AddSingleton<IDataAccess>(sp => 
+    new EightbitSaxLoungeDataAccess(
+        sp.GetRequiredService<IConfiguration>(), 
+        null, 
+        sp.GetRequiredService<IHttpContextAccessor>()));
 builder.Services.AddSingleton<IEffectActivatorFactory, EffectActivatorFactory>();
 builder.Services.AddSingleton<IEffectActivator, VentrisDualReverbActivator>();
 builder.Services.AddSingleton<IMidiDataService, EightBitSaxLoungeMidiDataService>();
@@ -166,6 +171,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<CorrelationIdMiddleware>();
 
 // Bypass authentication middleware - only enabled for device service (Windows PC), not proxy service (K8s)
 // When MidiDeviceService:Url is set, this service acts as a proxy and requires JWT auth for incoming requests

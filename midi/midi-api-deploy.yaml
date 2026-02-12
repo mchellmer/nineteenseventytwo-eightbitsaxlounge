@@ -23,13 +23,15 @@
         suffix: midi-k8s
       register: tempdir
 
-    - name: Copy manifests to temp directory
+    - name: Template deployment manifest to temp directory
+      ansible.builtin.template:
+        src: k8s/deployment.yaml
+        dest: "{{ tempdir.path }}/deployment.yaml"
+
+    - name: Copy service manifest to temp directory
       ansible.builtin.copy:
-        src: "{{ item }}"
-        dest: "{{ tempdir.path }}/{{ item | basename }}"
-      loop:
-        - k8s/deployment.yaml
-        - k8s/service.yaml
+        src: k8s/service.yaml
+        dest: "{{ tempdir.path }}/service.yaml"
 
     - name: Debug CONNECTION_STRING before creating secret
       ansible.builtin.debug:

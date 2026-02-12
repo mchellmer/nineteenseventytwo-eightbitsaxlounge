@@ -15,11 +15,24 @@ test:
 	docker run --rm -v "$(shell pwd):/data" -w /data/go golang:1.24-alpine go test ./...
 	@echo "All tests passed"
 
-# Build Docker image and push to registry
-build:
+# Build Docker image locally
+build-image:
+	@echo "Building image $(IMAGE_BASE):$(VERSION)..."
 	docker build -t "$(IMAGE_BASE):$(VERSION)" -t "$(IMAGE_BASE):latest" .
+	@echo "✓ Image built successfully"
+
+# Test the built Docker image
+test-image:
+	@echo "Testing built image..."
+	@docker image inspect "$(IMAGE_BASE):$(VERSION)" > /dev/null || (echo "ERROR: Image not built" && exit 1)
+	@echo "✓ Image exists and is valid"
+
+# Push image to registry
+push:
+	@echo "Pushing image $(IMAGE_BASE):$(VERSION) to registry..."
 	docker push "$(IMAGE_BASE):$(VERSION)"
 	docker push "$(IMAGE_BASE):latest"
+	@echo "✓ Image pushed successfully"
 
 # Deploy to Kubernetes via Ansible
 deploy:
@@ -37,8 +50,11 @@ docker-run:
 # Help target
 help:
 	@echo "Available targets:"
-	@echo "  test               - Run Go tests in container"
-	@echo "  build              - Build and push Docker image"
+	@echo "  lint               - Run Go linter"
+	@echo "  test               - Run Go unit tests"
+	@echo "  build-image        - Build Docker image locally"
+	@echo "  test-image         - Verify built image exists"
+	@echo "  push               - Push image to registry"
 	@echo "  deploy             - Deploy to Kubernetes cluster"
 	@echo "  deploy-data-api    - (deprecated) Same as deploy"
 	@echo ""
@@ -47,4 +63,4 @@ help:
 	@echo "  NAMESPACE          - K8s namespace (default: eightbitsaxlounge-dev)"
 	@echo "  GITHUB_REPOSITORY_OWNER - Docker registry owner (default: mchellmer)"
 
-.PHONY: test build deploy deploy-data-api docker-build docker-run help
+.PHONY: lint test build-image test-image push deploy deploy-data-api docker-build docker-run help

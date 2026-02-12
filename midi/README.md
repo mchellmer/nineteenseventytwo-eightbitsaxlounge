@@ -1,4 +1,5 @@
 # Overview
+
 The midi layer interacts with midi devices sending midi messages to set a desired state of effects. The layer uses dual deployment: a containerized API proxy in Kubernetes and a Windows service on the PC with connected MIDI devices.
 
 **Architecture:**
@@ -290,3 +291,8 @@ curl -X POST http://localhost:5000/api/Midi/SetEffect \
 - WinMM device service unit tests (WinmmMidiDeviceService)
 - Configuration model validation tests
 
+## Monitoring & Logging
+- Unified log format: `[timestamp] [Information] [midi] message correlationID=<id>`
+- Correlation ID is propagated from UI to MIDI to Data for end-to-end tracing in Grafana
+- Health check endpoints excluded from correlation ID logging
+- Version labels on pods for deployment tracking

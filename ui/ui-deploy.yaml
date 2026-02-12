@@ -41,8 +41,8 @@
         suffix: ui-k8s
       register: tempdir
 
-    - name: Copy deployment manifest to temp directory
-      ansible.builtin.copy:
+    - name: Template deployment manifest to temp directory
+      ansible.builtin.template:
         src: k8s/deployment.yaml
         dest: "{{ tempdir.path }}/deployment.yaml"
 

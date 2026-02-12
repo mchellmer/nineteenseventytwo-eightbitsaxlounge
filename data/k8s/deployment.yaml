@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: eightbitsaxlounge-data-api
+  name: eightbitsaxlounge-data
   labels:
     app: eightbitsaxlounge
     component: data
@@ -16,14 +16,15 @@ spec:
       labels:
         app: eightbitsaxlounge
         component: data
+        version: "{{ lookup('env', 'VERSION') | default('latest', true) }}"
     spec:
       containers:
-      - name: eightbitsaxlounge-data-api
+      - name: godata
         image: ghcr.io/mchellmer/eightbitsaxlounge-data:latest
         imagePullPolicy: Always
         env:
         - name: COUCHDB_ENDPOINT
-          value: db-service:5984
+          value: eightbitsaxlounge-db-service:5984
         - name: COUCHDB_USER
           value: admin
         - name: COUCHDB_PASSWORD
@@ -33,3 +34,25 @@ spec:
               key: password
         ports:
         - containerPort: 8080
+          name: http
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 2
+          failureThreshold: 20
+          timeoutSeconds: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
