@@ -15,7 +15,16 @@ until curl -s http://localhost:5984/_up > /dev/null 2>&1; do
   sleep 1
 done
 
-echo "CouchDB is ready. Initializing system databases..."
+echo "CouchDB is ready. Initializing as single node..."
+
+# Configure CouchDB as a single node
+curl -s -X POST "http://localhost:5984/_cluster_setup" \
+  -u "${COUCHDB_USER}:${COUCHDB_PASSWORD}" \
+  -H "Content-Type: application/json" \
+  -d '{"action":"enable_single_node","bind_address":"0.0.0.0","username":"'"${COUCHDB_USER}"'","password":"'"${COUCHDB_PASSWORD}"'"}' \
+  > /dev/null 2>&1 || echo "Single node setup already complete"
+
+echo "Creating system databases..."
 
 # Create system databases
 curl -s -X PUT "http://localhost:5984/_users" \
