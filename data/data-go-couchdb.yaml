@@ -71,8 +71,9 @@
     - name: Patch Deployment image to versioned tag
       ansible.builtin.shell: |
         IMAGE_BASE=${IMAGE_BASE:-ghcr.io/${GITHUB_REPOSITORY_OWNER}/eightbitsaxlounge-data}
-        kubectl -n "$NAMESPACE" set image deploy/eightbitsaxlounge-data-api \
-          eightbitsaxlounge-data-api="${IMAGE_BASE}:${VERSION}"
+        IMAGE="${IMAGE_BASE}:${VERSION}"
+        kubectl -n "$NAMESPACE" set image deploy/eightbitsaxlounge-data \
+          godata="${IMAGE_BASE}:${VERSION}"
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
         VERSION: "{{ lookup('env', 'VERSION') }}"
@@ -81,22 +82,22 @@
 
     - name: Annotate Deployment with change cause
       ansible.builtin.shell: |
-        kubectl -n "$NAMESPACE" annotate deploy/eightbitsaxlounge-data-api \
-          kubernetes.io/change-cause="data-api ${VERSION}" --overwrite
+        kubectl -n "$NAMESPACE" annotate deploy/eightbitsaxlounge-data \
+          kubernetes.io/change-cause="data ${VERSION}" --overwrite
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
         VERSION: "{{ lookup('env', 'VERSION') }}"
 
     - name: Wait for rollout to complete
       ansible.builtin.shell: |
-        kubectl -n "$NAMESPACE" rollout status deploy/eightbitsaxlounge-data-api --timeout=180s
+        kubectl -n "$NAMESPACE" rollout status deploy/eightbitsaxlounge-data --timeout=180s
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
       when: lookup('env', 'NEEDS_BUILD') | default('true') == 'true'
 
     - name: Verify running image
       ansible.builtin.shell: |
-        kubectl -n "$NAMESPACE" get deploy eightbitsaxlounge-data-api -o jsonpath='{.spec.template.spec.containers[0].image}'
+        kubectl -n "$NAMESPACE" get deploy eightbitsaxlounge-data -o jsonpath='{.spec.template.spec.containers[0].image}'
       register: deploy_image
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"

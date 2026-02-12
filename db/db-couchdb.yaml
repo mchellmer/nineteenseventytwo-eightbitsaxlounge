@@ -85,8 +85,8 @@
 
     - name: Patch Deployment image to versioned tag
       ansible.builtin.shell: |
-        IMAGE_BASE=${IMAGE_BASE:-ghcr.io/${GITHUB_REPOSITORY_OWNER}/eightbitsaxlounge-couchdb}
-        kubectl -n "$NAMESPACE" set image deploy/eightbitsaxlounge-couchdb \
+        IMAGE_BASE=${IMAGE_BASE:-ghcr.io/${GITHUB_REPOSITORY_OWNER}/eightbitsaxlounge-db}
+        kubectl -n "$NAMESPACE" set image deploy/eightbitsaxlounge-db \
           couchdb="${IMAGE_BASE}:${VERSION}"
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"

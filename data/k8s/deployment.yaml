@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: eightbitsaxlounge-data-api
+  name: eightbitsaxlounge-data
   labels:
     app: eightbitsaxlounge
     component: data
@@ -19,7 +19,7 @@ spec:
         version: "{{ lookup('env', 'VERSION') | default('latest', true) }}"
     spec:
       containers:
-      - name: eightbitsaxlounge-data-api
+      - name: godata
         image: ghcr.io/mchellmer/eightbitsaxlounge-data:latest
         imagePullPolicy: Always
         env:
