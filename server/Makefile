@@ -62,9 +62,11 @@ init-console-ansible-vault: scripts/ansible-vault-init.sh
 
 init-console-config:
 	@if [ -n "$$SUDO_PASSWORD" ]; then \
-		ANSIBLE_BECOME_PASS="$$SUDO_PASSWORD" ansible-playbook init-console.yaml --become; \
+		ANSIBLE_BECOME_PASS="$$SUDO_PASSWORD" \
+		ansible-playbook init-console.yaml -i localhost, --connection=local \
+			-e "ansible_become_pass=$$SUDO_PASSWORD" --become; \
 	else \
-		ansible-playbook init-console.yaml -K; \
+		ansible-playbook init-console.yaml -i localhost, --connection=local -K; \
 	fi
 
 init-nodes:
