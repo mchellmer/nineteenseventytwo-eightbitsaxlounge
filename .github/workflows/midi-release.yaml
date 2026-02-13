@@ -277,7 +277,11 @@ jobs:
   deploy-k8s:
     name: Deploy MIDI to Kubernetes
     needs: [check-artifacts, build-container, test]
-    if: always() && needs.build-container.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    if: >-
+      always() && (
+        needs.check-artifacts.outputs.needs-build == 'false' ||
+        (needs.build-container.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped'))
+      )
     runs-on: self-hosted
     steps:
     - name: Checkout Code
@@ -309,7 +313,11 @@ jobs:
   deploy-pc:
     name: Deploy to Windows PC
     needs: [check-artifacts, build-pc, test]
-    if: always() && needs.build-pc.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    if: >-
+      always() && (
+        needs.check-artifacts.outputs.needs-build == 'false' ||
+        (needs.build-pc.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped'))
+      )
     runs-on: self-hosted
     steps:
     - name: Checkout Code

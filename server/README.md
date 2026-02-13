@@ -33,7 +33,7 @@ iaas and kubernetes cluster config for 1972
         - boot into each pi or e.g. my router gui shows all pis with ip addresses and mac addresses for each
         - consider setting static ips via router or dhcp server
 
-3. Init console
+3. Init raspberry pis
     - Updates/upgrades and install ansible/ansible vault on console host, generate secrets on server
     - ```bash
       sudo apt update
@@ -41,23 +41,9 @@ iaas and kubernetes cluster config for 1972
       make init-console
       ```
     - console will reboot
-    <!-- - installs ansible and adds secrets to vault
-        - you will be prompted for the following so have them ready:
-            - a vault password - save this in order to access the vault
-              ```bash
-              # The following command will generate a random 32 character password
-              openssl rand -base64 32
-              ```
-            - the wifi hash from /etc/netplan/50-cloud-init.yaml.network.wifis.wlan0.access-points.<wifi name>.auth.password
-            - an ansible become password - this is the password some user ansible will run as, in these scripts it's for 'mchellmer'
-            - an ansible default ip address to setup egress to some ip -->
     - Setup console via ansible
       - setup ansible host file and base config
       - sets the ansible host as a dhcp server serving ip addresses to nodes
-    <!-- x- after reboot - populate the ansible vault with the secrets
-      ```bash
-      make init-console-ansible-vault
-      ``` -->
       ```bash
       make init-console-config
       ```
