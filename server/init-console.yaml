@@ -1,5 +1,5 @@
 ---
-- name: Install and configure Kea DHCP server
+- name: Initialize Console Configuration
   hosts: localhost
   become: true
   tasks:

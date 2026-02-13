@@ -60,6 +60,12 @@ init-console: scripts/init.sh
 init-console-ansible-vault: scripts/ansible-vault-init.sh
 	bash scripts/ansible-vault-init.sh
 
+init-console-config:
+	ansible-playbook init-console.yaml
+
+init-nodes:
+	export ANSIBLE_HOST_KEY_CHECKING=False && ansible-playbook k8s-nodes.yaml --ask-pass
+
 shutdown-cluster:
 	@echo "⚠️  Initiating cluster shutdown sequence..."
 	@if [ -n "$$SUDO_PASSWORD" ]; then \
@@ -70,12 +76,6 @@ shutdown-cluster:
 	else \
 		ansible-playbook shutdown.yaml -K; \
 	fi
-
-init-console-config:
-	ansible-playbook k8s-console.yaml
-
-init-nodes:
-	export ANSIBLE_HOST_KEY_CHECKING=False && ansible-playbook k8s-nodes.yaml --ask-pass
 
 scripts/ansible-vault-init.sh:
 	chmod +x scripts/ansible-vault-init.sh

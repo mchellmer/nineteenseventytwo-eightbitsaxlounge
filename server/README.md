@@ -5,7 +5,7 @@ iaas and kubernetes cluster config for 1972
 - using ansible to setup kubernetes cluster on nodes with 1 master and 2 workers via kubeadm/kubectl
 
 # Setup servers
-1. Boot up - Boot of latest ubuntu (tested on 24.4) on rpi (tested on rpi4 - console/rpi5 - nodes)
+1. Boot up - Boot of latest ubuntu (tested on 25.10) on rpi (tested on rpi4 - console/rpi5 - nodes)
    - set config via imager:
      - hostname - to match /group_vars/all/vars.yaml
      - wifi name and pass
@@ -15,7 +15,7 @@ iaas and kubernetes cluster config for 1972
      - add cgroup_memory=1 cgroup_enable=memory cgroup_enable=hugetlb to /cmdline.txt
      - add dtoverlay=vc4-kms-v3d,cma-256 to /config.txt
    - AFTER BOOTING
-     - enable dhcp on eth0 in netplan, add the following to /etc/netplan/50-cloud-init.yaml (don't use tabs!):
+     - check enabled dhcp on eth0 in netplan, add the following to /etc/netplan/50-cloud-init.yaml (don't use tabs!):
          ```yaml
            network: 
             version: 2
@@ -28,21 +28,12 @@ iaas and kubernetes cluster config for 1972
      - wifi ip - set this to static values in your router, otherwise retrieve with `ip a`
      - eth0 ip - same
 
-2. On console host - get code via `git clone https://github.com/mchellmer/1972-Server.git`
+2. On console host - get code via `git clone https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge.git`
     - adjust /group_vars/all.yaml to match your network settings
         - boot into each pi or e.g. my router gui shows all pis with ip addresses and mac addresses for each
         - consider setting static ips via router or dhcp server
 
-3. Setup CI/CD
-    - Install and configure a GitHub Actions Runner for CI/CD pipelines.
-    - Run the following command to set up the runner:
-      ```bash
-      make init-cicd
-      ```
-    - You will be prompted to provide the GitHub action Runner token. Obtain this token from your GitLab project under **Settings > Runners**.
-    - Note that server pipelines requiring ansible vault secrets should load the vault file from server to runner environment
-
-4. Init console
+3. Init console
     - Updates/upgrades and install ansible/ansible vault on console host, generate secrets on server
     - installs ansible and adds secrets to vault
         - you will be prompted for the following so have them ready:
@@ -63,13 +54,22 @@ iaas and kubernetes cluster config for 1972
       sudo apt install make
       make init-console
       ```
-    - after reboot - populate the ansible vault with the secrets
+    x- after reboot - populate the ansible vault with the secrets
       ```bash
       make init-console-ansible-vault
       ```
     - after reboot - configure the console
       ```bash
       make init-console-config
+      ```
+
+4. Setup CI/CD
+    - Install and configure a GitHub Actions Runners for CI/CD pipelines, follow instructions to provide join tokens
+    - follow prompts to configure runners
+    - Run the following command to set up the runner:
+      ```bash
+      cd server
+      make init-cicd
       ```
 
 5. Deploy Namespaces
