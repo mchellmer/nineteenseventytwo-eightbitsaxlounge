@@ -69,6 +69,12 @@ iaas and kubernetes cluster config for 1972
       ```
       - nodes will reboot
 
+5. Deploy Kubernetes
+  - install container runtime (docker), kubeadm, tools, and join nodes
+  ```bash
+  make deploy-kubernetes
+  ```
+
 4. Setup CI/CD
     - Install and configure GitHub Actions Runners for CI/CD pipelines, follow instructions to provide join tokens
     - follow prompts to configure runners
@@ -77,10 +83,6 @@ iaas and kubernetes cluster config for 1972
       cd server
       make init-cicd
       ```
-
-5. Deploy Kubernetes
-   - make deploy-kubernetes
-   - make ansible-kubernetes-join
 
 5. Deploy Namespaces
   - Use the following command to deploy the Kubernetes namespaces for the app and environments:
