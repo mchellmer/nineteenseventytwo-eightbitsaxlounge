@@ -2,6 +2,7 @@
 - name: Initialize Console Configuration
   hosts: localhost
   become: true
+  become_user: mchellmer
   tasks:
     - name: Install ansiblehosts.j2 template
       template:
