@@ -55,6 +55,12 @@ iaas and kubernetes cluster config for 1972
       ```
       - nodes will reboot
 
+4. Init pc
+  - make pc available as ansible host, open traffic etc
+  ```bash
+  make init-pc
+  ```
+
 4. Deploy Kubernetes
   - install container runtime (docker), kubeadm, tools, and join nodes
   ```bash

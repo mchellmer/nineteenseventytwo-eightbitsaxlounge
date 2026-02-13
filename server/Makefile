@@ -127,6 +127,17 @@ init-nodes:
 		ansible-playbook init-nodes.yaml --ask-pass -K; \
 	fi
 
+init-pc:
+	@echo "Initializing PC configuration..."
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook init-pc.yaml --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook init-pc.yaml -K; \
+	fi
+
 shutdown-cluster:
 	@echo "⚠️  Initiating cluster shutdown sequence..."
 	@if [ -n "$$SUDO_PASSWORD" ]; then \
