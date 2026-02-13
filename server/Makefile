@@ -81,7 +81,16 @@ init-dhcp:
 	ansible-playbook init-dhcp.yaml
 
 init-nodes:
-	export ANSIBLE_HOST_KEY_CHECKING=False && ansible-playbook init-nodes.yaml --ask-pass
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		export ANSIBLE_HOST_KEY_CHECKING=False; \
+		ansible-playbook init-nodes.yaml --ask-pass --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		export ANSIBLE_HOST_KEY_CHECKING=False; \
+		ansible-playbook init-nodes.yaml --ask-pass -K; \
+	fi
 
 shutdown-cluster:
 	@echo "⚠️  Initiating cluster shutdown sequence..."
