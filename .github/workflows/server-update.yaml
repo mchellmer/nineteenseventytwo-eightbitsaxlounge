@@ -21,5 +21,5 @@ jobs:
       if: ${{ github.event.inputs.init_console == 'true' }}
       working-directory: ./server
       env:
-        SUDO_PASSWORD: ${{ secrets.ANSIBLE_SUDO_PASSWORD }}
+        ANSIBLE_BECOME_PASSWORD: ${{ secrets.ANSIBLE_SUDO_PASSWORD }}
       run: make init-console-config
