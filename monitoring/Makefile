@@ -6,7 +6,8 @@ CLUSTER_NAME ?= nineteenseventytwo
 # Deploy monitoring stack
 deploy:
 	@echo "Deploying monitoring stack version $(VERSION)..."
-	ansible-playbook k8s-monitoring.yaml; \
+	ANSIBLE_EXTRA_VARS="grafana_password=$$GRAFANA_PASSWORD"; \
+	ansible-playbook k8s-monitoring.yaml --extra-vars "$$ANSIBLE_EXTRA_VARS"
 
 # Check Alloy agents
 check-alloy:

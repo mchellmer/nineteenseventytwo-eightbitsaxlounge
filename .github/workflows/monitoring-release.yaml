@@ -27,13 +27,8 @@ jobs:
           echo "Branch: ${{ github.ref_name }}"
           echo "Actor: ${{ github.actor }}"
 
-      - name: Make vault available to runner
-        working-directory: ./monitoring
-        run: |
-          if [ -f "$HOME/nineteenseventytwo-eightbitsaxlounge/server/group_vars/all/vault.yml" ]; then
-            cp -f "$HOME/nineteenseventytwo-eightbitsaxlounge/server/group_vars/all/vault.yml" ./group_vars/all/vault.yml
-          fi
-
       - name: Deploy Monitoring
         working-directory: ./monitoring
         run: make deploy
+        env:
+          GRAFANA_PASSWORD: ${{ secrets.GRAFANA_PASSWORD }}
