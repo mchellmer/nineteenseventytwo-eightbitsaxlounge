@@ -1,6 +1,3 @@
-# Update Ubuntu version and packages
-update-ubuntu:
-		ansible-playbook update-ubuntu.yaml -vv
 .PHONY: deploy-kubernetes deploy-cni console-init init-ansible-vault init-cicd
 
 ansible-docker:
@@ -88,6 +85,17 @@ scripts/init.sh:
 
 scripts/github-runner.sh:
 	chmod +x scripts/github-runner.sh
+
+update-ubuntu:
+	@echo "Updating Ubuntu..."
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook update-ubuntu.yaml -vv --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook update-ubuntu.yaml -K; \
+	fi
 
 test-system:
 	@echo "System Information:"

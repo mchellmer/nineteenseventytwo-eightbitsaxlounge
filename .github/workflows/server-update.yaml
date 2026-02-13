@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       update_ubuntu:
-        description: 'Whether to update Ubuntu (true/false)'
+        description: 'Update Ubuntu packages and release'
         required: false
         type: boolean
 
