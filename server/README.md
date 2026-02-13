@@ -108,8 +108,7 @@ iaas and kubernetes cluster config for 1972
    make deploy-ingress
    ```
 
-
-6. Deploy Storage
+9. Deploy Storage
   - Install Longhorn distributed storage system for persistent volumes
   - Provides replicated storage across worker nodes with web UI management
     ```bash

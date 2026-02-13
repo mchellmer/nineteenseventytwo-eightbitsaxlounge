@@ -2,6 +2,22 @@
 - name: Install Longhorn distributed storage for Kubernetes
   hosts: master
   tasks:
+    - name: Check if Helm is installed
+      ansible.builtin.command:
+        cmd: helm version
+      register: helm_check
+      ignore_errors: true
+
+    - name: Extract installed Helm version
+      ansible.builtin.set_fact:
+        installed_helm_version: "{{ helm_check.stdout | regex_search('Version:\"(v[0-9.]+)\"', '\\1') | first | default('') }}"
+      when: helm_check.rc == 0
+
+    - name: Include Helm role if Helm is not installed or version mismatch
+      include_role:
+        name: helm
+      when: helm_check.rc != 0 or installed_helm_version != helm_version
+
     - name: Create temporary directory for manifests
       ansible.builtin.tempfile:
         state: directory
