@@ -81,7 +81,7 @@ init-dhcp:
 	ansible-playbook init-dhcp.yaml
 
 init-nodes:
-	export ANSIBLE_HOST_KEY_CHECKING=False && ansible-playbook k8s-nodes.yaml --ask-pass
+	export ANSIBLE_HOST_KEY_CHECKING=False && ansible-playbook init-nodes.yaml --ask-pass
 
 shutdown-cluster:
 	@echo "⚠️  Initiating cluster shutdown sequence..."

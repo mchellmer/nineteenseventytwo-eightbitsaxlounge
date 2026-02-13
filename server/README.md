@@ -52,8 +52,8 @@ iaas and kubernetes cluster config for 1972
             - an ansible become password - this is the password some user ansible will run as, in these scripts it's for 'mchellmer'
             - an ansible default ip address to setup egress to some ip -->
     - Setup console via ansible
-        - this sets the ansible host as a dhcp server serving ip addresses to nodes
-        - configures ip tables for kubernetes traffic allowing bridge traffic between console and nodes
+      - setup ansible host file and base config
+      - sets the ansible host as a dhcp server serving ip addresses to nodes
     <!-- x- after reboot - populate the ansible vault with the secrets
       ```bash
       make init-console-ansible-vault
@@ -61,10 +61,12 @@ iaas and kubernetes cluster config for 1972
       ```bash
       make init-console-config
       ```
-   - configure nodes
-     ```bash
-     make init-nodes
-     ```
+    - Setup nodes via ansible
+      - setups up ssh access between console and nodes
+      - configures ip tables for kubernetes traffic allowing bridge traffic between console and nodes
+      ```bash
+      make init-nodes
+      ```
 
 4. Setup CI/CD
     - Install and configure GitHub Actions Runners for CI/CD pipelines, follow instructions to provide join tokens
