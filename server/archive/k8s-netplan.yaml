@@ -1,3 +1,4 @@
+## Archiving: netplan configured by default when falshing ubuntu 25.10
 ---
 - name: Install and configure isc-dhcp-server and update iptables
   hosts: localhost

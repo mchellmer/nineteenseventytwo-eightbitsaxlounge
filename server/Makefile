@@ -1,16 +1,20 @@
 .PHONY: deploy-kubernetes deploy-cni console-init init-ansible-vault init-cicd
 
 ansible-docker:
-	ansible-playbook k8s-docker.yaml
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook k8s-docker.yaml -v --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook k8s-docker.yaml -v -K; \
+	fi
 
 ansible-kubernetes:
 	ansible-playbook k8s-kubernetes.yaml -vv
 
 ansible-kubernetes-join:
 	ansible-playbook k8s-kubernetes.yaml -vv --skip-tags "install_kubernetes,reset_kubeadm,init_kubeadm"
-
-ansible-netplan:
-	ansible-playbook k8s-netplan.yaml
 
 deploy-kubernetes:
 	make ansible-docker
@@ -73,6 +77,9 @@ init-console-config:
 		ansible-playbook init-console.yaml -K; \
 	fi
 
+init-dhcp:
+	ansible-playbook init-dhcp.yaml
+
 init-nodes:
 	export ANSIBLE_HOST_KEY_CHECKING=False && ansible-playbook k8s-nodes.yaml --ask-pass
 
@@ -104,3 +111,7 @@ test-system:
 	@echo "Kernel Version: $$(uname -r)"
 	@echo "Architecture: $$(uname -m)"
 	@echo "Uptime: $$(uptime -p)"
+
+archive-k8s-netplan:
+	@echo "Archiving: netplan configured by default when falshing ubuntu 25.10"
+	ansible-playbook k8s-netplan.yaml

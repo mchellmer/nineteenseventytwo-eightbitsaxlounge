@@ -35,7 +35,13 @@ iaas and kubernetes cluster config for 1972
 
 3. Init console
     - Updates/upgrades and install ansible/ansible vault on console host, generate secrets on server
-    - installs ansible and adds secrets to vault
+    - ```bash
+      sudo apt update
+      sudo apt install make
+      make init-console
+      ```
+    - console will reboot
+    <!-- - installs ansible and adds secrets to vault
         - you will be prompted for the following so have them ready:
             - a vault password - save this in order to access the vault
               ```bash
@@ -44,33 +50,34 @@ iaas and kubernetes cluster config for 1972
               ```
             - the wifi hash from /etc/netplan/50-cloud-init.yaml.network.wifis.wlan0.access-points.<wifi name>.auth.password
             - an ansible become password - this is the password some user ansible will run as, in these scripts it's for 'mchellmer'
-            - an ansible default ip address to setup egress to some ip
+            - an ansible default ip address to setup egress to some ip -->
     - Setup console via ansible
         - this sets the ansible host as a dhcp server serving ip addresses to nodes
         - configures ip tables for kubernetes traffic allowing bridge traffic between console and nodes
-
-    - ```bash
-      sudo apt update
-      sudo apt install make
-      make init-console
-      ```
-    x- after reboot - populate the ansible vault with the secrets
+    <!-- x- after reboot - populate the ansible vault with the secrets
       ```bash
       make init-console-ansible-vault
-      ```
-    - after reboot - configure the console
+      ``` -->
       ```bash
       make init-console-config
       ```
+   - configure nodes
+     ```bash
+     make init-nodes
+     ```
 
 4. Setup CI/CD
-    - Install and configure a GitHub Actions Runners for CI/CD pipelines, follow instructions to provide join tokens
+    - Install and configure GitHub Actions Runners for CI/CD pipelines, follow instructions to provide join tokens
     - follow prompts to configure runners
     - Run the following command to set up the runner:
       ```bash
       cd server
       make init-cicd
       ```
+
+5. Deploy Kubernetes
+   - make deploy-kubernetes
+   - make ansible-kubernetes-join
 
 5. Deploy Namespaces
   - Use the following command to deploy the Kubernetes namespaces for the app and environments:
