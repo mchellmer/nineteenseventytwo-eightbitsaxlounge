@@ -61,7 +61,14 @@ deploy-namespaces:
 	ansible-playbook k8s-namespaces.yaml
 
 deploy-storage:
-	ansible-playbook k8s-storage.yaml
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook k8s-storage.yaml --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook k8s-storage.yaml -K; \
+	fi
 
 clean-cicd:
 	@echo "Cleaning up GitHub Actions Runners..."
