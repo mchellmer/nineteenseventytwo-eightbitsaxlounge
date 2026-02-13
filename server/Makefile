@@ -61,8 +61,13 @@ init-console-ansible-vault: scripts/ansible-vault-init.sh
 	bash scripts/ansible-vault-init.sh
 
 init-console-config:
+	ANSIBLE_BECOME_EXE=sudo.ws
+	@echo "⚠️  Initiating cluster shutdown sequence..."
 	@if [ -n "$$SUDO_PASSWORD" ]; then \
-		ANSIBLE_BECOME_PASS="$$SUDO_PASSWORD" ansible-playbook init-console.yaml --become; \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook init-console.yaml --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
 	else \
 		ansible-playbook init-console.yaml -K; \
 	fi
