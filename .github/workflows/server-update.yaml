@@ -6,11 +6,12 @@ on:
       init_console:
         description: "Run console initialization steps"
         required: false
-        default: 'false'
+        default: false
+        type: boolean
 
 jobs:
   shutdown:
-    name: Shutdown Kubernetes Cluster
+    name: Update Server Configuration
     runs-on: self-hosted
     steps:
     - name: Checkout Code

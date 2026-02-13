@@ -61,7 +61,16 @@ init-console-ansible-vault: scripts/ansible-vault-init.sh
 	bash scripts/ansible-vault-init.sh
 
 init-console-config:
-	ansible-playbook init-console.yaml
+	@echo "Initiating console configuration..."
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook init-console.yaml --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook init-console.yaml -K; \
+	fi
+
 
 init-nodes:
 	export ANSIBLE_HOST_KEY_CHECKING=False && ansible-playbook k8s-nodes.yaml --ask-pass
