@@ -120,17 +120,6 @@ iaas and kubernetes cluster config for 1972
     # Open http://localhost:8080
     ```
 
-7. Deploy Monitoring
-  - Monitoring has been moved to its own layer
-  - See ../monitoring/README.md for deployment instructions
-  - Quick deploy:
-  ```bash
-  cd ../monitoring
-  make deploy
-  ```
-
----
-
 ## Cluster Infrastructure Choices
 
 ### Storage: Longhorn
