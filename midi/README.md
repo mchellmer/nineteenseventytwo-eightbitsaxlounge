@@ -85,45 +85,6 @@ make deploy-pc-dev       # Deploy PC service to dev
 make deploy-pc-prod      # Deploy PC service to prod
 ```
 
-**Initial Setup:**
-
-Ansible Access to PC
-- Install OpenSSH (elevated powershell session)
-  Check enabled: `Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'`
-  Enable: `Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0`
-  Start: `Start-Service sshd`
-  AutoStart: `Set-Service -Name sshd -StartupType 'Automatic'`
-  Confirm Running: `Get-Service sshd`
-  Confirm Listening: `Get-NetTCPConnection -LocalPort 22 -State Listen`
-  Test localhost: `ssh localhost`
-  Add rule allowing connection from ci/cd host: 
-  ```
-    New-NetFirewallRule -DisplayName "OpenSSH Server (Pi only)" 
-        -Name "OpenSSH-Server-CICD" `
-        -Direction Inbound `
-        -Protocol TCP `
-        -LocalPort 22 `
-        -Action Allow `
-        -RemoteAddress <CICD IP> `
-        -Profile Any `
-        -Enabled True`
-  ```
-  Restart: `Restart-Service sshd`
-  Test from pi: `ssh <username>@<PC IP>`
-
-- Ansible access
-  Ensure entry in /etc/ansible/hosts for midi group (handled by server layer)
-    ```
-      [midi]
-      midi-host ansible_host=<PC IP> ansible_user=<PC User> ansible_connection=ssh ansible_shell_type=powershell
-    ```
-  PC uses powershell by default for ssh (elevated powershell session)
-    temProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force`
-  Test: `ansible midi-host -m ansible.windows.win_shell -a "Get-Service sshd" --ask-pass`
-
-- Configure PC via Ansible (ssh keys, service directory and dependencies): `make init-midi`
-- Release to PC (take artifact and install): `make deploy-midi`
-
 # Scope
 
 **Current Implementation:**

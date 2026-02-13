@@ -71,14 +71,12 @@ Db layer
 - source of true state -> UI and device track
 
 Monitoring layer
-- all containers enforced probes for health monitoring
-- dashboard - service versions/states, device state
 - vulnerabilitiesbilities
   - logging
 
 Server layer
 - service mesh for finer tuned monitoring
-- shared ansible role for common work among layers
+- shared ansible role for common work among layers - helm
 - handle k8s updates
 
 CI/CD

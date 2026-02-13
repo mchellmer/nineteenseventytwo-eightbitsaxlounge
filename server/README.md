@@ -5,7 +5,7 @@ iaas and kubernetes cluster config for 1972
 - using ansible to setup kubernetes cluster on nodes with 1 master and 2 workers via kubeadm/kubectl
 
 # Setup servers
-1. Boot up - Boot of latest ubuntu (tested on 24.4) on rpi (tested on rpi4 - console/rpi5 - nodes)
+1. Boot up - Boot of latest ubuntu (tested on 25.10) on rpi (tested on rpi4 - console/rpi5 - nodes)
    - set config via imager:
      - hostname - to match /group_vars/all/vars.yaml
      - wifi name and pass
@@ -15,7 +15,7 @@ iaas and kubernetes cluster config for 1972
      - add cgroup_memory=1 cgroup_enable=memory cgroup_enable=hugetlb to /cmdline.txt
      - add dtoverlay=vc4-kms-v3d,cma-256 to /config.txt
    - AFTER BOOTING
-     - enable dhcp on eth0 in netplan, add the following to /etc/netplan/50-cloud-init.yaml (don't use tabs!):
+     - check enabled dhcp on eth0 in netplan, add the following to /etc/netplan/50-cloud-init.yaml (don't use tabs!):
          ```yaml
            network: 
             version: 2
@@ -28,57 +28,112 @@ iaas and kubernetes cluster config for 1972
      - wifi ip - set this to static values in your router, otherwise retrieve with `ip a`
      - eth0 ip - same
 
-2. On console host - get code via `git clone https://github.com/mchellmer/1972-Server.git`
+2. On console host - get code via `git clone https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge.git`
     - adjust /group_vars/all.yaml to match your network settings
         - boot into each pi or e.g. my router gui shows all pis with ip addresses and mac addresses for each
         - consider setting static ips via router or dhcp server
 
-3. Setup CI/CD
-    - Install and configure a GitHub Actions Runner for CI/CD pipelines.
-    - Run the following command to set up the runner:
-      ```bash
-      make init-cicd
-      ```
-    - You will be prompted to provide the GitHub action Runner token. Obtain this token from your GitLab project under **Settings > Runners**.
-    - Note that server pipelines requiring ansible vault secrets should load the vault file from server to runner environment
-
-4. Init console
+3. Init raspberry pis
     - Updates/upgrades and install ansible/ansible vault on console host, generate secrets on server
-    - installs ansible and adds secrets to vault
-        - you will be prompted for the following so have them ready:
-            - a vault password - save this in order to access the vault
-              ```bash
-              # The following command will generate a random 32 character password
-              openssl rand -base64 32
-              ```
-            - the wifi hash from /etc/netplan/50-cloud-init.yaml.network.wifis.wlan0.access-points.<wifi name>.auth.password
-            - an ansible become password - this is the password some user ansible will run as, in these scripts it's for 'mchellmer'
-            - an ansible default ip address to setup egress to some ip
-    - Setup console via ansible
-        - this sets the ansible host as a dhcp server serving ip addresses to nodes
-        - configures ip tables for kubernetes traffic allowing bridge traffic between console and nodes
-
     - ```bash
       sudo apt update
       sudo apt install make
       make init-console
       ```
-    - after reboot - populate the ansible vault with the secrets
-      ```bash
-      make init-console-ansible-vault
-      ```
-    - after reboot - configure the console
+    - console will reboot
+    - Setup console via ansible
+      - setup ansible host file and base config
+      - sets the ansible host as a dhcp server serving ip addresses to nodes
       ```bash
       make init-console-config
       ```
+    - Setup nodes via ansible
+      - setups up ssh access between console and nodes
+      - configures ip tables for kubernetes traffic allowing bridge traffic between console and nodes
+      ```bash
+      make init-nodes
+      ```
+      - nodes will reboot
 
-5. Deploy Namespaces
+4. Init pc
+   Ansible Access to PC
+    - Install OpenSSH (elevated powershell session)
+      Check enabled: `Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'`
+      Enable: `Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0`
+      Start: `Start-Service sshd`
+      AutoStart: `Set-Service -Name sshd -StartupType 'Automatic'`
+      Confirm Running: `Get-Service sshd`
+      Confirm Listening: `Get-NetTCPConnection -LocalPort 22 -State Listen`
+      Test localhost: `ssh localhost`
+      Add rule allowing connection from ci/cd host: 
+      ```
+        New-NetFirewallRule -DisplayName "OpenSSH Server (Pi only)" 
+            -Name "OpenSSH-Server-CICD" `
+            -Direction Inbound `
+            -Protocol TCP `
+            -LocalPort 22 `
+            -Action Allow `
+            -RemoteAddress <CICD IP> `
+            -Profile Any `
+            -Enabled True`
+      ```
+      Restart: `Restart-Service sshd`
+      Test from pi: `ssh <username>@<PC IP>`
+
+    - Ansible access
+      Ensure entry in /etc/ansible/hosts for midi group (handled by server layer)
+        ```
+          [midi]
+          midi-host ansible_host=<PC IP> ansible_user=<PC User> ansible_connection=ssh ansible_shell_type=powershell
+        ```
+      PC uses powershell by default for ssh (elevated powershell session)
+        temProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force`
+
+  - make pc available as ansible host, open traffic etc
+  ```bash
+  make init-pc
+  ```
+
+5. Deploy Kubernetes
+  - install container runtime (docker), kubeadm, tools, and join nodes
+  ```bash
+  make deploy-kubernetes
+  ```
+
+6. Setup CI/CD
+    - Install and configure GitHub Actions Runners for CI/CD pipelines, follow instructions to provide join tokens
+    - follow prompts to configure runners
+    - Run the following command to set up the runner:
+      ```bash
+      cd server
+      make init-cicd
+      ```
+
+7. Deploy Namespaces
   - Use the following command to deploy the Kubernetes namespaces for the app and environments:
     ```bash
     make deploy-namespaces
     ```
 
-6. Deploy Storage
+8. Deploy CNI
+   - use flannel as CNI
+   ```bash
+   make deploy-cni
+   ```
+
+9. Deploy loadbalancer
+   - use metallb
+   ```bash
+   make deploy-loadbalancer
+   ```
+
+10. Deploy ingress
+   - use nginx
+   ```bash
+   make deploy-ingress
+   ```
+
+11. Deploy Storage
   - Install Longhorn distributed storage system for persistent volumes
   - Provides replicated storage across worker nodes with web UI management
     ```bash
@@ -89,17 +144,6 @@ iaas and kubernetes cluster config for 1972
     kubectl port-forward -n longhorn-system svc/longhorn-frontend 8080:80
     # Open http://localhost:8080
     ```
-
-7. Deploy Monitoring
-  - Monitoring has been moved to its own layer
-  - See ../monitoring/README.md for deployment instructions
-  - Quick deploy:
-  ```bash
-  cd ../monitoring
-  make deploy
-  ```
-
----
 
 ## Cluster Infrastructure Choices
 

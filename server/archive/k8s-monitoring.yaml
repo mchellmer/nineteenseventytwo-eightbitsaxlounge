@@ -1,3 +1,4 @@
+# Archive, moved to /monitoring
 ---
 - name: Deploy Grafana Kubernetes Monitoring
   hosts: master

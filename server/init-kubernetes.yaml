@@ -5,7 +5,7 @@
   tags:
     - install_kubernetes
   vars:
-    kubernetes_version: 1.32
+    kubernetes_version: 1.35
     ansible_user: mchellmer
   tasks:
     - name: Download and dearmor Kubernetes GPG key
