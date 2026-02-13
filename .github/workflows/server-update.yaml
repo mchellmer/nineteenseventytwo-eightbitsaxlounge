@@ -2,6 +2,11 @@ name: Server Update
 
 on:
   workflow_dispatch:
+    inputs:
+      init_console:
+        description: "Run console initialization steps"
+        required: false
+        default: 'false'
 
 jobs:
   shutdown:
@@ -11,21 +16,9 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Display shutdown warning
-      run: |
-        echo "⚠️  WARNING: Shutting down entire Kubernetes cluster ⚠️"
-        echo ""
-        echo "This will shutdown:"
-        echo "  1. Worker nodes"
-        echo "  2. Master node"
-        echo "  3. Console/Runner machine"
-        echo ""
-        echo "The cluster will be completely offline after this operation."
-        echo "Physical access will be required to restart the machines."
-        echo ""
-
-    - name: Shutdown cluster
+    - name: Init console config
+      if: ${{ github.event.inputs.init_console == 'true' }}
       working-directory: ./server
       env:
         SUDO_PASSWORD: ${{ secrets.ANSIBLE_SUDO_PASSWORD }}
-      run: make shutdown-cluster
+      run: make init-console-config
