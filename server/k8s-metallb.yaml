@@ -1,6 +1,6 @@
 ---
 - name: Install and configure MetalLB in L2 mode
-  hosts: all
+  hosts: master, worker
   become: true
   tasks:
     - name: Allow TCP traffic on port 7946
