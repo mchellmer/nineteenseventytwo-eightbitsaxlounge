@@ -132,10 +132,10 @@ init-pc:
 	@if [ -n "$$SUDO_PASSWORD" ]; then \
 		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
 		chmod 600 /tmp/.ansible_become_pass; \
-		ansible-playbook init-pc.yaml --become-password-file /tmp/.ansible_become_pass; \
+		ansible-playbook init-pc.yaml --ask-pass --become-password-file /tmp/.ansible_become_pass; \
 		rm -f /tmp/.ansible_become_pass; \
 	else \
-		ansible-playbook init-pc.yaml -K; \
+		ansible-playbook init-pc.yaml --ask-pass -K; \
 	fi
 
 shutdown-cluster:
