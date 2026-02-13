@@ -38,7 +38,14 @@ deploy-cni:
 	ansible-playbook k8s-flannel.yaml
 
 deploy-ingress:
-	ansible-playbook k8s-ingress-nginx.yaml
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook k8s-ingress-nginx.yaml --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook k8s-ingress-nginx.yaml -K; \
+	fi
 
 deploy-loadbalancer:
 	@if [ -n "$$SUDO_PASSWORD" ]; then \

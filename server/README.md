@@ -97,10 +97,17 @@ iaas and kubernetes cluster config for 1972
    ```
 
 7. Deploy loadbalancer
-   - user metallb
-   ````bash
+   - use metallb
+   ```bash
    make deploy-loadbalancer
    ```
+
+8. Deploy ingress
+   - use nginx
+   ```bash
+   make deploy-ingress
+   ```
+
 
 6. Deploy Storage
   - Install Longhorn distributed storage system for persistent volumes
