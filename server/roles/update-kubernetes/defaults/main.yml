@@ -1,0 +1,7 @@
+---
+# defaults for update-kubernetes role
+kubernetes_version: ""  # e.g. 1.33.4
+perform_kubeadm_apply: false
+perform_kubelet_upgrade: false
+drain_node: true
+apt_repo: "https://apt.kubernetes.io/"

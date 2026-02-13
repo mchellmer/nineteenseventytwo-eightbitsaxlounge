@@ -1,0 +1,46 @@
+---
+# This task file expects to run on control-plane hosts (play should use serial: 1)
+- name: Show current kubeadm version
+  command: kubeadm version
+  register: kubeadm_version
+  ignore_errors: true
+
+- name: Print kubeadm version
+  debug:
+    var: kubeadm_version.stdout_lines
+
+- name: Verify kubeadm upgrade plan (JSON)
+  command: kubeadm upgrade plan -o json
+  register: upgrade_plan
+  failed_when: upgrade_plan.rc != 0
+
+- name: Display upgrade plan summary
+  debug:
+    var: upgrade_plan.stdout_lines
+
+- name: Optionally apply kubeadm upgrade (CONTROL-PLANE)
+  shell: |
+    kubeadm upgrade apply v{{ kubernetes_version }} -y
+  when: perform_kubeadm_apply | bool
+  register: upgrade_apply
+  ignore_errors: false
+
+- name: Show kubeadm upgrade apply output
+  debug:
+    var: upgrade_apply.stdout_lines
+  when: perform_kubeadm_apply | bool
+
+- name: Upgrade kubelet and kubectl on this control plane node
+  shell: |
+    sudo apt-mark unhold kubelet kubectl || true
+    sudo apt-get update
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y kubelet={{ kubernetes_version }}-00 kubectl={{ kubernetes_version }}-00
+    sudo apt-mark hold kubelet kubectl
+    sudo systemctl daemon-reload
+    sudo systemctl restart kubelet
+  register: kubelet_install
+  failed_when: kubelet_install.rc != 0
+
+- name: Show kubelet/kubectl install output
+  debug:
+    var: kubelet_install.stdout_lines

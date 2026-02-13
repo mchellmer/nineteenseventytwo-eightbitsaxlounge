@@ -1,0 +1,16 @@
+---
+# main entry for update-kubernetes role
+- name: Ensure prerequisites and apt repo present
+  include_tasks: install_prereqs.yml
+
+- name: Install/prepare kube packages on host
+  include_tasks: install_kube_pkgs.yml
+  when: kubernetes_version != ''
+
+- name: Control plane kubeadm upgrade (only if requested)
+  include_tasks: control_plane_upgrade.yml
+  when: perform_kubeadm_apply | bool
+
+- name: Upgrade kubelet/kubectl on nodes (if requested)
+  include_tasks: node_upgrade.yml
+  when: perform_kubelet_upgrade | bool

@@ -1,0 +1,21 @@
+---
+- name: Unhold kube packages (allow install)
+  shell: |
+    sudo apt-mark unhold kubeadm kubelet kubectl || true
+  changed_when: false
+
+- name: Install specific kube packages (kubeadm, kubelet, kubectl)
+  apt:
+    name:
+      - "kubeadm={{ kubernetes_version }}-00"
+      - "kubelet={{ kubernetes_version }}-00"
+      - "kubectl={{ kubernetes_version }}-00"
+    state: present
+    allow_downgrade: yes
+  register: kube_install
+  ignore_errors: true
+
+- name: Hold kube packages to prevent unintended upgrades
+  shell: |
+    sudo apt-mark hold kubeadm kubelet kubectl || true
+  changed_when: false

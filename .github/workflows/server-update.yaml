@@ -8,6 +8,11 @@ on:
         required: false
         type: boolean
 
+      kubernetes_version:
+        description: 'Update Kubernetes version (e.g. 1.3x)'
+        required: false
+        type: string
+
 jobs:
   update-ubuntu:
     name: Update Ubuntu Version
@@ -21,5 +26,18 @@ jobs:
       working-directory: ./server
       env:
         update_ubuntu: ${{ github.event.inputs.update_ubuntu }}
-        SUDO_PASSWORD: ${{ secrets.ANSIBLE_SUDO_PASSWORD }}
       run: make update-ubuntu
+  
+  update-kubernetes:
+    name: Update Kubernetes Version
+    runs-on: self-hosted
+    if: ${{ github.event.inputs.kubernetes_version != '' }}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Update Kubernetes
+      working-directory: ./server
+      env:
+        KUBERNETES_VERSION: ${{ github.event.inputs.kubernetes_version }}
+      run: make update-kubernetes

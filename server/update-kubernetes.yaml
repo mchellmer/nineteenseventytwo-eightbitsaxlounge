@@ -1,0 +1,22 @@
+---
+- name: Control-plane upgrade using role (serial)
+  hosts: master
+  become: true
+  serial: 1
+  vars:
+    kubernetes_version: "1.33"
+    perform_kubeadm_apply: "{{ perform_kubeadm_apply | default(false) }}"
+  roles:
+    - role: update-kubernetes
+      kubernetes_version: "{{ kubernetes_version | default('') }}"
+      perform_kubeadm_apply: "{{ perform_kubeadm_apply | default(false) }}"
+
+- name: Install/upgrade kubelet on all nodes using role (serial)
+  hosts: master, worker
+  become: true
+  serial: 1
+  roles:
+    - role: update-kubernetes
+      kubernetes_version: "{{ kubernetes_version | default('') }}"
+      perform_kubelet_upgrade: "{{ perform_kubelet_upgrade | default(true) }}"
+      drain_node: "{{ drain_node | default(true) }}"

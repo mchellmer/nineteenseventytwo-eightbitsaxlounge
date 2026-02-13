@@ -97,6 +97,25 @@ update-ubuntu:
 		ansible-playbook update-ubuntu.yaml -K; \
 	fi
 
+update-kubernetes:
+	@echo "Updating Kubernetes..."
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		if [ -n "$$KUBERNETES_VERSION" ]; then \
+			ansible-playbook update-kubernetes.yaml -e "kubernetes_version=$$KUBERNETES_VERSION" -vv --become-password-file /tmp/.ansible_become_pass; \
+		else \
+			ansible-playbook k8s-kubernetes.yaml -vv --become-password-file /tmp/.ansible_become_pass; \
+		fi; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		if [ -n "$$KUBERNETES_VERSION" ]; then \
+			ansible-playbook update-kubernetes.yaml -e "kubernetes_version=$$KUBERNETES_VERSION" -vv -K; \
+		else \
+			ansible-playbook k8s-kubernetes.yaml -vv -K; \
+		fi; \
+	fi
+
 test-system:
 	@echo "System Information:"
 	@echo "--------------------"

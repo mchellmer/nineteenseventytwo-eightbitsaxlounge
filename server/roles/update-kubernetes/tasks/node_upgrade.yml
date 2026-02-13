@@ -1,0 +1,33 @@
+---
+- name: Determine node name
+  command: hostname -s
+  register: hostname_out
+
+- name: Optionally drain node (skip daemonsets)
+  shell: |
+    kubectl drain {{ hostname_out.stdout }} --ignore-daemonsets --delete-emptydir-data --force
+  when: drain_node | bool
+  register: drain_res
+  ignore_errors: true
+
+- name: Unhold and install kubelet/kubectl
+  shell: |
+    sudo apt-mark unhold kubelet kubectl || true
+    sudo apt-get update
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y kubelet={{ kubernetes_version }}-00 kubectl={{ kubernetes_version }}-00
+    sudo apt-mark hold kubelet kubectl
+    sudo systemctl daemon-reload
+    sudo systemctl restart kubelet
+  register: kubelet_install
+  failed_when: kubelet_install.rc != 0
+
+- name: Uncordon node if drained
+  shell: |
+    kubectl uncordon {{ hostname_out.stdout }}
+  when: drain_node | bool
+  register: uncordon_res
+  ignore_errors: true
+
+- name: Show kubelet install output
+  debug:
+    var: kubelet_install.stdout_lines

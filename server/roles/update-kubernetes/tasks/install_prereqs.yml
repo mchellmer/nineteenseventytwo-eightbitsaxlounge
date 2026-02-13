@@ -1,0 +1,23 @@
+---
+- name: Ensure apt-transport-https
+  apt:
+    name: apt-transport-https
+    state: present
+    update_cache: yes
+
+- name: Add Kubernetes apt key
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+  register: added_k8s_key
+  ignore_errors: true
+
+- name: Add Kubernetes apt repository
+  apt_repository:
+    repo: "deb {{ apt_repo }} kubernetes-xenial main"
+    state: present
+    filename: kubernetes
+
+- name: Update apt cache
+  apt:
+    update_cache: yes

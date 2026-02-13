@@ -3,24 +3,82 @@
   hosts: localhost, master, worker
   become: true
   tasks:
-    - name: Update apt cache
-      apt:
-        update_cache: yes
+    - name: Backup apt source files (if present)
+      shell: |
+        set -e
+        for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.deb822; do
+          if [ -f "$f" ]; then
+            cp -n "$f" "$f.bak" || true
+          fi
+        done
+      args:
+        executable: /bin/bash
+      changed_when: false
 
-    - name: Upgrade all packages
+    - name: Replace ports.ubuntu.com URIs in /etc/apt/sources.list
+      replace:
+        path: /etc/apt/sources.list
+        regexp: 'ports.ubuntu.com/ubuntu-ports'
+        replace: 'old-releases.ubuntu.com/ubuntu'
+      ignore_errors: yes
+
+    - name: Replace ports.ubuntu.com URIs in /etc/apt/sources.list.d (*.list)
+      replace:
+        path: "{{ item }}"
+        regexp: 'ports.ubuntu.com/ubuntu-ports'
+        replace: 'old-releases.ubuntu.com/ubuntu'
+      with_fileglob:
+        - /etc/apt/sources.list.d/*.list
+      ignore_errors: yes
+
+    - name: Replace ports.ubuntu.com URIs in deb822/.sources files
+      replace:
+        path: "{{ item }}"
+        regexp: 'ports.ubuntu.com/ubuntu-ports'
+        replace: 'old-releases.ubuntu.com/ubuntu'
+      with_fileglob:
+        - /etc/apt/sources.list.d/*.sources
+        - /etc/apt/sources.list.d/*.deb822
+      ignore_errors: yes
+
+    - name: Check for running apt/dpkg/do-release-upgrade processes
+      shell: pgrep -f "apt|dpkg|do-release-upgrade" || true
+      register: running_procs
+      changed_when: false
+      failed_when: false
+
+    - name: Wait for dpkg/apt/do-release-upgrade to finish (if present)
+      shell: pgrep -f "apt|dpkg|do-release-upgrade" || true
+      register: pkgs_running
+      retries: 12
+      delay: 10
+      until: pkgs_running.stdout == ""
+      changed_when: false
+      failed_when: false
+
+    - name: Update apt cache (retryable)
+      shell: apt-get update
+      register: apt_update
+      retries: 4
+      delay: 8
+      until: apt_update.rc == 0
+
+    - name: Upgrade all packages (dist upgrade)
       apt:
         upgrade: dist
         autoremove: yes
         autoclean: yes
 
-
-    - name: Run do-release-upgrade
+    - name: Run do-release-upgrade if not already running
       shell: |
+        if pgrep -f do-release-upgrade >/dev/null; then
+          echo "do-release-upgrade already running"
+          exit 0
+        fi
         do-release-upgrade -f DistUpgradeViewNonInteractive
       register: upgrade_result
       ignore_errors: yes
 
-    - name: Show do-release-upgrade output
+    - name: Show do-release-upgrade output (if any)
       debug:
-        var: upgrade_result.stdout_lines
-      when: upgrade_result is defined
+        var: upgrade_result
