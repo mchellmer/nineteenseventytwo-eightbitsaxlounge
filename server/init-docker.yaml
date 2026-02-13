@@ -1,5 +1,5 @@
 - name: Disable swapfile
-  hosts: all
+  hosts: master, worker
   become: true
   vars:
     ansible_user: mchellmer
