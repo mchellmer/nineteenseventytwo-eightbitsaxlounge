@@ -4,17 +4,31 @@ ansible-docker:
 	@if [ -n "$$SUDO_PASSWORD" ]; then \
 		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
 		chmod 600 /tmp/.ansible_become_pass; \
-		ansible-playbook k8s-docker.yaml -v --become-password-file /tmp/.ansible_become_pass; \
+		ansible-playbook init-docker.yaml -v --become-password-file /tmp/.ansible_become_pass; \
 		rm -f /tmp/.ansible_become_pass; \
 	else \
-		ansible-playbook k8s-docker.yaml -v -K; \
+		ansible-playbook init-docker.yaml -v -K; \
 	fi
 
 ansible-kubernetes:
-	ansible-playbook k8s-kubernetes.yaml -vv
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook init-kubernetes.yaml -vv --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook init-kubernetes.yaml -vv -K; \
+	fi
 
 ansible-kubernetes-join:
-	ansible-playbook k8s-kubernetes.yaml -vv --skip-tags "install_kubernetes,reset_kubeadm,init_kubeadm"
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook init-kubernetes.yaml -vv --skip-tags "install_kubernetes,reset_kubeadm,init_kubeadm" --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook init-kubernetes.yaml -vv --skip-tags "install_kubernetes,reset_kubeadm,init_kubeadm" -K; \
+	fi
 
 deploy-kubernetes:
 	make ansible-docker

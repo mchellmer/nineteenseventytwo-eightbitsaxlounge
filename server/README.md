@@ -67,6 +67,7 @@ iaas and kubernetes cluster config for 1972
       ```bash
       make init-nodes
       ```
+      - nodes will reboot
 
 4. Setup CI/CD
     - Install and configure GitHub Actions Runners for CI/CD pipelines, follow instructions to provide join tokens
