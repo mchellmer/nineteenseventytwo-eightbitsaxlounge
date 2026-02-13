@@ -1,11 +1,2 @@
-[defaults]
-inventory = /etc/ansible/hosts
-remote_tmp = /tmp/.ansible
-pipelining = True
-retry_files_enabled = False
-forks = 10
-
 [privilege_escalation]
-become_method = sudo
-become_ask_pass = False
-become_user = {{ansible_user}}
+become_exe = sudo.ws
