@@ -1,3 +1,6 @@
+# Update Ubuntu version and packages
+update-ubuntu:
+		ansible-playbook update-ubuntu.yaml -vv
 .PHONY: deploy-kubernetes deploy-cni console-init init-ansible-vault init-cicd
 
 ansible-docker:

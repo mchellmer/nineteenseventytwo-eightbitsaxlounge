@@ -2,30 +2,24 @@ name: Server Update
 
 on:
   workflow_dispatch:
+    inputs:
+      update_ubuntu:
+        description: 'Whether to update Ubuntu (true/false)'
+        required: false
+        type: boolean
 
 jobs:
-  shutdown:
-    name: Shutdown Kubernetes Cluster
+  update-ubuntu:
+    name: Update Ubuntu Version
     runs-on: self-hosted
+    if: ${{ github.event.inputs.update_ubuntu == 'true' }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Display shutdown warning
-      run: |
-        echo "⚠️  WARNING: Shutting down entire Kubernetes cluster ⚠️"
-        echo ""
-        echo "This will shutdown:"
-        echo "  1. Worker nodes"
-        echo "  2. Master node"
-        echo "  3. Console/Runner machine"
-        echo ""
-        echo "The cluster will be completely offline after this operation."
-        echo "Physical access will be required to restart the machines."
-        echo ""
-
-    - name: Shutdown cluster
+    - name: Update Ubuntu
       working-directory: ./server
       env:
+        update_ubuntu: ${{ github.event.inputs.update_ubuntu }}
         SUDO_PASSWORD: ${{ secrets.ANSIBLE_SUDO_PASSWORD }}
-      run: make shutdown-cluster
+      run: make update-ubuntu

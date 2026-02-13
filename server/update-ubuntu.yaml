@@ -1,0 +1,26 @@
+---
+- name: Update Ubuntu Version and Packages
+  hosts: localhost, master, worker
+  become: true
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+
+
+    - name: Run do-release-upgrade
+      shell: |
+        do-release-upgrade -f DistUpgradeViewNonInteractive
+      register: upgrade_result
+      ignore_errors: yes
+
+    - name: Show do-release-upgrade output
+      debug:
+        var: upgrade_result.stdout_lines
+      when: upgrade_result is defined
