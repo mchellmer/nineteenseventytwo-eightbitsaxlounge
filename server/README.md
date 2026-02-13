@@ -56,18 +56,51 @@ iaas and kubernetes cluster config for 1972
       - nodes will reboot
 
 4. Init pc
+   Ansible Access to PC
+    - Install OpenSSH (elevated powershell session)
+      Check enabled: `Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'`
+      Enable: `Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0`
+      Start: `Start-Service sshd`
+      AutoStart: `Set-Service -Name sshd -StartupType 'Automatic'`
+      Confirm Running: `Get-Service sshd`
+      Confirm Listening: `Get-NetTCPConnection -LocalPort 22 -State Listen`
+      Test localhost: `ssh localhost`
+      Add rule allowing connection from ci/cd host: 
+      ```
+        New-NetFirewallRule -DisplayName "OpenSSH Server (Pi only)" 
+            -Name "OpenSSH-Server-CICD" `
+            -Direction Inbound `
+            -Protocol TCP `
+            -LocalPort 22 `
+            -Action Allow `
+            -RemoteAddress <CICD IP> `
+            -Profile Any `
+            -Enabled True`
+      ```
+      Restart: `Restart-Service sshd`
+      Test from pi: `ssh <username>@<PC IP>`
+
+    - Ansible access
+      Ensure entry in /etc/ansible/hosts for midi group (handled by server layer)
+        ```
+          [midi]
+          midi-host ansible_host=<PC IP> ansible_user=<PC User> ansible_connection=ssh ansible_shell_type=powershell
+        ```
+      PC uses powershell by default for ssh (elevated powershell session)
+        temProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force`
+
   - make pc available as ansible host, open traffic etc
   ```bash
   make init-pc
   ```
 
-4. Deploy Kubernetes
+5. Deploy Kubernetes
   - install container runtime (docker), kubeadm, tools, and join nodes
   ```bash
   make deploy-kubernetes
   ```
 
-5. Setup CI/CD
+6. Setup CI/CD
     - Install and configure GitHub Actions Runners for CI/CD pipelines, follow instructions to provide join tokens
     - follow prompts to configure runners
     - Run the following command to set up the runner:
@@ -76,31 +109,31 @@ iaas and kubernetes cluster config for 1972
       make init-cicd
       ```
 
-5. Deploy Namespaces
+7. Deploy Namespaces
   - Use the following command to deploy the Kubernetes namespaces for the app and environments:
     ```bash
     make deploy-namespaces
     ```
 
-6. Deploy CNI
+8. Deploy CNI
    - use flannel as CNI
    ```bash
    make deploy-cni
    ```
 
-7. Deploy loadbalancer
+9. Deploy loadbalancer
    - use metallb
    ```bash
    make deploy-loadbalancer
    ```
 
-8. Deploy ingress
+10. Deploy ingress
    - use nginx
    ```bash
    make deploy-ingress
    ```
 
-9. Deploy Storage
+11. Deploy Storage
   - Install Longhorn distributed storage system for persistent volumes
   - Provides replicated storage across worker nodes with web UI management
     ```bash
