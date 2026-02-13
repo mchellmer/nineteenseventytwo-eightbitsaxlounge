@@ -26,6 +26,7 @@ jobs:
       working-directory: ./server
       env:
         update_ubuntu: ${{ github.event.inputs.update_ubuntu }}
+        SUDO_PASSWORD: ${{ secrets.ANSIBLE_SUDO_PASSWORD }}
       run: make update-ubuntu
   
   update-kubernetes:
@@ -40,4 +41,5 @@ jobs:
       working-directory: ./server
       env:
         KUBERNETES_VERSION: ${{ github.event.inputs.kubernetes_version }}
+        SUDO_PASSWORD: ${{ secrets.ANSIBLE_SUDO_PASSWORD }}
       run: make update-kubernetes
