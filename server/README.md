@@ -96,7 +96,11 @@ iaas and kubernetes cluster config for 1972
    make deploy-cni
    ```
 
-7. Deploy Ingress
+7. Deploy loadbalancer
+   - user metallb
+   ````bash
+   make deploy-loadbalancer
+   ```
 
 6. Deploy Storage
   - Install Longhorn distributed storage system for persistent volumes
