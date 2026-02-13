@@ -69,13 +69,13 @@ iaas and kubernetes cluster config for 1972
       ```
       - nodes will reboot
 
-5. Deploy Kubernetes
+4. Deploy Kubernetes
   - install container runtime (docker), kubeadm, tools, and join nodes
   ```bash
   make deploy-kubernetes
   ```
 
-4. Setup CI/CD
+5. Setup CI/CD
     - Install and configure GitHub Actions Runners for CI/CD pipelines, follow instructions to provide join tokens
     - follow prompts to configure runners
     - Run the following command to set up the runner:
@@ -89,6 +89,14 @@ iaas and kubernetes cluster config for 1972
     ```bash
     make deploy-namespaces
     ```
+
+6. Deploy CNI
+   - use flannel as CNI
+   ```bash
+   make deploy-cni
+   ```
+
+7. Deploy Ingress
 
 6. Deploy Storage
   - Install Longhorn distributed storage system for persistent volumes
