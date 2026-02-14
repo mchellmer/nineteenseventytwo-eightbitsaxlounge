@@ -5,9 +5,9 @@ on:
   push:
     branches:
       - main
-      - db/*
+      - security/*
     paths:
-      - 'db/version.txt'
+      - 'security/version.txt'
 
 jobs:
   release:
@@ -17,13 +17,13 @@ jobs:
       security-events: write
     uses: ./.github/workflows/release-template.yaml
     with:
-      component: 'db'
+      component: 'security'
       test-target: 'test'
-      build-target: 'build'
+      build-target: 'build-image'
       deploy-target: 'deploy'
       requires-docker-login: true
     secrets:
       component-secrets: |
         {
-          "COUCHDB_PASSWORD": "${{ secrets.DB_COUCHDB_PASSWORD }}"
+          "GITHUB_PAT": "${{ secrets.SECURITY_GITHUB_PAT }}"
         }

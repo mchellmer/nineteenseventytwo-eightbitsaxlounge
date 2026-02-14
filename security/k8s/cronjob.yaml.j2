@@ -5,7 +5,7 @@ metadata:
   labels:
     app: security-scanner
 spec:
-  schedule: "0 2 * * *" # daily at 02:00 UTC
+  schedule: "0 2 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -19,8 +19,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: scanner
-              # Replace with your built/published security-scanner image that includes trivy, gh, git, jq
-              image: ghcr.io/YOUR_ORG/security-scanner:latest
+              image: "{{ IMAGE_BASE | default('ghcr.io/' + lookup('env', 'GITHUB_REPOSITORY_OWNER') + '/eightbitsaxlounge-security') }}:{{ lookup('env','VERSION') }}"
               imagePullPolicy: IfNotPresent
               volumeMounts:
                 - name: trivy-cache
@@ -28,7 +27,6 @@ spec:
                 - name: workspace
                   mountPath: /workspace
               env:
-                # Provide either CLONE_URL or set GITHUB_REPOSITORY via env
                 - name: CLONE_URL
                   value: ""
                 - name: GITHUB_PAT
@@ -36,7 +34,6 @@ spec:
                     secretKeyRef:
                       name: security-scan-secret
                       key: github_pat
-                # Optional override of clone URL
               command: ["/scripts/run-scan.sh"]
           volumes:
             - name: trivy-cache
@@ -45,4 +42,3 @@ spec:
             - name: workspace
               emptyDir: {}
           serviceAccountName: security-scanner-sa
-          # backoffLimit is set on Job spec if needed
