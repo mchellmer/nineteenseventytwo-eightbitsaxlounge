@@ -28,12 +28,16 @@ spec:
                   mountPath: /workspace
               env:
                 - name: CLONE_URL
-                  value: ""
+                  value: "https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge.git"
+                - name: GITHUB_REPOSITORY
+                  value: "mchellmer/nineteenseventytwo-eightbitsaxlounge"
                 - name: GITHUB_PAT
                   valueFrom:
                     secretKeyRef:
                       name: security-scan-secret
                       key: github_pat
+                - name: IMAGES
+                  value: "ghcr.io/mchellmer/eightbitsaxlounge-data:latest,ghcr.io/mchellmer/eightbitsaxlounge-midi:latest,ghcr.io/mchellmer/eightbitsaxlounge-db:latest,ghcr.io/mchellmer/eightbitsaxlounge-ui:latest"
               command: ["/scripts/run-scan.sh"]
           volumes:
             - name: trivy-cache
