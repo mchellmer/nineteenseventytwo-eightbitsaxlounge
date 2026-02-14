@@ -39,12 +39,12 @@ class TwitchBot(StreamingBot):
         self.twitchio.event(self._on_command_error)
         
         # Register 8bsl channel commands with TwitchIO
-        self.twitchio.add_command(commands.Command(name='engine', func=self.engine_command))
-        self.twitchio.add_command(commands.Command(name='time', func=self.time_command))
-        self.twitchio.add_command(commands.Command(name='predelay', func=self.predelay_command))
-        self.twitchio.add_command(commands.Command(name='control1', func=self.control1_command))
-        self.twitchio.add_command(commands.Command(name='control2', func=self.control2_command))
-        self.twitchio.add_command(commands.Command(name='help', func=self.help_command))
+        self.twitchio.add_command(commands.Command(self.engine_command, name='engine'))
+        self.twitchio.add_command(commands.Command(self.time_command, name='time'))
+        self.twitchio.add_command(commands.Command(self.predelay_command, name='predelay'))
+        self.twitchio.add_command(commands.Command(self.control1_command, name='control1'))
+        self.twitchio.add_command(commands.Command(self.control2_command, name='control2'))
+        self.twitchio.add_command(commands.Command(self.help_command, name='help'))
     
     # StreamingBot interface implementation
     async def start(self) -> None:

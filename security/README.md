@@ -67,7 +67,7 @@ spec:
     spec:
       containers:
       - name: scanner
-        image: ghcr.io/mchellmer/eightbitsaxlounge-security:0.0.1
+        image: ghcr.io/mchellmer/eightbitsaxlounge-security:0.0.3
         command: ["/scripts/run-scan.sh"]
         env:
         - name: CLONE_URL
@@ -95,8 +95,3 @@ spec:
         emptyDir: {}
 EOF
 ```
-
-## Notes & Best Practices
-
-- Pre-warm the Trivy DB into the PVC to avoid long download times on first runs (see repo root notes). A scheduled job in the default branch can periodically update the cache.
-- Use the `SECURITY_GITHUB_PAT` repository secret with least privilege required for SARIF uploads.
