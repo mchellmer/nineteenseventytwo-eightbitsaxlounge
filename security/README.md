@@ -57,7 +57,7 @@ The workflow expects a repository secret `SECURITY_GITHUB_PAT` (used to create t
 If you'd like to execute a single run in the cluster for testing without waiting for CronJob schedule, create a Job that uses the same image and mounts the PVC:
 
 ```bash
-cat <<EOF | kubectl apply -n eightbitsaxlounge-dev -f -
+cat <<'EOF' | kubectl apply -n eightbitsaxlounge-dev -f -
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -67,20 +67,31 @@ spec:
     spec:
       containers:
       - name: scanner
-        image: ghcr.io/<owner>/eightbitsaxlounge-security:$(cat security/version.txt)
+        image: ghcr.io/mchellmer/eightbitsaxlounge-security:0.0.1
         command: ["/scripts/run-scan.sh"]
+        env:
+        - name: CLONE_URL
+          value: "https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge.git"
+        - name: GITHUB_REPOSITORY
+          value: "mchellmer/nineteenseventytwo-eightbitsaxlounge"
+        - name: GITHUB_PAT
+          valueFrom:
+            secretKeyRef:
+              name: security-scan-secret
+              key: github_pat
         volumeMounts:
         - name: trivy-cache
           mountPath: /var/lib/trivy
+        - name: workspace
+          mountPath: /workspace
       restartPolicy: Never
       volumes:
       - name: trivy-cache
         persistentVolumeClaim:
           claimName: trivy-cache-pvc
+      - name: workspace
+        emptyDir: {}
 EOF
-
-kubectl wait --for=condition=complete job/security-scan-once -n eightbitsaxlounge-dev --timeout=300s
-kubectl logs job/security-scan-once -n eightbitsaxlounge-dev --tail=200
 ```
 
 ## Notes & Best Practices

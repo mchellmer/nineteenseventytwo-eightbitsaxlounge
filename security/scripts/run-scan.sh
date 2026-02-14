@@ -46,24 +46,62 @@ fi
 
 # Optionally upload SARIF to GitHub Code Scanning API if GITHUB_PAT provided
 if [ -n "${GITHUB_PAT:-}" ]; then
-  echo "Uploading SARIF to GitHub Code Scanning API..."
-  OWNER_REPO="${GITHUB_REPOSITORY:-}"
-  if [ -z "$OWNER_REPO" ]; then
-    # try to extract from URL
-    OWNER_REPO=$(basename -s .git "${URL#*://*/}")
-  fi
-  COMMIT_SHA=$(git -C "$REPO_DIR" rev-parse --verify HEAD || echo "")
-  if [ -n "$COMMIT_SHA" ]; then
-    curl -sSL -X POST \
-      -H "Authorization: token ${GITHUB_PAT}" \
-      -F "sarif=@${OUTDIR}/trivy-results.sarif" \
-      -F "commit_sha=${COMMIT_SHA}" \
-      "https://api.github.com/repos/${OWNER_REPO}/code-scanning/sarifs" || true
+  echo "Preparing SARIF upload..."
+  SARIF_PATH="${OUTDIR}/trivy-results.sarif"
+  if [ ! -f "$SARIF_PATH" ]; then
+    echo "SARIF file not found at $SARIF_PATH; skipping upload"
   else
-    echo "No commit SHA; skipping SARIF upload"
+    # determine owner/repo
+    OWNER_REPO="${GITHUB_REPOSITORY:-}"
+    if [ -z "$OWNER_REPO" ]; then
+      OWNER_REPO=$(echo "$URL" | sed -E 's#https?://[^/]+/([^/]+/[^/]+)(\.git)?#\1#')
+    fi
+
+    # commit/ref detection: allow env override, else use repo HEAD
+    COMMIT_SHA="${COMMIT_SHA:-}"
+    REF="${REF:-}"
+    if [ -z "$COMMIT_SHA" ] || [ -z "$REF" ]; then
+      if [ -d "$REPO_DIR/.git" ]; then
+        COMMIT_SHA=$(git -C "$REPO_DIR" rev-parse --verify HEAD 2>/dev/null || echo "")
+        BRANCH=$(git -C "$REPO_DIR" symbolic-ref --quiet --short HEAD 2>/dev/null || echo "")
+        if [ -n "$BRANCH" ]; then
+          REF="refs/heads/$BRANCH"
+        else
+          REF="refs/heads/main"
+        fi
+      else
+        REF="refs/heads/main"
+      fi
+    fi
+
+    if [ -z "$COMMIT_SHA" ]; then
+      echo "Warning: commit SHA unknown. Upload requires a commit_sha; skipping upload." >&2
+    else
+      echo "GZipping and base64-encoding SARIF..."
+      SARIF_B64=$(gzip -c "$SARIF_PATH" 2>/dev/null | base64 | tr -d '\n')
+
+      echo "Building payload..."
+      if command -v jq >/dev/null 2>&1; then
+        PAYLOAD=$(jq -nc --arg commit_sha "$COMMIT_SHA" --arg ref "$REF" --arg sarif "$SARIF_B64" '{commit_sha:$commit_sha, ref:$ref, sarif:$sarif}')
+      else
+        # fallback to python to construct payload
+        PAYLOAD=$(python3 - <<PY
+import json,os,sys
+payload={
+  'commit_sha': os.environ.get('COMMIT_SHA', '${COMMIT_SHA}'),
+  'ref': os.environ.get('REF', '${REF}'),
+  'sarif': os.environ.get('SARIF_B64', '${SARIF_B64}')
+}
+print(json.dumps(payload))
+PY
+)
+      fi
+
+      echo "Uploading SARIF to GitHub..."
+      RESPONSE=$(curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${GITHUB_PAT}" -H "Content-Type: application/json" -d "$PAYLOAD" "https://api.github.com/repos/${OWNER_REPO}/code-scanning/sarifs") || true
+      echo "$RESPONSE" | jq -C . || echo "$RESPONSE"
+    fi
   fi
-else
-  echo "GITHUB_PAT not set; skipping SARIF upload"
 fi
 
 echo "Scan complete; results in $OUTDIR"
