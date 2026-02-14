@@ -1,0 +1,29 @@
+name: Security Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - db/*
+    paths:
+      - 'db/version.txt'
+
+jobs:
+  release:
+    name: Release Security Component
+    permissions:
+      packages: write
+      security-events: write
+    uses: ./.github/workflows/release-template.yaml
+    with:
+      component: 'db'
+      test-target: 'test'
+      build-target: 'build'
+      deploy-target: 'deploy'
+      requires-docker-login: true
+    secrets:
+      component-secrets: |
+        {
+          "COUCHDB_PASSWORD": "${{ secrets.DB_COUCHDB_PASSWORD }}"
+        }
