@@ -30,6 +30,7 @@
           - lookup('env','NAMESPACE') | length > 0
           - lookup('env','VERSION') | length > 0
           - lookup('env','TWITCH_CLIENT_ID') | length > 0
+          - lookup('env','TWITCH_CLIENT_SECRET') | length > 0
           - lookup('env','TWITCH_TOKEN') | length > 0
           - lookup('env','MIDI_CLIENT_ID') | length > 0
           - lookup('env','MIDI_CLIENT_SECRET') | length > 0
@@ -50,6 +51,7 @@
       ansible.builtin.shell: |
         kubectl create secret generic {{ secret_name }} \
           --from-literal=client-id="$TWITCH_CLIENT_ID" \
+          --from-literal=client-secret="$TWITCH_CLIENT_SECRET" \
           --from-literal=token="$TWITCH_TOKEN" \
           --from-literal=midi-client-id="$MIDI_CLIENT_ID" \
           --from-literal=midi-client-secret="$MIDI_CLIENT_SECRET" \
@@ -57,6 +59,7 @@
           --dry-run=client -o yaml | kubectl apply -f -
       environment:
         TWITCH_CLIENT_ID: "{{ lookup('env', 'TWITCH_CLIENT_ID') }}"
+        TWITCH_CLIENT_SECRET: "{{ lookup('env', 'TWITCH_CLIENT_SECRET') }}"
         TWITCH_TOKEN: "{{ lookup('env', 'TWITCH_TOKEN') }}"
         MIDI_CLIENT_ID: "{{ lookup('env', 'MIDI_CLIENT_ID') }}"
         MIDI_CLIENT_SECRET: "{{ lookup('env', 'MIDI_CLIENT_SECRET') }}"

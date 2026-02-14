@@ -20,11 +20,11 @@ class TwitchBot(StreamingBot):
     
     def __init__(self):
         self.twitchio = commands.Bot(
-            token=settings.twitch_token,
             client_id=settings.twitch_client_id,
-            nick=settings.bot_name.lower(),
+            client_secret=settings.twitch_client_secret,
+            bot_id=settings.twitch_bot_id,
             prefix=settings.twitch_prefix,
-            initial_channels=[settings.twitch_channel],
+            # initial_channels=[settings.twitch_channel], moved to event sub
             case_insensitive=True
         )
         
