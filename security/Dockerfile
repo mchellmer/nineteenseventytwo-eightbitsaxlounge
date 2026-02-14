@@ -19,7 +19,6 @@ RUN pip3 install --no-cache-dir flake8
 
 RUN useradd -m scanner
 WORKDIR /workspace
-# Copy the bundled script from `security/scripts` into the image
 COPY --chown=scanner:scanner ./scripts/run-scan.sh /scripts/run-scan.sh
 RUN chmod +x /scripts/run-scan.sh || true
 USER scanner
