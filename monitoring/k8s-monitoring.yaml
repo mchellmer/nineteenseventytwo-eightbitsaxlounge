@@ -33,7 +33,7 @@
 
     - name: Install Alloy CRD
       ansible.builtin.command:
-        cmd: kubectl apply -f https://github.com/grafana/alloy-operator/releases/download/v0.2.9/collectors.grafana.com_alloy.yaml
+        cmd: kubectl apply -f https://github.com/grafana/alloy-operator/releases/download/alloy-operator-0.3.10/collectors.grafana.com_alloy.yaml
 
     - name: Wait for Alloy CRD to be established
       ansible.builtin.command:
@@ -99,13 +99,6 @@
             enabled: true
           podLogs:
             enabled: true
-            extraConfig: |
-              stage.match {
-                selector = "{namespace=~\"eightbitsaxlounge-(dev|prod)\"}"
-                stage.drop {
-                  expression = ".*(/health|/ready|/_up).*"
-                }
-              }
           applicationObservability:
             enabled: true
             receivers:
