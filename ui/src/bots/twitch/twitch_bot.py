@@ -66,7 +66,7 @@ class TwitchBot(StreamingBot):
 
                     await bot.start(load_tokens=False)
 
-        asyncio.run(runner())
+        await runner()
     
     # TODO: Implement with v3
     async def send_message(self, channel: str, message: str) -> None:
