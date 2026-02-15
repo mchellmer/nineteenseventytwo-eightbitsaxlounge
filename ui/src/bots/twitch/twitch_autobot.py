@@ -78,6 +78,12 @@ class TwitchAutoBot(commands.AutoBot):
         """Called when the bot is ready."""
         self._connected = True
         logger.info(f'Bot {self.bot_id} is online and connected to #{settings.twitch_channel}!')
+        # DEBUG: fetch and log eventsub subscriptions to verify they exist
+        try:
+            subs = await self.fetch_eventsub_subscriptions()
+            logger.info("Fetched eventsub subscriptions: %s", subs)
+        except Exception:
+            logger.exception("Failed to fetch eventsub subscriptions for debug")
 
     async def setup_hook(self) -> None:
         """Add custom components to e.g. handle commands and events."""
