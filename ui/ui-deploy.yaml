@@ -16,7 +16,6 @@
     # Default Values
     default_twitch_channel: "the8bitsaxlounge"
     default_log_level: "INFO"
-    default_bot_name: "EightBitSaxBot"
     default_image_base: "ghcr.io"
     
     # Deployment Configuration
@@ -47,6 +46,17 @@
         src: k8s/deployment.yaml
         dest: "{{ tempdir.path }}/deployment.yaml"
 
+    - name: Template ConfigMap manifest to temp directory
+      ansible.builtin.template:
+        src: k8s/configmap.yaml
+        dest: "{{ tempdir.path }}/configmap.yaml"
+
+    - name: Apply UI ConfigMap (deploy what's in k8s/configmap.yaml)
+      ansible.builtin.shell: |
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/configmap.yaml
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
     - name: Create UI Secrets
       ansible.builtin.shell: |
         kubectl create secret generic {{ secret_name }} \
@@ -63,21 +73,6 @@
         TWITCH_TOKEN: "{{ lookup('env', 'TWITCH_TOKEN') }}"
         MIDI_CLIENT_ID: "{{ lookup('env', 'MIDI_CLIENT_ID') }}"
         MIDI_CLIENT_SECRET: "{{ lookup('env', 'MIDI_CLIENT_SECRET') }}"
-        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
-
-    - name: Create UI ConfigMap
-      ansible.builtin.shell: |
-        kubectl create configmap {{ configmap_name }} \
-          --from-literal=twitch_channel="$TWITCH_CHANNEL" \
-          --from-literal=midi_device_url="{{ midi_service_url }}" \
-          --from-literal=log_level="$LOG_LEVEL" \
-          --from-literal=bot_name="$BOT_NAME" \
-          --namespace $NAMESPACE \
-          --dry-run=client -o yaml | kubectl apply -f -
-      environment:
-        TWITCH_CHANNEL: "{{ lookup('env', 'TWITCH_CHANNEL') | default(default_twitch_channel, true) }}"
-        LOG_LEVEL: "{{ lookup('env', 'LOG_LEVEL') | default(default_log_level, true) }}"
-        BOT_NAME: "{{ lookup('env', 'BOT_NAME') | default(default_bot_name, true) }}"
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 
     - name: Deploy UI Deployment

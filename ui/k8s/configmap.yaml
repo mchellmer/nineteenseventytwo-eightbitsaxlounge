@@ -7,7 +7,7 @@ metadata:
     app: eightbitsaxlounge
     component: ui
 data:
-  twitch_channel: "placeholder"
+  twitch_channel: "the8bitsaxlounge"
   midi_device_url: "http://eightbitsaxlounge-midi-service:8080"
   log_level: "INFO"
   bot_name: "EightBitSaxBot"
