@@ -29,6 +29,11 @@ spec:
             secretKeyRef:
               name: eightbitsaxlounge-ui-secrets
               key: client-id
+        - name: TWITCH_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: eightbitsaxlounge-ui-secrets
+              key: client-secret
         - name: TWITCH_TOKEN
           valueFrom:
             secretKeyRef:
