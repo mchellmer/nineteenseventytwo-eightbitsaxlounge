@@ -55,6 +55,7 @@ class TwitchAutoBot(commands.AutoBot):
         Oauth - get/put tokens in database
         Subscribe to channel events for authorized channels
         """
+        logger.info(f"Received oauth authorization for user_id: {payload.user_id}")
         await self.add_token(payload.access_token, payload.refresh_token)
 
         if not payload.user_id:

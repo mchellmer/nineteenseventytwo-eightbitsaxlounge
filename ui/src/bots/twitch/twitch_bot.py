@@ -29,6 +29,7 @@ class TwitchBot(StreamingBot):
         async def runner() -> None:
             async with asqlite.create_pool("tokens.db") as tdb:
                 tokens, subs = await self._setup_database(tdb)
+                logger.info(f"Loaded {len(tokens)} tokens and {len(subs)} subscriptions from the database")
 
                 async with TwitchAutoBot(token_database=tdb, subs=subs) as bot:
                     for pair in tokens:
@@ -89,18 +90,19 @@ class TwitchBot(StreamingBot):
             rows: list[sqlite3.Row] = await connection.fetchall("""SELECT * from tokens""")
 
             tokens: list[tuple[str, str]] = []
-            subs: list[eventsub.SubscriptionPayload] = [
-                eventsub.ChatMessageSubscription(
-                    broadcaster_user_id=settings.twitch_owner_id, 
-                    user_id=settings.twitch_bot_id)
-            ]
+            subs: list[eventsub.SubscriptionPayload] = []
+            # subs: list[eventsub.SubscriptionPayload] = [
+            #     eventsub.ChatMessageSubscription(
+            #         broadcaster_user_id=settings.twitch_owner_id, 
+            #         user_id=settings.twitch_bot_id)
+            # ]
 
             for row in rows:
                 tokens.append((row["token"], row["refresh"]))
 
-                if row["user_id"] == self.bot_id:
+                if row["user_id"] == settings.twitch_bot_id:
                     continue
 
-                subs.extend([eventsub.ChatMessageSubscription(broadcaster_user_id=row["user_id"], user_id=self.bot_id)])
+                subs.extend([eventsub.ChatMessageSubscription(broadcaster_user_id=row["user_id"], user_id=settings.twitch_bot_id)])
 
         return tokens, subs
