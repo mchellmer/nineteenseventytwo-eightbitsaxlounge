@@ -57,4 +57,4 @@ async def shutdown_all(bot, health_server):
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
