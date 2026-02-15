@@ -3,14 +3,12 @@ from twitchio.ext import commands
 from twitchio.models.eventsub_ import ChatMessage as TwitchChatMessage
 
 from commands.command_registry import CommandRegistry
+from twitch.twitch_autobot import TwitchAutoBot
 
 logger = logging.getLogger(__name__)
 
 class EightBitSaxLoungeComponent(commands.Component):
     """Main component for the EightBitSaxLounge Twitch bot."""
-    
-    def __init__(self, bot: commands.Bot) -> None:
-        self.command_registry = CommandRegistry()
 
     # TwitchIO event listener for incoming chat messages
     @commands.Component.listener()
@@ -22,6 +20,31 @@ class EightBitSaxLoungeComponent(commands.Component):
     async def engine(self, ctx: commands.Context, *args) -> None:
         """Handle !engine commands."""
         await self._execute_command('engine', list(args), ctx)
+
+    @commands.command()
+    async def time(self, ctx: commands.Context, *args) -> None:
+        """Handle !time commands."""
+        await self._execute_command('time', list(args), ctx)
+    
+    @commands.command()
+    async def predelay(self, ctx: commands.Context, *args) -> None:
+        """Handle !predelay commands."""
+        await self._execute_command('predelay', list(args), ctx)
+    
+    @commands.command()
+    async def control1(self, ctx: commands.Context, *args) -> None:
+        """Handle !control1 commands."""
+        await self._execute_command('control1', list(args), ctx)
+    
+    @commands.command()
+    async def control2(self, ctx: commands.Context, *args) -> None:
+        """Handle !control2 commands."""
+        await self._execute_command('control2', list(args), ctx)
+    
+    @commands.command()
+    async def help(self, ctx: commands.Context, *args) -> None:
+        """Handle !help command."""
+        await self._execute_command('help', list(args), ctx)
 
     async def _execute_command(self, command: str, args: list, ctx):
         """Execute a command through the command registry."""

@@ -1,6 +1,5 @@
-from config.settings import settings
-# from commands.command_registry import CommandRegistry -> Moved to component
 from bots.twitch.eightbitsaxlounge_component import EightBitSaxLoungeComponent
+from config.settings import settings
 
 import asqlite
 import logging
@@ -81,31 +80,5 @@ class TwitchAutoBot(commands.AutoBot):
 
     async def setup_hook(self) -> None:
         """Add custom components to e.g. handle commands and events."""
-        await self.add_component(EightBitSaxLoungeComponent(self))
-    
-    # MIGRATED to component
-    # async def engine_command(self, ctx, *args):
-    #     """Handle !engine commands."""
-    #     await self._execute_command('engine', list(args), ctx)
-
-    # MIGRATE to component
-    # async def time_command(self, ctx, *args):
-    #     """Handle !time commands."""
-    #     await self._execute_command('time', list(args), ctx)
-    
-    # async def predelay_command(self, ctx, *args):
-    #     """Handle !predelay commands."""
-    #     await self._execute_command('predelay', list(args), ctx)
-    
-    # async def control1_command(self, ctx, *args):
-    #     """Handle !control1 commands."""
-    #     await self._execute_command('control1', list(args), ctx)
-    
-    # async def control2_command(self, ctx, *args):
-    #     """Handle !control2 commands."""
-    #     await self._execute_command('control2', list(args), ctx)
-    
-    # async def help_command(self, ctx, *args):
-    #     """Handle !help command."""
-    #     await self._execute_command('help', list(args), ctx)
+        await self.add_component(EightBitSaxLoungeComponent())
     
