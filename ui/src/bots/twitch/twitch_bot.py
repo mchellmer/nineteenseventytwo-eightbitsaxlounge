@@ -90,12 +90,12 @@ class TwitchBot(StreamingBot):
             rows: list[sqlite3.Row] = await connection.fetchall("""SELECT * from tokens""")
 
             tokens: list[tuple[str, str]] = []
-            subs: list[eventsub.SubscriptionPayload] = []
-            # subs: list[eventsub.SubscriptionPayload] = [
-            #     eventsub.ChatMessageSubscription(
-            #         broadcaster_user_id=settings.twitch_owner_id, 
-            #         user_id=settings.twitch_bot_id)
-            # ]
+            # subs: list[eventsub.SubscriptionPayload] = []
+            subs: list[eventsub.SubscriptionPayload] = [
+                eventsub.ChatMessageSubscription(
+                    broadcaster_user_id=settings.twitch_owner_id, 
+                    user_id=settings.twitch_bot_id)
+            ]
 
             for row in rows:
                 tokens.append((row["token"], row["refresh"]))
