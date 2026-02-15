@@ -3,7 +3,6 @@ from twitchio.ext import commands
 from twitchio.models.eventsub_ import ChatMessage as TwitchChatMessage
 
 from commands.command_registry import CommandRegistry
-from twitch.twitch_autobot import TwitchAutoBot
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +51,10 @@ class EightBitSaxLoungeComponent(commands.Component):
             import asyncio
             user = ctx.author.name if hasattr(ctx, 'author') else 'unknown'
             logger.info(f'Executing !{command} command from {user} with args: {args}')
+
+            command_registry = CommandRegistry()
             
-            response = await self.command_registry.execute_command(command, args, ctx)
+            response = await command_registry.execute_command(command, args, ctx)
             
             # Handle both single string responses and list of messages
             if isinstance(response, list):
