@@ -1,7 +1,19 @@
 """Tests for StreamingBot interface."""
 
 import pytest
-from bots.streaming_bot import StreamingBot
+import importlib.util
+import importlib.machinery
+import sys
+from pathlib import Path
+
+# Load StreamingBot directly from the source file to avoid importing the
+# `bots` package which may perform eager imports and cause circular imports
+streaming_path = Path(__file__).resolve().parents[2] / 'src' / 'bots' / 'streaming_bot.py'
+spec = importlib.util.spec_from_file_location('streaming_bot_module', str(streaming_path))
+streaming_mod = importlib.util.module_from_spec(spec)
+sys.modules['streaming_bot_module'] = streaming_mod
+spec.loader.exec_module(streaming_mod)
+StreamingBot = streaming_mod.StreamingBot
 
 
 class TestStreamingBot:

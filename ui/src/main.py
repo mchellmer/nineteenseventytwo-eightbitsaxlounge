@@ -12,7 +12,7 @@ import sys
 
 from config.settings import settings
 from config.logging_config import configure_logging
-from bots.twitch_bot import TwitchBot
+from ui.src.bots.twitch.twitch_bot import TwitchBot
 from services.health_server import HealthServer
 
 # Configure centralized logging with [ui] prefix
