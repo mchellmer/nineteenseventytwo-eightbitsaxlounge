@@ -13,7 +13,8 @@ os.environ.setdefault('TWITCH_BOT_ID', '1424580736')
 os.environ.setdefault('TWITCH_OWNER_ID', '896950964')
 os.environ.setdefault('TWITCH_CLIENT_SECRET', 'test_midi_secret')
 os.environ.setdefault('TWITCH_CLIENT_ID', 'test_client_id')
-os.environ.setdefault('TWITCH_TOKEN', 'oauth:test_token')
+os.environ.setdefault('TWITCH_ACCESS_TOKEN', 'oauth:test_token')
+os.environ.setdefault('TWITCH_REFRESH_TOKEN', 'test_refresh_token')
 
 from bots.twitch.twitch_autobot import TwitchAutoBot
 from bots.twitch.eightbitsaxlounge_component import EightBitSaxLoungeComponent
@@ -22,7 +23,8 @@ from bots.twitch.eightbitsaxlounge_component import EightBitSaxLoungeComponent
 @pytest.fixture
 def mock_settings():
     s = Mock()
-    s.twitch_token = "oauth:test_token"
+    s.twitch_access_token = "oauth:test_token"
+    s.twitch_refresh_token = "test_refresh_token"
     s.twitch_client_id = "test_client_id"
     s.twitch_channel = "test_channel"
     s.twitch_prefix = "!"

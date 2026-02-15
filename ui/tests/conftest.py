@@ -14,7 +14,8 @@ import os
 import sys
 
 # Set environment variables before importing any app modules
-os.environ.setdefault('TWITCH_TOKEN', 'oauth:test_token')
+os.environ.setdefault('TWITCH_ACCESS_TOKEN', 'oauth:test_token')
+os.environ.setdefault('TWITCH_REFRESH_TOKEN', 'test_refresh_token')
 os.environ.setdefault('TWITCH_CLIENT_ID', 'test_client_id')
 os.environ.setdefault('TWITCH_CHANNEL', 'test_channel')
 os.environ.setdefault('MIDI_CLIENT_ID', 'test_midi_client')
@@ -28,7 +29,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 def mock_settings():
     """Mock settings for testing."""
     settings = Mock()
-    settings.twitch_token = "oauth:test_token"
+    settings.twitch_access_token = "oauth:test_token"
+    settings.twitch_refresh_token = "test_refresh_token"
     settings.twitch_client_id = "test_client_id"
     settings.twitch_channel = "test_channel"
     settings.twitch_prefix = "!"

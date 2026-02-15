@@ -86,6 +86,20 @@ class TwitchBot(StreamingBot):
         async with db.acquire() as connection:
             await connection.execute(query)
 
+            try:
+                await connection.execute(
+                    """
+                    INSERT INTO tokens(user_id, token, refresh)
+                    VALUES(?, ?, ?)
+                    ON CONFLICT(user_id) DO UPDATE SET
+                        token = excluded.token,
+                        refresh = excluded.refresh;
+                    """,
+                    (settings.twitch_bot_id, settings.twitch_access_token, settings.twitch_refresh_token)
+                )
+            except Exception:
+                logger.exception("Failed to seed bot token into tokens table")
+
             # Fetch any existing tokens...
             rows: list[sqlite3.Row] = await connection.fetchall("""SELECT * from tokens""")
 

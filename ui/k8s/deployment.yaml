@@ -34,11 +34,16 @@ spec:
             secretKeyRef:
               name: eightbitsaxlounge-ui-secrets
               key: client-secret
-        - name: TWITCH_TOKEN
+        - name: TWITCH_ACCESS_TOKEN
           valueFrom:
             secretKeyRef:
               name: eightbitsaxlounge-ui-secrets
-              key: token
+              key: access-token
+        - name: TWITCH_REFRESH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: eightbitsaxlounge-ui-secrets
+              key: refresh-token
         - name: TWITCH_CHANNEL
           valueFrom:
             configMapKeyRef:

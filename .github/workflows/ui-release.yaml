@@ -27,7 +27,8 @@ jobs:
         {
           "TWITCH_CLIENT_ID": "${{ secrets.TWITCH_CLIENT_ID }}",
           "TWITCH_CLIENT_SECRET": "${{ secrets.TWITCH_CLIENT_SECRET }}",
-          "TWITCH_TOKEN": "${{ secrets.TWITCH_TOKEN }}",
+          "TWITCH_ACCESS_TOKEN": "${{ secrets.TWITCH_ACCESS_TOKEN }}",
+          "TWITCH_REFRESH_TOKEN": "${{ secrets.TWITCH_REFRESH_TOKEN }}",
           "MIDI_CLIENT_ID": "${{ secrets.MIDI_CLIENT_ID }}",
           "MIDI_CLIENT_SECRET": "${{ secrets.MIDI_CLIENT_SECRET }}"
         }

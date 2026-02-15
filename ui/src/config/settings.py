@@ -15,7 +15,8 @@ class Settings(BaseSettings):
     # Twitch Configuration
     twitch_bot_id: str  # Twitch User ID for EightBitSaxBot (can be found via Twitch API)
     twitch_owner_id: str  # Twitch User ID for the bot owner
-    twitch_token: str  # Access token with 'oauth:' prefix
+    twitch_access_token: str  # Access token with 'oauth:' prefix
+    twitch_refresh_token: str  # Refresh token for obtaining new access tokens
     twitch_client_id: str  # Your app's Client ID from dev.twitch.tv
     twitch_client_secret: str  # Your app's Client Secret from dev.twitch.tv
     twitch_channel: str  # Channel name to connect to
