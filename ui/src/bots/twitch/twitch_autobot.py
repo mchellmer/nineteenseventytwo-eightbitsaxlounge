@@ -80,30 +80,13 @@ class TwitchAutoBot(commands.AutoBot):
         """Called when the bot is ready."""
         self._connected = True
         logger.info(f'Bot {self.bot_id} is online and connected to #{settings.twitch_channel}!')
-        # DEBUG: fetch and log eventsub subscriptions to verify they exist
         try:
             subs = await self.fetch_eventsub_subscriptions()
             logger.info("Fetched eventsub subscriptions: %s", subs)
-            # If no subscriptions exist on Helix/Conduit, attempt to (re)create them
-            # try:
-            #     total = getattr(subs, "total", 0)
-            # except Exception:
-            #     total = 0
-
-            # if total == 0 and getattr(self, "_desired_subscriptions", None):
-            #     logger.info("No EventSub subscriptions found; attempting to (re)create %d subscriptions", len(self._desired_subscriptions))
-            #     try:
-            #         resp: twitchio.MultiSubscribePayload = await self.multi_subscribe(self._desired_subscriptions)
-            #         if getattr(resp, "errors", None):
-            #             logger.warning("Failed to create subscriptions: %r", resp.errors)
-            #         else:
-            #             logger.info("Successfully created EventSub subscriptions: %s", resp)
-            #     except Exception:
-            #         logger.exception("Error while attempting to (re)create EventSub subscriptions")
         except Exception:
             logger.exception("Failed to fetch eventsub subscriptions for debug")
 
     async def setup_hook(self) -> None:
         """Add custom components to e.g. handle commands and events."""
-        await self.add_component(EightBitSaxLoungeComponent())
+        await self.add_component(EightBitSaxLoungeComponent(self))
     
