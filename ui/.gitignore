@@ -55,6 +55,7 @@ coverage.xml
 
 v3Example.py
 v3ExampleSeeded.py
+tokens*
 
 # Jupyter Notebook
 .ipynb_checkpoints

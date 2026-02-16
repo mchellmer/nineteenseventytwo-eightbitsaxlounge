@@ -76,8 +76,10 @@
       environment:
         TWITCH_CLIENT_ID: "{{ lookup('env', 'TWITCH_CLIENT_ID') }}"
         TWITCH_CLIENT_SECRET: "{{ lookup('env', 'TWITCH_CLIENT_SECRET') }}"
-        TWITCH_ACCESS_TOKEN: "{{ lookup('env', 'TWITCH_ACCESS_TOKEN') }}"
-        TWITCH_REFRESH_TOKEN: "{{ lookup('env', 'TWITCH_REFRESH_TOKEN') }}"
+        TWITCH_BOT_ACCESS_TOKEN: "{{ lookup('env', 'TWITCH_BOT_ACCESS_TOKEN') }}"
+        TWITCH_BOT_REFRESH_TOKEN: "{{ lookup('env', 'TWITCH_BOT_REFRESH_TOKEN') }}"
+        TWITCH_CHANNEL_ACCESS_TOKEN: "{{ lookup('env', 'TWITCH_CHANNEL_ACCESS_TOKEN') }}"
+        TWITCH_CHANNEL_REFRESH_TOKEN: "{{ lookup('env', 'TWITCH_CHANNEL_REFRESH_TOKEN') }}"
         MIDI_CLIENT_ID: "{{ lookup('env', 'MIDI_CLIENT_ID') }}"
         MIDI_CLIENT_SECRET: "{{ lookup('env', 'MIDI_CLIENT_SECRET') }}"
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
