@@ -78,45 +78,78 @@ class TwitchBot(StreamingBot):
         return "Twitch"
 
     async def _setup_database(self, db: asqlite.Pool) -> tuple[list[tuple[str, str]], list[eventsub.SubscriptionPayload]]:
-        # Create our token table, if it doesn't exist..
-        # You should add the created files to .gitignore or potentially store them somewhere safer
-        # This is just for example purposes...
 
-        query = """CREATE TABLE IF NOT EXISTS tokens(user_id TEXT PRIMARY KEY, token TEXT NOT NULL, refresh TEXT NOT NULL)"""
+        create_query = """
+        CREATE TABLE IF NOT EXISTS tokens(
+            user_id TEXT PRIMARY KEY,
+            token TEXT NOT NULL,
+            refresh TEXT NOT NULL
+        )
+        """
+
         async with db.acquire() as connection:
-            await connection.execute(query)
+            await connection.execute(create_query)
 
-            # try:
-            #     await connection.execute(
-            #         """
-            #         INSERT INTO tokens(user_id, token, refresh)
-            #         VALUES(?, ?, ?)
-            #         ON CONFLICT(user_id) DO UPDATE SET
-            #             token = excluded.token,
-            #             refresh = excluded.refresh;
-            #         """,
-            #         (settings.twitch_bot_id, settings.twitch_access_token, settings.twitch_refresh_token)
-            #     )
-            # except Exception:
-            #     logger.exception("Failed to seed bot token into tokens table")
+            # Check if table is empty
+            row = await connection.fetchone("SELECT COUNT(*) as count FROM tokens")
+            is_empty = row["count"] == 0
 
-            # Fetch any existing tokens...
-            rows: list[sqlite3.Row] = await connection.fetchall("""SELECT * from tokens""")
+            if is_empty:
+                logger.info("tokens table empty — seeding initial tokens")
 
-            tokens: list[tuple[str, str]] = []
-            subs: list[eventsub.SubscriptionPayload] = []
-            # subs: list[eventsub.SubscriptionPayload] = [
-            #     eventsub.ChatMessageSubscription(
-            #         broadcaster_user_id=settings.twitch_owner_id, 
-            #         user_id=settings.twitch_bot_id)
-            # ]
+                # Seed BOT
+                await self._seed_database_connection(
+                    connection,
+                    settings.twitch_bot_id,
+                    settings.twitch_bot_access_token,
+                    settings.twitch_bot_refresh_token,
+                )
 
-            for row in rows:
-                tokens.append((row["token"], row["refresh"]))
+                # Seed CHANNEL
+                await self._seed_database_connection(
+                    connection,
+                    settings.twitch_owner_id,
+                    settings.twitch_channel_access_token,
+                    settings.twitch_channel_refresh_token,
+                )
 
-                if row["user_id"] == settings.twitch_bot_id:
-                    continue
+            # Now fetch rows (after potential seeding)
+            rows: list[sqlite3.Row] = await connection.fetchall(
+                "SELECT * FROM tokens"
+            )
 
-                subs.extend([eventsub.ChatMessageSubscription(broadcaster_user_id=row["user_id"], user_id=settings.twitch_bot_id)])
+        tokens: list[tuple[str, str]] = []
+        subs: list[eventsub.SubscriptionPayload] = []
+
+        for row in rows:
+            tokens.append((row["token"], row["refresh"]))
+
+            if row["user_id"] == settings.twitch_bot_id:
+                continue
+
+            subs.append(
+                eventsub.ChatMessageSubscription(
+                    broadcaster_user_id=row["user_id"],
+                    user_id=settings.twitch_bot_id,
+                )
+            )
 
         return tokens, subs
+
+    async def _seed_database_connection(
+        self,
+        connection,
+        user_id: str,
+        token: str,
+        refresh: str,) -> None:
+        
+        query = """
+        INSERT INTO tokens(user_id, token, refresh)
+        VALUES(?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+            token = excluded.token,
+            refresh = excluded.refresh;
+        """
+
+        await connection.execute(query, (user_id, token, refresh))
+        logger.info("Seeded tokens.db for user: %s", user_id)

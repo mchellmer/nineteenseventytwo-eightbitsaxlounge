@@ -53,6 +53,9 @@ coverage.xml
 .env.local
 .env.*.local
 
+v3Example.py
+v3ExampleSeeded.py
+
 # Jupyter Notebook
 .ipynb_checkpoints
 

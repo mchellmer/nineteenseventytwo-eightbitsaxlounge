@@ -1,5 +1,6 @@
 asqlite==2.0.0
 twitchio==3.2.1
+twitchio[starlette]==3.2.1
 aiohttp==3.13.3
 python-dotenv==1.2.1
 pydantic==2.12.5
