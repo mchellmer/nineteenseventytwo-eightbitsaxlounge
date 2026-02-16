@@ -3,14 +3,13 @@ from twitchio.ext import commands
 from twitchio.models.eventsub_ import ChatMessage as TwitchChatMessage
 
 from commands.command_registry import CommandRegistry
-from bots.twitch.twitch_autobot import TwitchAutoBot
 
 logger = logging.getLogger(__name__)
 
 class EightBitSaxLoungeComponent(commands.Component):
     """Main component for the EightBitSaxLounge Twitch bot."""
 
-    def __init__(self, bot: TwitchAutoBot) -> None:
+    def __init__(self, bot) -> None:
         self.bot = bot
 
     # TwitchIO event listener for incoming chat messages
