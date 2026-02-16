@@ -21,6 +21,7 @@ class EightBitSaxLoungeComponent(commands.Component):
     @commands.command()
     async def engine(self, ctx: commands.Context, *args) -> None:
         """Handle !engine commands."""
+        logger.info(f"Received !engine command from {ctx.author.name} with args: {args}")
         await self._execute_command('engine', list(args), ctx)
 
     @commands.command()
