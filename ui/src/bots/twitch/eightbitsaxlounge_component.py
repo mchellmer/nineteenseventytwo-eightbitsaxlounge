@@ -7,7 +7,8 @@ from commands.command_registry import CommandRegistry
 logger = logging.getLogger(__name__)
 
 class EightBitSaxLoungeComponent(commands.Component):
-    """Main component for the EightBitSaxLou
+    """Main component for the EightBitSaxLounge Twitch bot."""
+
 
     # TwitchIO event listener for incoming chat messages
     @commands.Component.listener()
