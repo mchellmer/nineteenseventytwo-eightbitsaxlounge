@@ -126,4 +126,7 @@ spec:
       - name: workspace
         emptyDir: {}
 EOF
+
+kubectl get pods -n eightbitsaxlounge-dev
+kubectl logs security-scan-<id> -n eightbitsaxlounge-dev
 ```
