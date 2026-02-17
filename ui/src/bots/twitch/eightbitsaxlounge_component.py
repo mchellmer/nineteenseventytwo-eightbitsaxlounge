@@ -17,43 +17,34 @@ class EightBitSaxLoungeComponent(commands.Component):
 
     # TwitchIO commands
     @commands.command()
-    async def hi(self, ctx: commands.Context) -> None:
-        """Command that replies to the invoker with Hi <name>!
-
-        !hi
-        """
-        await ctx.reply(f"Hi {ctx.chatter}!")
-
-    @commands.command()
     async def engine(self, ctx: commands.Context, *args) -> None:
         """Handle !engine commands."""
-        logger.info(f"Received !engine command from {ctx.author.name} with args: {args}")
         await self._execute_command('engine', list(args), ctx)
 
-    # @commands.command()
-    # async def time(self, ctx: commands.Context, *args) -> None:
-    #     """Handle !time commands."""
-    #     await self._execute_command('time', list(args), ctx)
+    @commands.command()
+    async def time(self, ctx: commands.Context, *args) -> None:
+        """Handle !time commands."""
+        await self._execute_command('time', list(args), ctx)
     
-    # @commands.command()
-    # async def predelay(self, ctx: commands.Context, *args) -> None:
-    #     """Handle !predelay commands."""
-    #     await self._execute_command('predelay', list(args), ctx)
+    @commands.command()
+    async def predelay(self, ctx: commands.Context, *args) -> None:
+        """Handle !predelay commands."""
+        await self._execute_command('predelay', list(args), ctx)
     
-    # @commands.command()
-    # async def control1(self, ctx: commands.Context, *args) -> None:
-    #     """Handle !control1 commands."""
-    #     await self._execute_command('control1', list(args), ctx)
+    @commands.command()
+    async def control1(self, ctx: commands.Context, *args) -> None:
+        """Handle !control1 commands."""
+        await self._execute_command('control1', list(args), ctx)
     
-    # @commands.command()
-    # async def control2(self, ctx: commands.Context, *args) -> None:
-    #     """Handle !control2 commands."""
-    #     await self._execute_command('control2', list(args), ctx)
+    @commands.command()
+    async def control2(self, ctx: commands.Context, *args) -> None:
+        """Handle !control2 commands."""
+        await self._execute_command('control2', list(args), ctx)
     
-    # @commands.command()
-    # async def help(self, ctx: commands.Context, *args) -> None:
-    #     """Handle !help command."""
-    #     await self._execute_command('help', list(args), ctx)
+    @commands.command()
+    async def help(self, ctx: commands.Context, *args) -> None:
+        """Handle !help command."""
+        await self._execute_command('help', list(args), ctx)
 
     async def _execute_command(self, command: str, args: list, ctx):
         """Execute a command through the command registry."""

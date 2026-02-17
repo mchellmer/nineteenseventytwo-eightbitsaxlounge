@@ -10,6 +10,7 @@ from bots.streaming_bot import StreamingBot
 import bots.twitch.twitchio_autobot as twitchio_autobot
 
 logger = logging.getLogger(__name__)
+BOT_ID: str = settings.twitch_bot_id  # The Account ID of the bot user...
 
 
 class Bot(StreamingBot):
@@ -23,16 +24,18 @@ class Bot(StreamingBot):
         self._shutdown = False
         self._connected = False
     
-    # TODO: Implement with v3
-    async def send_message(self, channel: str, message: str) -> None:
-        """Send a message to the specified channel."""
-        # Removed in v3
-        # channel_obj = self.twitchio.get_channel(channel)
-        # if channel_obj:
-        #     await channel_obj.send(message)
-        # else:
-        #     logger.warning(f"Channel {channel} not found or not connected")
-        pass
+    async def send_message(self, channel_id: str, message: str) -> None:
+        if not self._bot:
+            logger.warning("Bot not initialized")
+            return
+
+        try:
+            await self._bot.send_message(
+                broadcaster=channel_id,
+                message=message,
+            )
+        except Exception:
+            logger.exception("Failed to send message")
 
     async def start(self) -> None:
         """Start the bot and connect to Twitch."""
@@ -42,6 +45,9 @@ class Bot(StreamingBot):
                 logger.info(f"Loaded {len(tokens)} tokens and {len(subs)} subscriptions from the database")
 
                 async with twitchio_autobot.TwitchioAutoBot(token_database=tdb, subs=subs) as bot:
+
+                    self._bot = bot
+
                     for pair in tokens:
                         await bot.add_token(*pair)
 
@@ -49,12 +55,13 @@ class Bot(StreamingBot):
 
         await runner()
 
-    # TODO: check v3 for shutdown implementation, may not be needed
     async def shutdown(self):
         """Graceful shutdown."""
         logger.info('Shutting down bot...')
         self._shutdown = True
         self._connected = False
+        if self._bot:
+            await self._bot.close()
     
     @property
     def is_connected(self) -> bool:
