@@ -107,7 +107,7 @@ spec:
               name: security-scan-secret
               key: github_pat
         - name: IMAGES
-          value: "ghcr.io/mchellmer/eightbitsaxlounge-data:latest,ghcr.io/mchellmer/eightbitsaxlounge-midi:latest,ghcr.io/mchellmer/eightbitsaxlounge-db:latest,ghcr.io/mchellmer/eightbitsaxlounge-ui:latest"
+          value: "ghcr.io/mchellmer/eightbitsaxlounge-ui:latest,ghcr.io/mchellmer/eightbitsaxlounge-data:latest,ghcr.io/mchellmer/eightbitsaxlounge-midi:latest,ghcr.io/mchellmer/eightbitsaxlounge-db:latest"
         - name: MAP_IMAGE_SARIF_TO_REPO
           value: "true"
         # Optional: pin SARIF to a specific commit/ref (uncomment to use)
@@ -129,6 +129,5 @@ spec:
         emptyDir: {}
 EOF
 
-kubectl get pods -n eightbitsaxlounge-dev
-kubectl logs security-scan-<id> -n eightbitsaxlounge-dev
+kubectl logs job/security-scan-once -n eightbitsaxlounge-dev
 ```
