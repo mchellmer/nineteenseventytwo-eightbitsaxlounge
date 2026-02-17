@@ -18,7 +18,6 @@ jobs:
     uses: ./.github/workflows/release-template.yaml
     with:
       component: 'ui'
-      lint-target: 'lint'
       test-target: 'test'
       build-target: 'build'
       deploy-target: 'deploy'
@@ -27,7 +26,7 @@ jobs:
       component-secrets: |
         {
           "TWITCH_CLIENT_ID": "${{ secrets.TWITCH_CLIENT_ID }}",
-          "TWITCH_TOKEN": "${{ secrets.TWITCH_TOKEN }}",
+          "TWITCH_CLIENT_SECRET": "${{ secrets.TWITCH_CLIENT_SECRET }}",
           "MIDI_CLIENT_ID": "${{ secrets.MIDI_CLIENT_ID }}",
           "MIDI_CLIENT_SECRET": "${{ secrets.MIDI_CLIENT_SECRET }}"
         }

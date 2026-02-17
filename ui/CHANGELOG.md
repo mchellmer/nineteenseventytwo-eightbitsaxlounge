@@ -1,4 +1,12 @@
 # Changelog
+ 
+## [4.0.28] - 2026-02-17
+
+### Added
+- Twitchio v3 with automated token management
+- python 3.14 slim base image
+- upgrade dependencies to latest
+
 ## [3.0.10] - 2026-02-12
 
 ### Changed

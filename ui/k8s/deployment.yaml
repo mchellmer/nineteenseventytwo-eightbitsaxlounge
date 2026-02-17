@@ -20,8 +20,8 @@ spec:
     spec:
       containers:
       - name: twitch-bot
-        image: ghcr.io/mchellmer/eightbitsaxlounge-ui:latest
-        imagePullPolicy: Always
+        image: ghcr.io/mchellmer/eightbitsaxlounge-ui:{{ lookup('env', 'VERSION') | default('latest', true) }}
+        imagePullPolicy: IfNotPresent
         env:
         # Twitch Configuration
         - name: TWITCH_CLIENT_ID
@@ -29,16 +29,26 @@ spec:
             secretKeyRef:
               name: eightbitsaxlounge-ui-secrets
               key: client-id
-        - name: TWITCH_TOKEN
+        - name: TWITCH_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               name: eightbitsaxlounge-ui-secrets
-              key: token
+              key: client-secret
         - name: TWITCH_CHANNEL
           valueFrom:
             configMapKeyRef:
               name: eightbitsaxlounge-ui-config
               key: twitch_channel
+        - name: TWITCH_BOT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: eightbitsaxlounge-ui-config
+              key: bot_id
+        - name: TWITCH_OWNER_ID
+          valueFrom:
+            configMapKeyRef:
+              name: eightbitsaxlounge-ui-config
+              key: bot_owner_id
         - name: TWITCH_PREFIX
           value: "!"
         # MIDI Configuration

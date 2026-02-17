@@ -13,8 +13,10 @@ class Settings(BaseSettings):
     )
     
     # Twitch Configuration
-    twitch_token: str  # Access token with 'oauth:' prefix
+    twitch_bot_id: int  # Twitch User ID for EightBitSaxBot (can be found via Twitch API)
+    twitch_owner_id: int  # Twitch User ID for the bot owner
     twitch_client_id: str  # Your app's Client ID from dev.twitch.tv
+    twitch_client_secret: str  # Your app's Client Secret from dev.twitch.tv
     twitch_channel: str  # Channel name to connect to
     twitch_prefix: str = "!"
     

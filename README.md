@@ -77,7 +77,7 @@ Monitoring layer
 Server layer
 - service mesh for finer tuned monitoring
 - shared ansible role for common work among layers - helm
-- handle k8s updates
+- delegate build and test to kubernetes
 
 CI/CD
 - linting and scanning - on a schedule and isolated to a single runner so it doesn't block build/release

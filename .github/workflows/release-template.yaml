@@ -22,11 +22,6 @@ on:
         required: false
         type: string
         default: ''
-      lint-target:
-        description: 'Make target for linting (empty to skip)'
-        required: false
-        type: string
-        default: ''
       package-target:
         description: 'Make target for packaging (empty to skip)'
         required: false

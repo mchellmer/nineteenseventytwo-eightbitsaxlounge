@@ -14,7 +14,6 @@ lint:
 test:
 	@echo "Running Python tests..."
 	pip3 install -r requirements.txt --break-system-packages || pip3 install -r requirements.txt
-	pip3 install -r requirements-dev.txt --break-system-packages || pip3 install -r requirements-dev.txt
 	python3 -m pytest tests/ --cov=src --cov-report=xml --cov-report=term --junitxml=test-results.xml
 	@echo "All tests passed"
 

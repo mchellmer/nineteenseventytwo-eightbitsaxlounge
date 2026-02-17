@@ -42,6 +42,7 @@ class HealthServer:
             'service': 'eightbitsaxlounge-ui'
         })
     
+    #TODO: review
     async def readiness_check(self, request):
         """
         Readiness probe endpoint.
