@@ -88,5 +88,5 @@ class TwitchAutoBot(commands.AutoBot):
 
     async def setup_hook(self) -> None:
         """Add custom components to e.g. handle commands and events."""
-        await self.add_component(EightBitSaxLoungeComponent(self))
+        await self.add_component(EightBitSaxLoungeComponent())
     

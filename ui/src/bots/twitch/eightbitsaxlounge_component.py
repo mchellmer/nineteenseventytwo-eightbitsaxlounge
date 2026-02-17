@@ -1,20 +1,17 @@
 import logging
 from twitchio.ext import commands
-from twitchio.models.eventsub_ import ChatMessage as TwitchChatMessage
+import twitchio
 
 from commands.command_registry import CommandRegistry
 
 logger = logging.getLogger(__name__)
 
 class EightBitSaxLoungeComponent(commands.Component):
-    """Main component for the EightBitSaxLounge Twitch bot."""
-
-    def __init__(self, bot) -> None:
-        self.bot = bot
+    """Main component for the EightBitSaxLou
 
     # TwitchIO event listener for incoming chat messages
     @commands.Component.listener()
-    async def event_message(self, payload: TwitchChatMessage) -> None:
+    async def event_message(self, payload: twitchio.ChatMessage) -> None:
         logger.info(f"[{payload.broadcaster.name}] - chat from {payload.chatter.name}: {payload.text}")
 
     # TwitchIO commands
