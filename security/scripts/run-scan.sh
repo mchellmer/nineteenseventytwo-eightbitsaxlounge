@@ -97,6 +97,16 @@ PY
   echo "$RESPONSE" | jq -C . || echo "$RESPONSE"
 }
 
+# Print a short SARIF summary (result count and sample URIs) without uploading
+print_sarif_summary() {
+  local SARIF_PATH="$1"
+  if [ -f "$SARIF_PATH" ] && command -v jq >/dev/null 2>&1; then
+    RESULT_COUNT=$(jq -r '(.runs // [] | map(.results // []) | flatten | length) // 0' "$SARIF_PATH" 2>/dev/null || echo 0)
+    SAMPLE_URIS=$(jq -r '(.runs // [] | map(.results // []) | flatten | .[0:3] | map(.locations[0].physicalLocation.artifactLocation.uri // "no-uri") | join(", ")) // "no-uri"' "$SARIF_PATH" 2>/dev/null || echo "no-uri")
+    echo "SARIF summary for $SARIF_PATH: results=$RESULT_COUNT; sample_uris=$SAMPLE_URIS"
+  fi
+}
+
 # If IMAGES env var is set, scan the provided container images (comma or space separated)
 if [ -n "${IMAGES:-}" ]; then
   echo "Scanning images: $IMAGES"
@@ -137,36 +147,67 @@ fi
 # Optionally upload SARIF to GitHub Code Scanning API if GITHUB_PAT provided
 if [ -n "${GITHUB_PAT:-}" ]; then
   echo "Preparing SARIF upload(s)..."
-  # upload filesystem SARIF if present
+
+  TO_UPLOAD=()
+
+  # Add filesystem SARIF if present
   FS_SARIF="${OUTDIR}/trivy-results.sarif"
   if [ -f "$FS_SARIF" ]; then
-    upload_sarif_file "$FS_SARIF" || true
+    print_sarif_summary "$FS_SARIF"
+    TO_UPLOAD+=("$FS_SARIF")
   fi
 
-  # upload any image SARIFs that were produced
+  # Collect image SARIFs (mapped when requested)
   for f in "$OUTDIR"/trivy-image-*.sarif; do
     [ -f "$f" ] || continue
 
-    # Optionally map image SARIF results to a repository file path so
-    # GitHub Code Scanning can create alerts for image vulnerabilities.
-    # Controlled by MAP_IMAGE_SARIF_TO_REPO (default: false).
-    if [ "${MAP_IMAGE_SARIF_TO_REPO:-false}" = "true" ]; then
-      if command -v jq >/dev/null 2>&1; then
-        safe=$(basename "$f" .sarif | sed -E 's/[^A-Za-z0-9._-]/_/g')
-        mapped="$OUTDIR/${safe}.mapped.sarif"
+    if [ "${MAP_IMAGE_SARIF_TO_REPO:-false}" = "true" ] && command -v jq >/dev/null 2>&1; then
+      safe=$(basename "$f" .sarif | sed -E 's/[^A-Za-z0-9._-]/_/g')
+      mapped="$OUTDIR/${safe}.mapped.sarif"
 
-        jq --arg path "security/image-scan-${safe}.txt" \
-           '(.runs |= map(.results |= map( if (.locations != null and (.locations|length>0)) then (.locations |= map( .physicalLocation.artifactLocation.uri = $path )) | . else . + {locations:[{physicalLocation:{artifactLocation:{uri:$path}}}]} end )))' \
-           "$f" > "$mapped" || mapped="$f"
+      jq --arg path "security/image-scan-${safe}.txt" \
+         '(.runs |= map(.results |= map( if (.locations != null and (.locations|length>0)) then (.locations |= map( .physicalLocation.artifactLocation.uri = $path )) | . else . + {locations:[{physicalLocation:{artifactLocation:{uri:$path}}}]} end )))' \
+         "$f" > "$mapped" || mapped="$f"
 
-        upload_sarif_file "$mapped" || true
-      else
-        upload_sarif_file "$f" || true
-      fi
+      print_sarif_summary "$mapped"
+      TO_UPLOAD+=("$mapped")
     else
-      upload_sarif_file "$f" || true
+      print_sarif_summary "$f"
+      TO_UPLOAD+=("$f")
     fi
   done
+
+  if [ "${#TO_UPLOAD[@]}" -gt 0 ]; then
+    echo "Merging ${#TO_UPLOAD[@]} SARIF(s) into single upload..."
+    COMBINED="$OUTDIR/trivy-combined.sarif"
+
+    if command -v jq >/dev/null 2>&1; then
+      jq -s '{"$schema": (.[0]."$schema"), version:(.[0].version // "2.1.0"), runs: map(.runs) | add}' "${TO_UPLOAD[@]}" > "$COMBINED"
+    else
+      python3 - <<PY
+import json,sys
+out={
+  "$schema": None,
+  "version": None,
+  "runs": []
+}
+for p in sys.argv[1:]:
+  with open(p,'r',encoding='utf-8') as fh:
+    d=json.load(fh)
+    if out['$schema'] is None:
+      out['$schema']=d.get('$schema')
+    if out['version'] is None:
+      out['version']=d.get('version')
+    out['runs'].extend(d.get('runs',[]))
+print(json.dumps(out))
+PY
+    fi
+
+    print_sarif_summary "$COMBINED"
+    upload_sarif_file "$COMBINED" || true
+  else
+    echo "No SARIF files found to upload"
+  fi
 fi
 
 echo "Scan complete; results in $OUTDIR"
