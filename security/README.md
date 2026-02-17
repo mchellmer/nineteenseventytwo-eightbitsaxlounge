@@ -21,6 +21,31 @@ The security scanner is designed to:
 - `.github/workflows/security-release.yaml` - release workflow (calls reusable release-template)
 - `CHANGELOG.md` - changelog for security component
 
+## Script inputs / environment variables
+
+The scanner script `scripts/run-scan.sh` reads the following environment variables. The example `Job` in this README uses the bolded ones.
+
+- `CLONE_URL` (required if `GITHUB_REPOSITORY` is not set)
+  - Full clone URL for the repository to scan (e.g. `https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge.git`). If omitted, `GITHUB_REPOSITORY` is used to construct the clone URL.
+- `GITHUB_REPOSITORY` (optional; used when `CLONE_URL` is not provided)
+  - Owner/repo (e.g. `mchellmer/nineteenseventytwo-eightbitsaxlounge`). Also used as the target for SARIF upload when `GITHUB_PAT` is provided.
+- `GITHUB_PAT` (optional; required to upload SARIF to GitHub Code Scanning)
+  - Personal Access Token provided via secret; when present the script will upload generated SARIF files to the GitHub Code Scanning API. The script will attempt to detect the local `commit_sha`/`ref` automatically — you can override with the envs below.
+- `COMMIT_SHA` (optional)
+  - Override for the commit SHA to associate SARIF uploads with. If unset the script will attempt to detect `HEAD` in the cloned repo. If the commit SHA cannot be determined the SARIF upload is skipped.
+- `REF` (optional)
+  - Override for the git ref (e.g. `refs/heads/main`). If unset the script will attempt to detect the current branch and fallback to `refs/heads/main`.
+- `IMAGES` (optional)
+  - Comma- or space-separated list of container images to scan (e.g. `ghcr.io/<owner>/eightbitsaxlounge-ui:latest,ghcr.io/<owner>/eightbitsaxlounge-db:latest`). Image SARIF files are written to the output directory as `trivy-image-<sanitized-name>.sarif`.
+- `MAP_IMAGE_SARIF_TO_REPO` (optional; default: `false`)
+  - When `true` the script will add a synthetic repository `artifactLocation.uri` to image SARIF results (for example `security/image-scan-<image>.txt`) so GitHub Code Scanning can create repository alerts for image findings. This is opt-in because it creates synthetic file paths in alerts.
+
+Outputs and behavior notes:
+- Filesystem SARIF: written to `/workspace/output/trivy-results.sarif`.
+- Image SARIFs: written to `/workspace/output/trivy-image-*.sarif`.
+- If `GITHUB_PAT` is provided the script will upload any SARIF files and include `commit_sha` + `ref` to allow GitHub to create Code Scanning alerts.
+- The script runs additional checks automatically when relevant files are present (Go `go vet`/`go test`, Python `flake8`, .NET `dotnet build`).
+
 ## Quickstart — build and run locally
 
 Build the scanner image locally (from `security/`):
@@ -67,7 +92,7 @@ spec:
     spec:
       containers:
       - name: scanner
-        image: ghcr.io/mchellmer/eightbitsaxlounge-security:0.0.3
+        image: ghcr.io/mchellmer/eightbitsaxlounge-security:latest
         command: ["/scripts/run-scan.sh"]
         env:
         - name: CLONE_URL

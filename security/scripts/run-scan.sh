@@ -136,7 +136,26 @@ if [ -n "${GITHUB_PAT:-}" ]; then
   # upload any image SARIFs that were produced
   for f in "$OUTDIR"/trivy-image-*.sarif; do
     [ -f "$f" ] || continue
-    upload_sarif_file "$f" || true
+
+    # Optionally map image SARIF results to a repository file path so
+    # GitHub Code Scanning can create alerts for image vulnerabilities.
+    # Controlled by MAP_IMAGE_SARIF_TO_REPO (default: false).
+    if [ "${MAP_IMAGE_SARIF_TO_REPO:-false}" = "true" ]; then
+      if command -v jq >/dev/null 2>&1; then
+        safe=$(basename "$f" .sarif | sed -E 's/[^A-Za-z0-9._-]/_/g')
+        mapped="$OUTDIR/${safe}.mapped.sarif"
+
+        jq --arg path "security/image-scan-${safe}.txt" \
+           '(.runs |= map(.results |= map( if (.locations == null or (.locations|length==0)) then . + {locations:[{physicalLocation:{artifactLocation:{uri:$path}}}]} else . end )))' \
+           "$f" > "$mapped" || mapped="$f"
+
+        upload_sarif_file "$mapped" || true
+      else
+        upload_sarif_file "$f" || true
+      fi
+    else
+      upload_sarif_file "$f" || true
+    fi
   done
 fi
 
