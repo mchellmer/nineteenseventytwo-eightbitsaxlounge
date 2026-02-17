@@ -34,26 +34,6 @@ spec:
             secretKeyRef:
               name: eightbitsaxlounge-ui-secrets
               key: client-secret
-        - name: TWITCH_BOT_ACCESS_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: eightbitsaxlounge-ui-secrets
-              key: bot-access-token
-        - name: TWITCH_BOT_REFRESH_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: eightbitsaxlounge-ui-secrets
-              key: bot-refresh-token
-        - name: TWITCH_CHANNEL_ACCESS_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: eightbitsaxlounge-ui-secrets
-              key: channel-access-token
-        - name: TWITCH_CHANNEL_REFRESH_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: eightbitsaxlounge-ui-secrets
-              key: channel-refresh-token
         - name: TWITCH_CHANNEL
           valueFrom:
             configMapKeyRef:
