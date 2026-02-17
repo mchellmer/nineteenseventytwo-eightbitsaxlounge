@@ -156,7 +156,7 @@ if [ -n "${GITHUB_PAT:-}" ]; then
         mapped="$OUTDIR/${safe}.mapped.sarif"
 
         jq --arg path "security/image-scan-${safe}.txt" \
-           '(.runs |= map(.results |= map( if (.locations == null or (.locations|length==0)) then . + {locations:[{physicalLocation:{artifactLocation:{uri:$path}}}]} else . end )))' \
+           '(.runs |= map(.results |= map( if (.locations != null and (.locations|length>0)) then (.locations[0].physicalLocation.artifactLocation.uri = $path) | . else . + {locations:[{physicalLocation:{artifactLocation:{uri:$path}}}]} end )))' \
            "$f" > "$mapped" || mapped="$f"
 
         upload_sarif_file "$mapped" || true

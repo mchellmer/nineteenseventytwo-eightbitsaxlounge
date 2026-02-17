@@ -82,6 +82,8 @@ The workflow expects a repository secret `SECURITY_GITHUB_PAT` (used to create t
 If you'd like to execute a single run in the cluster for testing without waiting for CronJob schedule, create a Job that uses the same image and mounts the PVC:
 
 ```bash
+kubectl delete job/security-scan-once -n eightbitsaxlounge-dev
+
 cat <<'EOF' | kubectl apply -n eightbitsaxlounge-dev -f -
 apiVersion: batch/v1
 kind: Job
