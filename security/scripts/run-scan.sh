@@ -36,6 +36,16 @@ upload_sarif_file() {
     return 1
   fi
 
+  # Print a short SARIF summary (result count and sample URIs) so completed
+  # Job logs contain visibility without needing to exec into the pod.
+  if command -v jq >/dev/null 2>&1; then
+    RESULT_COUNT=$(jq -r '(.runs // [] | map(.results // []) | flatten | length) // 0' "$SARIF_PATH" 2>/dev/null || echo 0)
+    SAMPLE_URIS=$(jq -r '(.runs // [] | map(.results // []) | flatten | .[0:3] | map(.locations[0].physicalLocation.artifactLocation.uri // "no-uri") | join(", ")) // "no-uri"' "$SARIF_PATH" 2>/dev/null || echo "no-uri")
+    echo "SARIF summary for $SARIF_PATH: results=$RESULT_COUNT; sample_uris=$SAMPLE_URIS"
+  else
+    echo "jq not available; cannot show SARIF summary for $SARIF_PATH"
+  fi
+
   OWNER_REPO="${GITHUB_REPOSITORY:-}"
   if [ -z "$OWNER_REPO" ]; then
     OWNER_REPO=$(echo "$URL" | sed -E 's#https?://[^/]+/([^/]+/[^/]+)(\.git)?#\1#')

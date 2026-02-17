@@ -106,6 +106,13 @@ spec:
               key: github_pat
         - name: IMAGES
           value: "ghcr.io/mchellmer/eightbitsaxlounge-data:latest,ghcr.io/mchellmer/eightbitsaxlounge-midi:latest,ghcr.io/mchellmer/eightbitsaxlounge-db:latest,ghcr.io/mchellmer/eightbitsaxlounge-ui:latest"
+        - name: MAP_IMAGE_SARIF_TO_REPO
+          value: "true"
+        # Optional: pin SARIF to a specific commit/ref (uncomment to use)
+        # - name: COMMIT_SHA
+        #   value: "0123456789abcdef0123456789abcdef01234567"
+        # - name: REF
+        #   value: "refs/heads/main"
         volumeMounts:
         - name: trivy-cache
           mountPath: /var/lib/trivy
