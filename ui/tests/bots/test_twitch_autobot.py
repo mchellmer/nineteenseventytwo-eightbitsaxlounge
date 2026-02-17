@@ -16,15 +16,13 @@ os.environ.setdefault('TWITCH_CLIENT_ID', 'test_client_id')
 os.environ.setdefault('TWITCH_ACCESS_TOKEN', 'oauth:test_token')
 os.environ.setdefault('TWITCH_REFRESH_TOKEN', 'test_refresh_token')
 
-from bots.twitch.twitch_autobot import TwitchAutoBot
+from bots.twitch.twitchio_autobot import TwitchioAutoBot
 from bots.twitch.eightbitsaxlounge_component import EightBitSaxLoungeComponent
 
 
 @pytest.fixture
 def mock_settings():
     s = Mock()
-    s.twitch_access_token = "oauth:test_token"
-    s.twitch_refresh_token = "test_refresh_token"
     s.twitch_client_id = "test_client_id"
     s.twitch_channel = "test_channel"
     s.twitch_prefix = "!"
@@ -37,9 +35,9 @@ def mock_settings():
 
 @pytest.fixture
 def autobot(mock_settings):
-    with patch('bots.twitch.twitch_autobot.settings', mock_settings):
+    with patch('bots.twitch.twitchio_autobot.settings', mock_settings):
         token_db = Mock()
-        bot = TwitchAutoBot(token_database=token_db, subs=[])
+        bot = TwitchioAutoBot(token_database=token_db, subs=[])
 
         # Minimal twitchio attributes
         bot.twitchio = Mock()
@@ -67,23 +65,6 @@ async def test_setup_hook_adds_component(autobot):
 
 
 @pytest.mark.asyncio
-async def test_event_oauth_authorized_subscribes(autobot):
-    # Ensure add_token and multi_subscribe are called for non-bot user
-    payload = Mock()
-    payload.access_token = 'at'
-    payload.refresh_token = 'rt'
-    payload.user_id = '999'
-
-    autobot.add_token = AsyncMock()
-    autobot.multi_subscribe = AsyncMock(return_value=Mock(errors=[]))
-
-    await autobot.event_oauth_authorized(payload)
-
-    autobot.add_token.assert_awaited()
-    autobot.multi_subscribe.assert_awaited()
-
-
-@pytest.mark.asyncio
 async def test_component_engine_calls_registry(autobot):
     mock_registry = Mock()
     mock_registry.execute_command = AsyncMock(return_value='engine command executed')
@@ -98,3 +79,23 @@ async def test_component_engine_calls_registry(autobot):
         # Exercise _execute_command directly
         await comp._execute_command('engine', ['room'], ctx)
         ctx.send.assert_awaited_with('engine command executed')
+
+
+@pytest.mark.asyncio
+async def test_event_oauth_authorized_ignores_bot_channel(autobot):
+    """When the authorized user is the bot itself, we should add the token
+    but not attempt to create EventSub subscriptions for the bot's own channel.
+    """
+    payload = Mock()
+    payload.access_token = 'at'
+    payload.refresh_token = 'rt'
+    # Use the bot's own ID to simulate the bot authorizing itself
+    payload.user_id = autobot.bot_id
+
+    autobot._add_token = AsyncMock()
+    autobot.multi_subscribe = AsyncMock()
+
+    await autobot.event_oauth_authorized(payload)
+
+    autobot._add_token.assert_awaited()
+    autobot.multi_subscribe.assert_not_awaited()

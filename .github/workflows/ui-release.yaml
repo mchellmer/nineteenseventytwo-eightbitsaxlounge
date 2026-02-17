@@ -27,10 +27,6 @@ jobs:
         {
           "TWITCH_CLIENT_ID": "${{ secrets.TWITCH_CLIENT_ID }}",
           "TWITCH_CLIENT_SECRET": "${{ secrets.TWITCH_CLIENT_SECRET }}",
-          "TWITCH_BOT_ACCESS_TOKEN": "${{ secrets.TWITCH_BOT_ACCESS_TOKEN }}",
-          "TWITCH_BOT_REFRESH_TOKEN": "${{ secrets.TWITCH_BOT_REFRESH_TOKEN }}",
-          "TWITCH_CHANNEL_ACCESS_TOKEN": "${{ secrets.TWITCH_CHANNEL_ACCESS_TOKEN }}",
-          "TWITCH_CHANNEL_REFRESH_TOKEN": "${{ secrets.TWITCH_CHANNEL_REFRESH_TOKEN }}",
           "MIDI_CLIENT_ID": "${{ secrets.MIDI_CLIENT_ID }}",
           "MIDI_CLIENT_SECRET": "${{ secrets.MIDI_CLIENT_SECRET }}"
         }

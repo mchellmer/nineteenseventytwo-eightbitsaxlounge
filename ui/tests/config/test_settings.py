@@ -17,7 +17,8 @@ class TestSettings:
         
         # Define a test settings class
         class TestConfig(BaseSettings):
-            model_config = ConfigDict(env_file=".env", case_sensitive=False)
+            # Avoid loading the repository .env during tests; rely on monkeypatch env instead
+            model_config = ConfigDict(env_file=None, case_sensitive=False)
             test_field: str
             another_field: str
         
@@ -32,7 +33,7 @@ class TestSettings:
         monkeypatch.setenv("REQUIRED_FIELD", "value")
         
         class TestConfig(BaseSettings):
-            model_config = ConfigDict(env_file=".env", case_sensitive=False)
+            model_config = ConfigDict(env_file=None, case_sensitive=False)
             required_field: str
             optional_field: str = "default_value"
         
@@ -44,7 +45,7 @@ class TestSettings:
     def test_settings_validates_required_fields(self):
         """Test that BaseSettings validation fails when required fields are missing."""
         class TestConfig(BaseSettings):
-            model_config = ConfigDict(env_file=".env", case_sensitive=False)
+            model_config = ConfigDict(env_file=None, case_sensitive=False)
             required_field: str
         
         # Should raise validation error when required field is missing

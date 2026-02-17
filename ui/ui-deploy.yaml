@@ -30,10 +30,6 @@
           - lookup('env','VERSION') | length > 0
           - lookup('env','TWITCH_CLIENT_ID') | length > 0
           - lookup('env','TWITCH_CLIENT_SECRET') | length > 0
-          - lookup('env','TWITCH_BOT_ACCESS_TOKEN') | length > 0
-          - lookup('env','TWITCH_BOT_REFRESH_TOKEN') | length > 0
-          - lookup('env','TWITCH_CHANNEL_ACCESS_TOKEN') | length > 0
-          - lookup('env','TWITCH_CHANNEL_REFRESH_TOKEN') | length > 0
           - lookup('env','MIDI_CLIENT_ID') | length > 0
           - lookup('env','MIDI_CLIENT_SECRET') | length > 0
         fail_msg: "Missing required environment variables. Ensure the workflow passes all required secrets."
@@ -65,10 +61,6 @@
         kubectl create secret generic {{ secret_name }} \
           --from-literal=client-id="$TWITCH_CLIENT_ID" \
           --from-literal=client-secret="$TWITCH_CLIENT_SECRET" \
-          --from-literal=bot-access-token="$TWITCH_BOT_ACCESS_TOKEN" \
-          --from-literal=bot-refresh-token="$TWITCH_BOT_REFRESH_TOKEN" \
-          --from-literal=channel-access-token="$TWITCH_CHANNEL_ACCESS_TOKEN" \
-          --from-literal=channel-refresh-token="$TWITCH_CHANNEL_REFRESH_TOKEN" \
           --from-literal=midi-client-id="$MIDI_CLIENT_ID" \
           --from-literal=midi-client-secret="$MIDI_CLIENT_SECRET" \
           --namespace $NAMESPACE \
@@ -76,10 +68,6 @@
       environment:
         TWITCH_CLIENT_ID: "{{ lookup('env', 'TWITCH_CLIENT_ID') }}"
         TWITCH_CLIENT_SECRET: "{{ lookup('env', 'TWITCH_CLIENT_SECRET') }}"
-        TWITCH_BOT_ACCESS_TOKEN: "{{ lookup('env', 'TWITCH_BOT_ACCESS_TOKEN') }}"
-        TWITCH_BOT_REFRESH_TOKEN: "{{ lookup('env', 'TWITCH_BOT_REFRESH_TOKEN') }}"
-        TWITCH_CHANNEL_ACCESS_TOKEN: "{{ lookup('env', 'TWITCH_CHANNEL_ACCESS_TOKEN') }}"
-        TWITCH_CHANNEL_REFRESH_TOKEN: "{{ lookup('env', 'TWITCH_CHANNEL_REFRESH_TOKEN') }}"
         MIDI_CLIENT_ID: "{{ lookup('env', 'MIDI_CLIENT_ID') }}"
         MIDI_CLIENT_SECRET: "{{ lookup('env', 'MIDI_CLIENT_SECRET') }}"
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"

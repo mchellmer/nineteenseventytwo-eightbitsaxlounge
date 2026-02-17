@@ -14,13 +14,13 @@ os.environ.setdefault('TWITCH_BOT_ID', '1424580736')
 os.environ.setdefault('TWITCH_OWNER_ID', '896950964')
 os.environ.setdefault('TWITCH_CLIENT_SECRET', 'test_midi_secret')
 
-from bots.twitch.twitch_bot import TwitchBot
+from bots.twitch.bot import Bot
 
 
 @pytest.fixture
 def basic_bot():
     # construct without patching settings: ensure signature works
-    bot = TwitchBot()
+    bot = Bot()
 
     # minimal twitchio stubs
     bot.twitchio = Mock()
