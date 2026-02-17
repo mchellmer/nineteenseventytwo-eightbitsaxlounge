@@ -38,7 +38,7 @@ The 8bsl has several services that handle updating music hardware, state data, e
 
 Configured services:
 - midi_client - this handles requests to update midi data and devices inline with UI element state
-- twitch_client - handles monitoring token validity
+- twitch_client - handles monitoring token validity [depracated]
 - All logs include correlationID for request tracing
 
 #### App config
