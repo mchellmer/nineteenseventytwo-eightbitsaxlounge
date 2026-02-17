@@ -15,9 +15,18 @@ class EightBitSaxLoungeComponent(commands.Component):
     # TwitchIO event listener for incoming chat messages
     @commands.Component.listener()
     async def event_message(self, payload: TwitchChatMessage) -> None:
-        logger.info(f"[{payload.broadcaster.name}] - {payload.chatter.name}: {payload.text}")
+        logger.info(f"[{payload.broadcaster.name}] - chat from {payload.chatter.name}: {payload.text}")
 
     # TwitchIO commands
+    @commands.command()
+    async def hi(self, ctx: commands.Context) -> None:
+        """Command that replies to the invoker with Hi <name>!
+
+        !hi
+        """
+        await ctx.reply(f"Hi {ctx.chatter}!")
+
+
     @commands.command()
     async def engine(self, ctx: commands.Context, *args) -> None:
         """Handle !engine commands."""
