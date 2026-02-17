@@ -204,7 +204,15 @@ PY
     fi
 
     print_sarif_summary "$COMBINED"
+
+    # Print count of unique ruleIds/CVEs in the combined SARIF
+    if command -v jq >/dev/null 2>&1 && [ -f "$COMBINED" ]; then
+      UNIQUE_COUNT=$(jq -r '.runs[].results[].ruleId' "$COMBINED" 2>/dev/null | sort -u | wc -l | tr -d '[:space:]' || echo 0)
+      echo "Unique ruleId/CVE count in combined SARIF: $UNIQUE_COUNT"
+    fi
+
     upload_sarif_file "$COMBINED" || true
+
   else
     echo "No SARIF files found to upload"
   fi
