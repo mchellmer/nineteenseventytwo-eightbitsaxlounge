@@ -19,8 +19,15 @@ Configuration highlights
 - For production HA/scale run 3+ replicas and configure NATS clustering/routes.
 
 Testing
-- Quick smoke test using `nats-box`:
+- Quick smoke test using `nats-box` (k8s):
   kubectl -n eightbitsaxlounge-dev run --rm -i --tty nats-test --image=natsio/nats-box --restart=Never -- nats sub test & nats pub test "hello"
+
+- Local Podman test (fast, no k8s):
+  1. cd state
+  2. make test            # runs NATS+JetStream in foreground (Ctrl-C to stop)
+     or
+     make test-detach    # runs NATS in background (podman stop nats-test)
+  3. Verify via: curl http://localhost:8222/  or use the `nats-box` image to pub/sub to `ui.overlay.*`
 
 Next steps
 - Create NATS accounts / credentials and ACLs for each environment.
