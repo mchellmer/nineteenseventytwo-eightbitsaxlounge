@@ -1,0 +1,49 @@
+---
+- name: Deploy NATS JetStream to Kubernetes
+  hosts: master
+  tasks:
+    - name: Ensure required environment variables are provided
+      ansible.builtin.assert:
+        that:
+          - lookup('env','NAMESPACE') | length > 0
+        fail_msg: "Missing required env var: NAMESPACE. Ensure the workflow passes it to Ansible."
+
+    - name: Create a temporary directory for manifests
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: nats-k8s
+      register: tempdir
+
+    - name: Copy NATS manifest to temp directory
+      ansible.builtin.copy:
+        src: k8s/nats.yaml
+        dest: "{{ tempdir.path }}/nats.yaml"
+
+    - name: Deploy NATS StatefulSet & Services
+      ansible.builtin.shell: |
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/nats.yaml
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Wait for StatefulSet rollout
+      ansible.builtin.shell: |
+        kubectl -n $NAMESPACE rollout status sts/nats --timeout=180s || true
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+
+    - name: Verify PVCs created
+      ansible.builtin.shell: |
+        kubectl -n $NAMESPACE get pvc -l app=nats -o wide
+      register: pvc_list
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+      changed_when: false
+
+    - name: Print PVCs
+      ansible.builtin.debug:
+        var: pvc_list.stdout_lines
+
+    - name: Remove temporary directory
+      ansible.builtin.file:
+        path: "{{ tempdir.path }}"
+        state: absent

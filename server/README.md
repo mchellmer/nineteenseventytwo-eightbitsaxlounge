@@ -88,6 +88,19 @@ iaas and kubernetes cluster config for 1972
   ```
   - releases: increment versions/monitoring.txt and push change
 
+7. Deploy Message Broker
+  - Deploy an in-cluster NATS server with JetStream enabled (durable event storage).
+  - Apply the manifest to your target namespace (dev/prod):
+    ```bash
+    kubectl -n eightbitsaxlounge-dev apply -f state/k8s/nats.yaml
+    ```
+  - In-cluster connection string: `nats://nats:4222` (use `NATS_URL` or `NATS_SERVERS` in pods)
+  - Quick test (uses the `nats-box` image):
+    ```bash
+    kubectl run --rm -i --tty nats-test --image=natsio/nats-box --restart=Never -- nats sub test & nats pub test "hello"
+    ```
+  - Persistence: the StatefulSet creates a PVC per pod (1Gi default). To change the storage class or size, edit `state/k8s/nats.yaml` `volumeClaimTemplates`.
+  - Scaling: JetStream requires careful configuration for HA — run 3+ replicas and configure clustering/routes before increasing replicas.
 
 # Test
 - ingress - apply the files/manifests/nginxtest.yaml and try to curl from nodes/another machine on the same subnet

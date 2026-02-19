@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>8bsl Overlay</title>
+    <style>
+      body { background: transparent; color: white; font-family: sans-serif; }
+      .box { padding: 8px 12px; background: rgba(0,0,0,0.6); border-radius: 6px; display:inline-block }
+      .label { color: #aaa; font-size: 12px }
+      .value { font-size: 28px; font-weight: 700 }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <div class="label">Engine</div>
+      <div id="engine" class="value">room</div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+      socket.on('overlay.engine', msg => {
+        const v = (msg && msg.data && msg.data.value) ? msg.data.value : (typeof msg === 'string' ? msg : JSON.stringify(msg.data || msg));
+        document.getElementById('engine').textContent = v;
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,145 @@
+# NATS with JetStream persistence (StatefulSet)
+# - StatefulSet + PVCs for JetStream durability
+# - In-cluster client DNS: `nats:4222` (ClusterIP Service)
+# - StatefulSet stable network identity provided by `nats-headless` headless Service
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nats-config
+  labels:
+    app: nats
+data:
+  nats.conf: |
+    ## NATS server configuration with JetStream enabled
+    port: 4222
+    http: 8222
+    server_name: nats
+
+    jetstream {
+      store_dir: "/data/jetstream"
+      max_mem_store: 64MB
+      max_file_store: 200MB
+    }
+
+    # Single-server cluster (for small deployments). For HA, run 3+ replicas and
+    # enable clustering configuration.
+    # clustering {
+    #   name: "nats-cluster"
+    #   listen: 0.0.0.0:6222
+    #   routes = [ nats-route://nats-0.nats-headless:6222 ]
+    # }
+
+---
+# Headless service required by StatefulSet (stable network IDs)
+apiVersion: v1
+kind: Service
+metadata:
+  name: nats-headless
+  labels:
+    app: nats
+spec:
+  clusterIP: None
+  ports:
+    - name: client
+      port: 4222
+      targetPort: 4222
+    - name: monitor
+      port: 8222
+      targetPort: 8222
+  selector:
+    app: nats
+
+---
+# StatefulSet with a PVC per pod for JetStream storage
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nats
+  labels:
+    app: nats
+spec:
+  serviceName: nats-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nats
+  template:
+    metadata:
+      labels:
+        app: nats
+    spec:
+      containers:
+        - name: nats
+          image: nats:2.9.22
+          args: ["-c", "/etc/nats/nats.conf"]
+          ports:
+            - name: client
+              containerPort: 4222
+            - name: monitor
+              containerPort: 8222
+            - name: cluster
+              containerPort: 6222
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nats
+              readOnly: true
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            tcpSocket:
+              port: 4222
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 4222
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: config
+          configMap:
+            name: nats-config
+            items:
+              - key: nats.conf
+                path: nats.conf
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: longhorn
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
+
+---
+# ClusterIP service for client access (keeps existing DNS name `nats`)
+apiVersion: v1
+kind: Service
+metadata:
+  name: nats
+  labels:
+    app: nats
+spec:
+  type: ClusterIP
+  ports:
+    - name: client
+      port: 4222
+      targetPort: 4222
+    - name: monitor
+      port: 8222
+      targetPort: 8222
+  selector:
+    app: nats
+
