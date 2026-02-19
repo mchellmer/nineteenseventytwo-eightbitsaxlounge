@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nats-config
+  labels:
+    app: nats
+data:
+  nats.conf: |
+    ## NATS server configuration with JetStream enabled
+    port: 4222
+    http: 8222
+    server_name: nats
+
+    jetstream {
+      store_dir: "/data/jetstream"
+      max_mem_store: 64MB
+      max_file_store: 200MB
+    }
+
+    # Single-server cluster (for small deployments). For HA, run 3+ replicas and
+    # enable clustering configuration.
+    # clustering {
+    #   name: "nats-cluster"
+    #   listen: 0.0.0.0:6222
+    #   routes = [ nats-route://nats-0.nats-headless:6222 ]
+    # }
