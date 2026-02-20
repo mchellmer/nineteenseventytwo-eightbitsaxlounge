@@ -17,6 +17,7 @@ FILES=(
   "$BASE/values/9.svg"
   "$BASE/values/10.svg"
   "$BASE/error.svg"
+  "$BASE/background.svg"
 )
 
 for f in "${FILES[@]}"; do

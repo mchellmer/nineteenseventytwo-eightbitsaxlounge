@@ -16,8 +16,19 @@ async function start() {
   server.listen(PORT, () => console.log(`overlay: listening on ${PORT}`));
 
   // Socket.IO connection handling
+  // maintain a small in-memory cache of last values so new clients get immediate state
+  const lastState = Object.create(null);
+
   io.on('connection', (socket) => {
     console.log('socket connected', socket.id);
+
+    // send last-known overlay states immediately to the newly connected client
+    Object.keys(lastState).forEach(tail => {
+      const entry = lastState[tail];
+      const event = `overlay.${tail}`;
+      socket.emit(event, { subject: entry.subject, data: entry.data });
+    });
+
     socket.on('disconnect', () => console.log('socket disconnected', socket.id));
   });
 
@@ -42,6 +53,10 @@ async function start() {
         // e.g. NATS subject `ui.overlay.engine` -> socket event `overlay.engine`
         const tail = subj.split('.').slice(2).join('.');
         const event = `overlay.${tail}`;
+
+        // cache the last value and publish to sockets
+        lastState[tail] = { subject: subj, data };
+
         console.log('emit event', event, data);
         io.emit(event, { subject: subj, data });
       } catch (err) {
