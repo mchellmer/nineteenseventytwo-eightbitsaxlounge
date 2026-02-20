@@ -39,6 +39,36 @@ How it works
 - When an image asset is missing the client will display `public/images/error.svg` (guarded to avoid recursive failures). A `placeholder.svg` is still available as a generic demo image. Sample placeholder, error & demo images are present in `public/images/`.
 - A minimal `public/index.html` is included as a demo overlay (browser source for OBS).
 
+## OBS setup 🎛️
+
+Quick steps
+
+1. Add a *Browser Source* in OBS and point the URL to the overlay service:
+   - Local dev: `http://localhost:3000/grid.html`
+   - Podman: `http://host.containers.internal:3000/grid.html`
+   - In-cluster / production: `https://<overlay_ingress_host>/` (use `/grid.html` for the demo)
+
+2. Recommended Browser Source properties:
+   - **Width:** 1920, **Height:** 1080
+   - **FPS:** 30
+   - **Shutdown source when not visible:** **UNSET** (recommended to keep socket connection)
+   - **Refresh browser when scene becomes active:** optional (useful after scene switches)
+
+3. Ordering & transparency
+   - The overlay is rendered with a transparent center area — place the Browser Source *above* your video source in the OBS scene so the video shows through the middle-area.
+   - The overlay page background is already transparent; no special CSS required.
+
+Troubleshooting
+
+- If the overlay is blank in OBS but works in a normal browser: open `http://localhost:3000/grid.html` in Chrome/Firefox and check devtools for console/network errors.
+- Confirm the overlay server is running (logs show `overlay: listening on 3000`) and that NATS is reachable (server logs show `emit event overlay.*`).
+- If OBS fails to load remote (HTTPS) overlay, ensure the ingress has valid TLS and the URL is reachable from the OBS host.
+
+Notes
+
+- Use `/grid.html` during development — switch to `/` or your production path when deploying.
+- For persistent connections prefer leaving **Shutdown source when not visible** unchecked so the socket remains connected while changing scenes.
+
 Next steps
 - Add JWT/NATS credentials and ACLs for production.
 - Add ingress and TLS if you want OBS to access the overlay via a public URL.
