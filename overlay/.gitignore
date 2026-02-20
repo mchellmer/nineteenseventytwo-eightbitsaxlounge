@@ -1,0 +1,52 @@
+# .gitignore — overlay (Node.js / front-end)
+# Ignore node modules, logs, local env files and common build/cache artifacts
+
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# Runtime / temp
+pids/
+*.pid
+*.seed
+*.pid.lock
+tmp/
+temp/
+
+# Build / output
+dist/
+build/
+out/
+.cache/
+.parcel-cache/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# TypeScript incremental build
+*.tsbuildinfo
+
+# Environment files (local secrets)
+.env
+.env.*.local
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Misc
+*.tgz
+*.pem
+
+# Podman/Docker override (local)
+docker-compose.override.yml
