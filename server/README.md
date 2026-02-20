@@ -92,7 +92,7 @@ iaas and kubernetes cluster config for 1972
   - Deploy an in-cluster NATS server with JetStream enabled (durable event storage).
   - Apply the manifest to your target namespace (dev/prod):
     ```bash
-    kubectl -n eightbitsaxlounge-dev apply -f state/k8s/nats.yaml
+    kubectl -n eightbitsaxlounge-dev apply -f state/k8s/
     ```
   - In-cluster connection string: `nats://nats:4222` (use `NATS_URL` or `NATS_SERVERS` in pods)
   - Quick test (uses the `nats-box` image):

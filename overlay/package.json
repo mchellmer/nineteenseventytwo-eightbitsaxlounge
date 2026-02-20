@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "NODE_ENV=development node src/index.js",
-    "smoke": "node scripts/publish-sample.js"
+    "smoke": "node scripts/publish-sample.js",
+    "test-images": "./tests/test_images.sh",
+    "test": "npm run test-images"
   },
   "dependencies": {
     "express": "^5.2.1",

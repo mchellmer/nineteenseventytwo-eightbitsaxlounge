@@ -1,22 +1,10 @@
-# State layer — NATS / JetStream
+# State layer
 
-This folder contains the Kubernetes + Ansible manifests used to run the state/eventing tier (NATS JetStream) for EightBitSaxLounge.
+Manage state across the eightbitsaxlounge via message broker
 
 Purpose
-- Provide a dedicated, stateful message broker (NATS + JetStream) for microservice events.
-- Persistent JetStream storage is backed by Longhorn PVCs (per-pod PVC via StatefulSet).
-
-Deploy (example)
-- Apply directly with kubectl (namespace must exist):
-  kubectl -n eightbitsaxlounge-dev apply -f state/k8s/nats.yaml
-
-- Or use the included Ansible playbook:
-  NAMESPACE=eightbitsaxlounge-dev ansible-playbook state/state-nats.yaml
-
-Configuration highlights
-- `volumeClaimTemplates` uses `storageClassName: longhorn` by default.
-- DNS within namespace: `nats:4222` (set `NATS_URL=nats://nats:4222` for services).
-- For production HA/scale run 3+ replicas and configure NATS clustering/routes.
+- Provide a dedicated, stateful message broker via NATS for microservice events.
+- Persistent storage via JetStream
 
 Testing
 - Quick smoke test using `nats-box` (k8s):

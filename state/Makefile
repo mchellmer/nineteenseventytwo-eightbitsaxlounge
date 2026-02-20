@@ -2,7 +2,7 @@ deploy-nats:
 	ansible-playbook state-nats.yaml
 
 apply-k8s:
-	kubectl apply -f k8s/nats.yaml
+	kubectl apply -f k8s/
 
 # Run a disposable NATS+JetStream server locally using Podman for quick testing.
 # - runs in foreground so logs appear in your terminal (Ctrl-C to stop)

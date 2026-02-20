@@ -14,14 +14,32 @@
         suffix: nats-k8s
       register: tempdir
 
-    - name: Copy NATS manifest to temp directory
+    - name: Copy NATS ConfigMap to temp directory
       ansible.builtin.copy:
-        src: k8s/nats.yaml
-        dest: "{{ tempdir.path }}/nats.yaml"
+        src: k8s/configmap.yaml
+        dest: "{{ tempdir.path }}/configmap.yaml"
 
-    - name: Deploy NATS StatefulSet & Services
+    - name: Copy NATS headless service to temp directory
+      ansible.builtin.copy:
+        src: k8s/service-headless.yaml
+        dest: "{{ tempdir.path }}/service-headless.yaml"
+
+    - name: Copy NATS StatefulSet to temp directory
+      ansible.builtin.copy:
+        src: k8s/statefulset.yaml
+        dest: "{{ tempdir.path }}/statefulset.yaml"
+
+    - name: Copy NATS client service to temp directory
+      ansible.builtin.copy:
+        src: k8s/service-client.yaml
+        dest: "{{ tempdir.path }}/service-client.yaml"
+
+    - name: Deploy NATS manifests (ordered)
       ansible.builtin.shell: |
-        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/nats.yaml
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/configmap.yaml
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/service-headless.yaml
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/statefulset.yaml
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/service-client.yaml
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 

@@ -38,8 +38,11 @@ async function start() {
         try { data = JSON.parse(payload); } catch { data = payload; }
         console.log('nats msg', subj, data);
 
-        // emit to connected browsers using subject tail as event name
-        const event = subj.split('.').slice(2).join('.'); // overlay.engine
+        // emit to connected browsers using `overlay.<tail>` event name
+        // e.g. NATS subject `ui.overlay.engine` -> socket event `overlay.engine`
+        const tail = subj.split('.').slice(2).join('.');
+        const event = `overlay.${tail}`;
+        console.log('emit event', event, data);
         io.emit(event, { subject: subj, data });
       } catch (err) {
         console.error('failed processing nats message', err);
