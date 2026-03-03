@@ -22,8 +22,20 @@ spec:
         image: ghcr.io/mchellmer/eightbitsaxlounge-overlay:latest
         imagePullPolicy: Always
         env:
+        # connect to the state layer service; credentials taken from the
+        # shared `state-nats-creds` secret (overlay_user/overlay_pass).
         - name: NATS_URL
-          value: "nats://nats:4222"
+          value: "nats://eightbitsaxlounge-state-client:4222"
+        - name: NATS_USER
+          valueFrom:
+            secretKeyRef:
+              name: state-nats-creds
+              key: overlay_user
+        - name: NATS_PASS
+          valueFrom:
+            secretKeyRef:
+              name: state-nats-creds
+              key: overlay_pass
         - name: PORT
           value: "3000"
         ports:

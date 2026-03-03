@@ -7,7 +7,11 @@ const SUBJECT = process.env.SUBJECT || 'ui.overlay.engine';
 const PAYLOAD = process.env.PAYLOAD || JSON.stringify({ value: 'lofi', requester: 'smoke-test' });
 
 async function main() {
-  const nc = await connect({ servers: NATS_URL });
+  const opts = { servers: NATS_URL };
+  if (process.env.NATS_USER) opts.user = process.env.NATS_USER;
+  if (process.env.NATS_PASS) opts.pass = process.env.NATS_PASS;
+
+  const nc = await connect(opts);
   const sc = StringCodec();
   nc.publish(SUBJECT, sc.encode(PAYLOAD));
   await nc.flush();

@@ -9,9 +9,23 @@ Usage
 - The Node entrypoint (`src/index.js`) sets up an Express webserver and listens on the provided port.
 - The generic `OverlayService` handles logic to create the view, currently the `NatsOverlayService` extends this to setup NATS subscription and response on overlay events. Create further extensions and update index.js to handle differently.
 
-- Build & run locally (expectes running NATS instance):
+- Build & run locally (expects running NATS instance and NATS_USER, NATS_PASS env vars set):
   - `make podman-build`
   - `make podman-run`
+
+Credentials
+
+The overlay service authenticates to NATS with a username/password pair.
+In-cluster these are stored centrally in the *state* namespace under the
+secret `state-nats-creds`.  The overlay deployment pulls the keys
+`overlay_user` and `overlay_pass` from that secret; no separate credential
+secret is required.
+
+For local development you can still set the environment variables directly:
+```
+export NATS_USER=overlay
+export NATS_PASS=overlaypw
+```
 - Deploy to Kubernetes:
   - `make deploy`
 

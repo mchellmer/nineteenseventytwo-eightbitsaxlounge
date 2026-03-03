@@ -34,6 +34,31 @@
         src: k8s/service-client.yaml
         dest: "{{ tempdir.path }}/service-client.yaml"
 
+    - name: Create central NATS credentials secret
+      ansible.builtin.shell: |
+        kubectl create secret generic state-nats-creds \
+          --from-literal=overlay_user="${OVERLAY_USER:-overlay}" \
+          --from-literal=overlay_pass="${OVERLAY_PASS:-overlaypw}" \
+          --from-literal=ui_user="${UI_USER:-ui}" \
+          --from-literal=ui_pass="${UI_PASS:-uipass}" \
+          --from-literal=midi_user="${MIDI_USER:-midi}" \
+          --from-literal=midi_pass="${MIDI_PASS:-midEpass}" \
+          --from-literal=data_user="${DATA_USER:-data}" \
+          --from-literal=data_pass="${DATA_PASS:-dataPass}" \
+          --namespace $NAMESPACE \
+          --dry-run=client -o yaml | kubectl apply -f -
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+        OVERLAY_USER: "{{ lookup('env','OVERLAY_USER') | default('', true) }}"
+        OVERLAY_PASS: "{{ lookup('env','OVERLAY_PASS') | default('', true) }}"
+        UI_USER: "{{ lookup('env','UI_USER') | default('', true) }}"
+        UI_PASS: "{{ lookup('env','UI_PASS') | default('', true) }}"
+        MIDI_USER: "{{ lookup('env','MIDI_USER') | default('', true) }}"
+        MIDI_PASS: "{{ lookup('env','MIDI_PASS') | default('', true) }}"
+        DATA_USER: "{{ lookup('env','DATA_USER') | default('', true) }}"
+        DATA_PASS: "{{ lookup('env','DATA_PASS') | default('', true) }}"
+      changed_when: false
+
     - name: Deploy NATS manifests (ordered)
       ansible.builtin.shell: |
         kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/configmap.yaml

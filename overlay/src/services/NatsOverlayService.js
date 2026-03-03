@@ -45,9 +45,14 @@ class NatsOverlayService extends OverlayService {
       socket.on('disconnect', () => logger.info('socket disconnected', socket.id));
     });
 
+    // Build connection options; include credentials if supplied via env vars.
+    const connOpts = { servers: this.natsUrl };
+    if (process.env.NATS_USER) connOpts.user = process.env.NATS_USER;
+    if (process.env.NATS_PASS) connOpts.pass = process.env.NATS_PASS;
+
     // Connect to NATS and subscribe to overlay events.
-    const nc = await connect({ servers: this.natsUrl });
-    logger.info('connected to NATS', this.natsUrl);
+    const nc = await connect(connOpts);
+    logger.info('connected to NATS', this.natsUrl, connOpts.user ? `(user=${connOpts.user})` : '');
     const sc = StringCodec();
 
     // jetstream / wildcard subscribe

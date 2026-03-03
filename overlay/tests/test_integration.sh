@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Simple integration smoke script (requires NATS at $NATS_URL and overlay running at $OVERLAY_URL)
 NATS_URL=${NATS_URL:-nats://127.0.0.1:4222}
+NATS_USER=${NATS_USER:-}
+NATS_PASS=${NATS_PASS:-}
 OVERLAY_URL=${OVERLAY_URL:-http://localhost:3000/grid.html}
 
-echo "Publishing sample messages to $NATS_URL"
+echo "Publishing sample messages to $NATS_URL (user=$NATS_USER pass=$NATS_PASS)"
 node ./scripts/publish-sample.js || exit 1
 
 # publish a few different subjects using the node publisher (no external CLI required)

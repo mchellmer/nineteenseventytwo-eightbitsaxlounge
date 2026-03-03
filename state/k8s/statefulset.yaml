@@ -1,19 +1,22 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: nats
+  name: eightbitsaxlounge-state
   labels:
-    app: nats
+    app: eightbitsaxlounge
+    component: state
 spec:
-  serviceName: nats-headless
+  serviceName: eightbitsaxlounge-state-headless
   replicas: 1
   selector:
     matchLabels:
-      app: nats
+      app: eightbitsaxlounge
+      component: state
   template:
     metadata:
       labels:
-        app: nats
+        app: eightbitsaxlounge
+        component: state
     spec:
       containers:
         - name: nats

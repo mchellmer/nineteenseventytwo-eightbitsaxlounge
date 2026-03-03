@@ -1,15 +1,25 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: nats-config
+  name: eightbitsaxlounge-state
   labels:
-    app: nats
+    app: eightbitsaxlounge
+    component: state
 data:
   nats.conf: |
     ## NATS server configuration with JetStream enabled
     port: 4222
     http: 8222
     server_name: nats
+
+    # simple authorization block containing a single user for the overlay
+    # service. this is solely for early testing; production should use
+    # accounts/credentials and stronger secrets managed via k8s secrets.
+    authorization {
+      users = [
+        { user: "overlay", password: "overlaypw", permissions: { publish: ["ui.overlay.*"], subscribe: [] } }
+      ]
+    }
 
     jetstream {
       store_dir: "/data/jetstream"

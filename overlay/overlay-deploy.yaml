@@ -8,6 +8,8 @@
           - lookup('env','VERSION') | length > 0
         fail_msg: "Missing required env vars: NAMESPACE and/or VERSION. Ensure the workflow passes them to Ansible."
 
+
+
     - name: Determine Ingress Controller external IP (MetalLB)
       ansible.builtin.shell: |
         kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
@@ -56,6 +58,7 @@
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 
+    # TODO: rather have all deployment files use the deployment version than patching after deploying 'latest'
     - name: Deploy Overlay Ingress
       ansible.builtin.shell: |
         kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/ingress.yaml
