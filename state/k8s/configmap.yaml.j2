@@ -6,18 +6,22 @@ metadata:
     app: eightbitsaxlounge
     component: state
 data:
+  overlay_user: overlay
+  ui_user: ui
+  midi_user: midi
+  data_user: data
   nats.conf: |
     ## NATS server configuration with JetStream enabled
     port: 4222
     http: 8222
     server_name: nats
 
-    # simple authorization block containing a single user for the overlay
-    # service. this is solely for early testing; production should use
-    # accounts/credentials and stronger secrets managed via k8s secrets.
     authorization {
       users = [
-        { user: "overlay", password: "overlaypw", permissions: { publish: ["ui.overlay.*"], subscribe: [] } }
+        { user: "overlay", password: "{{ overlay_pass }}", permissions: { publish: ["overlay.*"], subscribe: [] } }
+        { user: "ui", password: "{{ ui_pass }}", permissions: { publish: ["ui.*"], subscribe: [] } }
+        { user: "midi", password: "{{ midi_pass }}", permissions: { publish: ["midi.*"], subscribe: [] } }
+        { user: "data", password: "{{ data_pass }}", permissions: { publish: ["data.*"], subscribe: [] } }
       ]
     }
 

@@ -10,11 +10,11 @@ node ./scripts/publish-sample.js || exit 1
 
 # publish a few different subjects using the node publisher (no external CLI required)
 SUBJECTS=(
-  "ui.overlay.engine|{\"value\":\"room\"}"
-  "ui.overlay.time|{\"value\":3}"
-  "ui.overlay.control1|{\"value\":7}"
-  "ui.overlay.control2|{\"value\":10}"
-  "ui.overlay.delay|{\"value\":1}"
+  "overlay.engine|{\"value\":\"room\"}"
+  "overlay.time|{\"value\":3}"
+  "overlay.control1|{\"value\":7}"
+  "overlay.control2|{\"value\":10}"
+  "overlay.delay|{\"value\":1}"
 )
 for s in "${SUBJECTS[@]}"; do
   IFS='|' read -r subj payload <<< "$s"

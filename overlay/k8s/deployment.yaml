@@ -22,14 +22,12 @@ spec:
         image: ghcr.io/mchellmer/eightbitsaxlounge-overlay:latest
         imagePullPolicy: Always
         env:
-        # connect to the state layer service; credentials taken from the
-        # shared `state-nats-creds` secret (overlay_user/overlay_pass).
         - name: NATS_URL
           value: "nats://eightbitsaxlounge-state-client:4222"
         - name: NATS_USER
           valueFrom:
-            secretKeyRef:
-              name: state-nats-creds
+            configMapKeyRef:
+              name: eightbitsaxlounge-state
               key: overlay_user
         - name: NATS_PASS
           valueFrom:

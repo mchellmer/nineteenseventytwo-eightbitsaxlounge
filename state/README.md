@@ -9,31 +9,22 @@ Purpose
 Usage
 
 The state layer runs a single‑node NATS server with JetStream enabled.  To
-reach it from other components you use the Kubernetes service DNS name
-(`eightbitsaxlounge-state-client` in this repo).
+reach it from other components use the Kubernetes service DNS name
+(`eightbitsaxlounge-state-client`).
 
 A centralized credential secret (`state-nats-creds`) is created by the state
 playbook.  You may override any of the default user/password pairs by
-exporting environment variables such as `OVERLAY_USER`, `OVERLAY_PASS`,
-`UI_USER`, `UI_PASS`, etc., before running the playbook.
+exporting environment variables.
 
 Credentials are managed centrally via a secret named `state-nats-creds`.
 This secret contains the following base64‑encoded keys:
 
 ```
-overlay_user
 overlay_pass
-ui_user
 ui_pass
-midi_user
 midi_pass
-data_user
 data_pass
 ```
-
-Each component picks its own pair; e.g. the overlay deployment reads
-`overlay_user`/`overlay_pass`.  This avoids having a separate secret per
-service and makes it easy to rotate credentials from one place.
 
 ```sh
 # from another pod in the same namespace
@@ -59,7 +50,7 @@ The overlay container should connect and updates will appear at
 NATS connection will be rejected.
 
 Testing
-- Local Podman test (fast, no k8s):
+- Local Podman test:
   1. cd state
   2. make test            # runs NATS+JetStream in foreground (Ctrl-C to stop)
   3. Verify via: curl http://localhost:8222/

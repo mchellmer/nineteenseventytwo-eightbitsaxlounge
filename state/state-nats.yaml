@@ -6,6 +6,10 @@
       ansible.builtin.assert:
         that:
           - lookup('env','NAMESPACE') | length > 0
+          - lookup('env','OVERLAY_PASS') | length > 0
+          - lookup('env','UI_PASS') | length > 0
+          - lookup('env','MIDI_PASS') | length > 0
+          - lookup('env','DATA_PASS') | length > 0
         fail_msg: "Missing required env var: NAMESPACE. Ensure the workflow passes it to Ansible."
 
     - name: Create a temporary directory for manifests
@@ -14,10 +18,15 @@
         suffix: nats-k8s
       register: tempdir
 
-    - name: Copy NATS ConfigMap to temp directory
-      ansible.builtin.copy:
-        src: k8s/configmap.yaml
+    - name: Template ConfigMap with credentials
+      ansible.builtin.template:
+        src: k8s/configmap.yaml.j2
         dest: "{{ tempdir.path }}/configmap.yaml"
+      vars:
+        overlay_pass: "{{ lookup('env','OVERLAY_PASS') }}"
+        ui_pass: "{{ lookup('env','UI_PASS') }}"
+        midi_pass: "{{ lookup('env','MIDI_PASS') }}"
+        data_pass: "{{ lookup('env','DATA_PASS') }}"
 
     - name: Copy NATS headless service to temp directory
       ansible.builtin.copy:
@@ -34,29 +43,21 @@
         src: k8s/service-client.yaml
         dest: "{{ tempdir.path }}/service-client.yaml"
 
-    - name: Create central NATS credentials secret
+    - name: Create central NATS credentials secret (passwords only)
       ansible.builtin.shell: |
         kubectl create secret generic state-nats-creds \
-          --from-literal=overlay_user="${OVERLAY_USER:-overlay}" \
-          --from-literal=overlay_pass="${OVERLAY_PASS:-overlaypw}" \
-          --from-literal=ui_user="${UI_USER:-ui}" \
-          --from-literal=ui_pass="${UI_PASS:-uipass}" \
-          --from-literal=midi_user="${MIDI_USER:-midi}" \
-          --from-literal=midi_pass="${MIDI_PASS:-midEpass}" \
-          --from-literal=data_user="${DATA_USER:-data}" \
-          --from-literal=data_pass="${DATA_PASS:-dataPass}" \
+          --from-literal=overlay_pass="${OVERLAY_PASS}" \
+          --from-literal=ui_pass="${UI_PASS}" \
+          --from-literal=midi_pass="${MIDI_PASS}" \
+          --from-literal=data_pass="${DATA_PASS}" \
           --namespace $NAMESPACE \
           --dry-run=client -o yaml | kubectl apply -f -
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
-        OVERLAY_USER: "{{ lookup('env','OVERLAY_USER') | default('', true) }}"
-        OVERLAY_PASS: "{{ lookup('env','OVERLAY_PASS') | default('', true) }}"
-        UI_USER: "{{ lookup('env','UI_USER') | default('', true) }}"
-        UI_PASS: "{{ lookup('env','UI_PASS') | default('', true) }}"
-        MIDI_USER: "{{ lookup('env','MIDI_USER') | default('', true) }}"
-        MIDI_PASS: "{{ lookup('env','MIDI_PASS') | default('', true) }}"
-        DATA_USER: "{{ lookup('env','DATA_USER') | default('', true) }}"
-        DATA_PASS: "{{ lookup('env','DATA_PASS') | default('', true) }}"
+        OVERLAY_PASS: "{{ lookup('env','OVERLAY_PASS') }}"
+        UI_PASS: "{{ lookup('env','UI_PASS') }}"
+        MIDI_PASS: "{{ lookup('env','MIDI_PASS') }}"
+        DATA_PASS: "{{ lookup('env','DATA_PASS') }}"
       changed_when: false
 
     - name: Deploy NATS manifests (ordered)
