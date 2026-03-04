@@ -19,8 +19,13 @@ deps:
 	@npm ci --omit=dev || npm install --omit=dev
 
 test-integration: deps
-	@echo "Running integration test (publishes multiple ui.overlay.* messages)"
+	@echo "Running integration test (publishes multiple overlay.* messages)"
 	@bash tests/test_integration.sh
+
+# PowerShell version of integration test for Windows
+test-integration-ps: deps
+	@echo "Running integration test (publishes multiple ui.overlay.* messages)"
+	powershell -NoProfile -File tests/test_integration.ps1
 
 # verify demo image assets exist
 test-images:
@@ -39,6 +44,13 @@ podman-run:
 		-e NATS_USER=$${NATS_USER:-} \
 		-e NATS_PASS=$${NATS_PASS:-} \
 		eightbitsaxlounge-overlay:local
+
+podman-run-ps:
+	powershell -NoProfile -Command \
+		"& { $$natsUrl = if ($$env:NATS_URL) { $$env:NATS_URL } else { 'nats://host.containers.internal:4222' }; \
+		$$natsUser = if ($$env:NATS_USER) { $$env:NATS_USER } else { '' }; \
+		$$natsPass = if ($$env:NATS_PASS) { $$env:NATS_PASS } else { '' }; \
+		podman run --rm -p 3000:3000 -e NATS_URL=$$natsUrl -e NATS_USER=$$natsUser -e NATS_PASS=$$natsPass eightbitsaxlounge-overlay:local }"
 
 # Run the smoke publisher from inside a container (connects to host NATS by default)
 podman-smoke:

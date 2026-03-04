@@ -24,6 +24,14 @@ test:
 		-v $(CURDIR)/tmp/nats.conf:/etc/nats/nats.conf:Z \
 		nats:2.12 -c /etc/nats/nats.conf
 
+test-ps:
+	powershell -NoProfile -Command \
+		"& { Write-Host 'Starting NATS+JetStream in Podman (foreground). Press Ctrl-C to stop.'; \
+		New-Item -ItemType Directory -Force -Path 'tmp/data' | Out-Null; \
+		@('port: 4222', 'http: 8222', 'jetstream {', '  store_dir: \"/data/jetstream\"', '  max_mem_store: 64MB', '  max_file_store: 200MB', '}', '') | Set-Content -Path 'tmp/nats.conf'; \
+		$$curdir = (Get-Location).Path; \
+		podman run --rm --name nats-test -p 4222:4222 -p 8222:8222 -v $$curdir/tmp/data:/data:Z -v $$curdir/tmp/nats.conf:/etc/nats/nats.conf:Z nats:2.12 -c /etc/nats/nats.conf }"
+
 # Run NATS in detached/background mode (useful for CI or quick smoke tests)
 test-detach:
 	@mkdir -p tmp/data
