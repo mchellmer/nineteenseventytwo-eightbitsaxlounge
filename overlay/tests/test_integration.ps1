@@ -20,8 +20,8 @@ if ($LASTEXITCODE -ne 0) { exit 1 }
 $subjects = @(
     'overlay.engine|{"value":"room"}',
     'overlay.time|{"value":3}',
-    'overlay.control1|{"value":7}',
-    'overlay.control2|{"value":10}',
+    'overlay.dial1|{"value":7}',
+    'overlay.dial2|{"value":10}',
     'overlay.delay|{"value":1}'
 )
 

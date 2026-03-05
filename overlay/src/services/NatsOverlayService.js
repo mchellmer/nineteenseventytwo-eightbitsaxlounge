@@ -1,8 +1,8 @@
 /**
  * NatsOverlayService.js
  * ---------------------
- * OverlayService implementationthat uses a NATS server as the event source.  It
- * listens on all `ui.overlay.*` subjects, decodes the payload, caches the most
+ * OverlayService implementation that uses a NATS server as the event source.  It
+ * listens on all `overlay.*` subjects, decodes the payload, caches the most
  * recent value per-tail, and forwards updates to connected browser clients via
  * Socket.IO.
  *
@@ -56,7 +56,7 @@ class NatsOverlayService extends OverlayService {
     const sc = StringCodec();
 
     // jetstream / wildcard subscribe
-    const sub = nc.subscribe('ui.overlay.*');
+    const sub = nc.subscribe('overlay.*');
 
     // Process incoming messages and forward to Socket.IO clients
     (async () => {
@@ -68,8 +68,8 @@ class NatsOverlayService extends OverlayService {
           try { data = JSON.parse(payload); } catch { data = payload; }
           logger.info('nats msg', subj, data);
 
-          // compute the tail portion of the subject and propagate
-          const tail = subj.split('.').slice(2).join('.');
+          // compute the tail portion of the subject (everything after 'overlay.')
+          const tail = subj.split('.').slice(1).join('.');
           const event = `overlay.${tail}`;
 
           // cache & forward

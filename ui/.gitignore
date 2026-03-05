@@ -78,5 +78,3 @@ src/bots/twitch/v3ExampleSeeded.py
 tokens.db
 tokens.db-shm
 tokens.db-wal
-
-tokens*

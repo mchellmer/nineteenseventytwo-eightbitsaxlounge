@@ -8,26 +8,15 @@
   <body>
     <div class="layout">
       <div class="bg" aria-hidden="true"></div>
-          <div class="engine-block">
-            <div class="label">Engine</div>
-            <div class="value"><img id="engine-img" src="/images/engine/room.svg" class="value-img"/></div>
-          </div>
 
-          <div class="player-block">
-            <div class="label">Player</div>
-            <div id="player" class="value">MCH</div>
-          </div>
-
-          <div class="controls">
-            <div class="small"><div class="label">Time</div><div class="value"><img id="time-img" src="/images/values/0.svg" class="value-img"/></div></div>
-            <div class="small"><div class="label">Delay</div><div class="value"><img id="delay-img" src="/images/values/0.svg" class="value-img"/></div></div>
-            <div class="small"><div class="label">Control 1</div><div class="value"><img id="control1-img" src="/images/values/0.svg" class="value-img"/></div></div>
-            <div class="small"><div class="label">Control 2</div><div class="value"><img id="control2-img" src="/images/values/0.svg" class="value-img"/></div></div>
-          </div>
-
-          <div class="middle-area"><!-- empty center area for stream video (OBS will place the actual video) --></div>
-
-          <div class="chat-area" aria-hidden="true"><!-- reserved for chat (20% width) --></div>
+      <div class="overlay-stage">
+        <div id="panel-delay"  class="panel-text">0</div>
+        <div id="panel-engine" class="panel-text">Room</div>
+        <div id="panel-player" class="panel-text">MCH</div>
+        <div id="panel-time"   class="panel-text">0</div>
+        <div id="panel-dial1"  class="panel-text">0</div>
+        <div id="panel-dial2"  class="panel-text">0</div>
+      </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>

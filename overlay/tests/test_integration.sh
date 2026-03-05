@@ -12,8 +12,8 @@ node ./scripts/publish-sample.js || exit 1
 SUBJECTS=(
   "overlay.engine|{\"value\":\"room\"}"
   "overlay.time|{\"value\":3}"
-  "overlay.control1|{\"value\":7}"
-  "overlay.control2|{\"value\":10}"
+  "overlay.dial1|{\"value\":7}"
+  "overlay.dial2|{\"value\":10}"
   "overlay.delay|{\"value\":1}"
 )
 for s in "${SUBJECTS[@]}"; do

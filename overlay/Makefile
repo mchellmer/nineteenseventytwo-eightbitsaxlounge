@@ -24,7 +24,7 @@ test-integration: deps
 
 # PowerShell version of integration test for Windows
 test-integration-ps: deps
-	@echo "Running integration test (publishes multiple ui.overlay.* messages)"
+	@echo "Running integration test (publishes multiple overlay.* messages)"
 	powershell -NoProfile -File tests/test_integration.ps1
 
 # verify demo image assets exist
