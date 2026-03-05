@@ -1,0 +1,52 @@
+/* Styles shared by overlay HTML pages
+   - include via <link rel="stylesheet" href="/css/overlay.css" />
+   - panel positions derived from TwitchConsole.json (977 x 564 px image) */
+
+@font-face {
+  font-family: '04B_30';
+  src: url('/fonts/04B_30__.TTF') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+html,body{height:100%;margin:0;padding:0;background:transparent;overflow:hidden}
+
+.layout{position:relative;width:100vw;height:100vh;overflow:hidden}
+
+/* full-bleed background image */
+.bg{
+  position:absolute;inset:0;
+  background-image:url('/images/background.png');
+  background-size:cover;
+  background-position:center;
+  z-index:0;
+  pointer-events:none;
+}
+
+/* stage sits exactly over the background and provides the % coordinate space */
+.overlay-stage{
+  position:absolute;inset:0;
+  z-index:1;
+  pointer-events:none;
+}
+
+/* base style for all panel text boxes — positioned per-panel below */
+.panel-text{
+  position:absolute;
+  font-family:'04B_30',monospace;
+  color:#d30000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  line-height:1;
+  font-size:1em; /* overridden by script */
+}
+
+/* ── panel positions (% of 977 × 564) ───────────────────────── */
+#panel-delay  { left:2.76%;  top:6.75%;  width:13.00%; height:12.77%; }
+#panel-engine { left:21.29%; top:6.75%;  width:22.52%; height:12.77%; }
+#panel-player { left:49.02%; top:6.75%;  width:22.62%; height:12.77%; }
+#panel-time   { left:2.76%;  top:33%; width:13.00%; height:12.94%; }
+#panel-dial1  { left:2.76%;  top:58.69%; width:13.00%; height:12.77%; }
+#panel-dial2  { left:2.76%;  top:84%; width:13.00%; height:12.94%; }

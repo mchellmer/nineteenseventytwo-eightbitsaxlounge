@@ -1,0 +1,36 @@
+{
+    "length-pixels": 977,
+    "width-pixels": 564,
+    "panels": [
+        {
+            "name": "player",
+            "pixel-top-left": [479,45],
+            "pixel-bottom-right": [700,117]
+        },
+        {
+            "name": "engine",
+            "pixel-top-left": [208,45],
+            "pixel-bottom-right": [428,117]
+        },
+        {
+            "name": "delay",
+            "pixel-top-left": [27,45],
+            "pixel-bottom-right": [154,117]
+        },
+        {
+            "name": "time",
+            "pixel-top-left": [27,187],
+            "pixel-bottom-right": [154,260]
+        },
+        {
+            "name": "dial1",
+            "pixel-top-left": [27,331],
+            "pixel-bottom-right": [154,403]
+        },
+        {
+            "name": "dial2",
+            "pixel-top-left": [27,470],
+            "pixel-bottom-right": [154,543]
+        }
+    ]
+}

@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: eightbitsaxlounge-state
+  labels:
+    app: eightbitsaxlounge
+    component: state
+spec:
+  serviceName: eightbitsaxlounge-state-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eightbitsaxlounge
+      component: state
+  template:
+    metadata:
+      labels:
+        app: eightbitsaxlounge
+        component: state
+    spec:
+      containers:
+        - name: nats
+          image: nats:2.12
+          args: ["-c", "/etc/nats/nats.conf"]
+          ports:
+            - name: client
+              containerPort: 4222
+            - name: monitor
+              containerPort: 8222
+            - name: cluster
+              containerPort: 6222
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nats
+              readOnly: true
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            tcpSocket:
+              port: 4222
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 4222
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: config
+          configMap:
+            name: nats-config
+            items:
+              - key: nats.conf
+                path: nats.conf
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: longhorn
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi

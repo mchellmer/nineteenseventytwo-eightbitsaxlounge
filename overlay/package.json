@@ -1,0 +1,27 @@
+{
+  "name": "eightbitsaxlounge-overlay",
+  "version": "0.0.1",
+  "description": "Browser-overlay service — subscribes to NATS and pushes updates to browsers via socket.io",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "NODE_ENV=development node src/index.js",
+    "smoke": "node scripts/publish-sample.js",
+    "test-unit": "jest",
+    "test-images": "./tests/test_images.sh",
+    "test": "npm run test-unit && npm run test-images"
+  },
+  "jest": {
+    "testMatch": ["**/tests/**/*.test.js"],
+    "testEnvironment": "node"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "nats": "^2.29.3",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0"
+  }
+}

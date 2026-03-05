@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eightbitsaxlounge-state
+  labels:
+    app: eightbitsaxlounge
+    component: state
+data:
+  overlay_user: overlay
+  ui_user: ui
+  midi_user: midi
+  data_user: data
+  nats.conf: |
+    ## NATS server configuration with JetStream enabled
+    port: 4222
+    http: 8222
+    server_name: nats
+
+    authorization {
+      users = [
+        { user: "overlay", password: "{{ overlay_pass }}", permissions: { publish: ["overlay.*"], subscribe: [] } }
+        { user: "ui", password: "{{ ui_pass }}", permissions: { publish: ["ui.*"], subscribe: [] } }
+        { user: "midi", password: "{{ midi_pass }}", permissions: { publish: ["midi.*"], subscribe: [] } }
+        { user: "data", password: "{{ data_pass }}", permissions: { publish: ["data.*"], subscribe: [] } }
+      ]
+    }
+
+    jetstream {
+      store_dir: "/data/jetstream"
+      max_mem_store: 64MB
+      max_file_store: 200MB
+    }
+
+    # Single-server cluster (for small deployments). For HA, run 3+ replicas and
+    # enable clustering configuration.
+    # clustering {
+    #   name: "nats-cluster"
+    #   listen: 0.0.0.0:6222
+    #   routes = [ nats-route://nats-0.nats-headless:6222 ]
+    # }

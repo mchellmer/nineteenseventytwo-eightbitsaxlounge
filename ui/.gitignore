@@ -73,3 +73,12 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# local twitch bot examples (shouldn't be committed)
+src/bots/twitch/v3Example.py
+src/bots/twitch/v3ExampleSeeded.py
+
+# sqlite token database
+tokens.db
+tokens.db-shm
+tokens.db-wal

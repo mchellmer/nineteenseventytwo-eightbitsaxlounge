@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Overlay Grid (demo)</title>
+    <link rel="stylesheet" href="/css/overlay.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <div class="bg" aria-hidden="true"></div>
+
+      <div class="overlay-stage">
+        <div id="panel-delay"  class="panel-text">0</div>
+        <div id="panel-engine" class="panel-text">Room</div>
+        <div id="panel-player" class="panel-text">MCH</div>
+        <div id="panel-time"   class="panel-text">0</div>
+        <div id="panel-dial1"  class="panel-text">0</div>
+        <div id="panel-dial2"  class="panel-text">0</div>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/overlay.js"></script>
+  </body>
+</html>
