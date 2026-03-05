@@ -1,0 +1,24 @@
+name: State Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - state/*
+    paths:
+      - 'state/version.txt'
+
+jobs:
+  release:
+    name: Release State Component
+    permissions:
+      packages: write
+      security-events: write
+    uses: ./.github/workflows/release-template.yaml
+    with:
+      component: 'state'
+      test-target: 'test'
+      build-target: 'build'
+      deploy-target: 'deploy'
+      requires-docker-login: true
