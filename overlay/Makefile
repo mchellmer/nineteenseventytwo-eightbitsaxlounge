@@ -27,6 +27,11 @@ test-integration-ps: deps
 	@echo "Running integration test (publishes multiple overlay.* messages)"
 	powershell -NoProfile -File tests/test_integration.ps1
 
+# Run Jest unit tests (overlay.js + NatsOverlayService)
+test-unit:
+	@echo "Running unit tests"
+	npm run test-unit
+
 # verify demo image assets exist
 test-images:
 	@echo "Checking overlay demo image assets"
