@@ -26,7 +26,7 @@ public class UploadEffectsHandler : IMidiEndpointHandler<IResult>
     public async Task<IResult> HandleAsync()
     {
         _logger.LogInformation("Starting effects upload");
-        
+
         var effectsFromConfig = _effectsOptions.Value.Effects;
         if (effectsFromConfig.Count == 0)
         {
@@ -60,7 +60,7 @@ public class UploadEffectsHandler : IMidiEndpointHandler<IResult>
             {
                 try
                 {
-                    var existingEffect = existingEffects.FirstOrDefault(e => 
+                    var existingEffect = existingEffects.FirstOrDefault(e =>
                         e.Name.Equals(effect.Name, StringComparison.OrdinalIgnoreCase));
 
                     if (existingEffect != null)

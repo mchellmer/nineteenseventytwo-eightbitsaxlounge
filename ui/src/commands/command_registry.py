@@ -4,7 +4,7 @@ Maps command names to their handler methods.
 """
 
 import logging
-from typing import Dict, Tuple, Callable, List, Any
+from typing import Dict, Tuple, Callable, List, Any, Union
 
 from config.settings import settings
 from services.midi_client import MidiClient
@@ -19,6 +19,7 @@ class CommandRegistry:
         """Initialize the command registry with all available commands."""
         from .handlers.engine import EngineHandler
         from .handlers.help import HelpHandler
+        from .handlers.value_handler import ValueHandler
         
         self._midi_client = MidiClient(
             base_url=settings.midi_device_url,
@@ -30,10 +31,71 @@ class CommandRegistry:
         self._engine_handler = EngineHandler(self._midi_client)
         self._help_handler = HelpHandler()
         
+        # Value-based commands using ValueHandler
+        # To add more commands like !decay, !predelay, etc.:
+        # 1. Create a handler instance with ValueHandler
+        # 2. Add it to self._commands dict below
+        # 3. Register it in twitch_bot.py (add_command and add handler method)
+        self._time_handler = ValueHandler(
+            midi_client=self._midi_client,
+            command_name="time",
+            device_name="VentrisDualReverb",
+            device_effect_name="ReverbEngineA",
+            device_effect_setting_name="Time",
+            min_value=0,
+            max_value=10
+        )
+        
+        self._predelay_handler = ValueHandler(
+            midi_client=self._midi_client,
+            command_name="predelay",
+            device_name="VentrisDualReverb",
+            device_effect_name="ReverbEngineA",
+            device_effect_setting_name="PreDelay",
+            min_value=0,
+            max_value=10
+        )
+        
+        self._control1_handler = ValueHandler(
+            midi_client=self._midi_client,
+            command_name="control1",
+            device_name="VentrisDualReverb",
+            device_effect_name="ReverbEngineA",
+            device_effect_setting_name="Control1",
+            min_value=0,
+            max_value=10
+        )
+        
+        self._control2_handler = ValueHandler(
+            midi_client=self._midi_client,
+            command_name="control2",
+            device_name="VentrisDualReverb",
+            device_effect_name="ReverbEngineA",
+            device_effect_setting_name="Control2",
+            min_value=0,
+            max_value=10
+        )
+        
         self._commands: Dict[str, Tuple[Callable, str]] = {
             'engine': (
                 self._engine_handler.handle,
                 self._engine_handler.description
+            ),
+            'time': (
+                self._time_handler.handle,
+                self._time_handler.description
+            ),
+            'predelay': (
+                self._predelay_handler.handle,
+                self._predelay_handler.description
+            ),
+            'control1': (
+                self._control1_handler.handle,
+                self._control1_handler.description
+            ),
+            'control2': (
+                self._control2_handler.handle,
+                self._control2_handler.description
             ),
             'help': (
                 self._help_handler.handle,
@@ -41,7 +103,7 @@ class CommandRegistry:
             ),
         }
     
-    async def execute_command(self, command_name: str, args: List[str], context: Any) -> str:
+    async def execute_command(self, command_name: str, args: List[str], context: Any) -> Union[str, List[str]]:
         """
         Execute a command with the given arguments and context.
         
@@ -51,7 +113,7 @@ class CommandRegistry:
             context: The command context (typically a Twitch context object)
             
         Returns:
-            The response message to send to chat
+            The response message(s) to send to chat (string or list of strings)
             
         Raises:
             ValueError: If the command is not found

@@ -1,0 +1,238 @@
+name: Reusable Release
+
+on:
+  workflow_call:
+    inputs:
+      component:
+        description: 'Component name (matches directory: db, data, midi, ui)'
+        required: true
+        type: string
+      version-file:
+        description: 'Path to version file relative to component directory'
+        required: false
+        type: string
+        default: 'version.txt'
+      build-target:
+        description: 'Make target for building (e.g., build, build-image)'
+        required: false
+        type: string
+        default: 'build'
+      test-target:
+        description: 'Make target for testing (empty to skip)'
+        required: false
+        type: string
+        default: ''
+      package-target:
+        description: 'Make target for packaging (empty to skip)'
+        required: false
+        type: string
+        default: ''
+      deploy-target:
+        description: 'Make target for deployment'
+        required: true
+        type: string
+      requires-docker-login:
+        description: 'Whether component requires Docker/GHCR authentication'
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      component-secrets:
+        description: 'JSON object of component-specific secrets to pass as environment variables'
+        required: false
+
+jobs:
+  publish:
+    name: Build, Test & Publish
+    runs-on: self-hosted
+    permissions:
+      packages: write
+      security-events: write
+    defaults:
+      run:
+        working-directory: ./${{ inputs.component }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      namespace: ${{ steps.namespace.outputs.namespace }}
+      image-exists: ${{ steps.final-check.outputs.image-exists }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Read Version
+        id: version
+        run: |
+          VERSION=$(cat ${{ inputs.version-file }})
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "📦 Version: $VERSION"
+
+      - name: Set Namespace Based on Branch
+        id: namespace
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            NAMESPACE="eightbitsaxlounge-prod"
+          else
+            NAMESPACE="eightbitsaxlounge-dev"
+          fi
+          echo "namespace=$NAMESPACE" >> $GITHUB_OUTPUT
+          echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
+          echo "🎯 Namespace: $NAMESPACE"
+
+      - name: Log in to GitHub Container Registry (for verification)
+        if: inputs.requires-docker-login
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if image exists in registry
+        id: check-artifact
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          IMAGE="ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}:${VERSION}"
+          echo "🔍 Checking if image exists in remote registry: $IMAGE"
+          
+          # Remove local image to force remote check
+          docker rmi "$IMAGE" 2>/dev/null || true
+          
+          # Check remote registry (uses docker login credentials)
+          if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+            echo "needs-build=false" >> $GITHUB_OUTPUT
+            echo "✅ Image exists in remote registry - skipping build"
+          else
+            echo "needs-build=true" >> $GITHUB_OUTPUT
+            echo "🔨 Image not found in remote registry - will build"
+          fi
+
+      - name: Build Image
+        if: steps.check-artifact.outputs.needs-build == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          NAMESPACE: ${{ steps.namespace.outputs.namespace }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "🔨 Building ${{ inputs.component }} version $VERSION"
+          make build-image
+
+      - name: Run Unit Tests
+        if: inputs.test-target != '' && steps.check-artifact.outputs.needs-build == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          echo "🧪 Testing ${{ inputs.component }} version $VERSION"
+          make ${{ inputs.test-target }}
+
+      - name: Test Built Image
+        if: steps.check-artifact.outputs.needs-build == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "🔍 Verifying built image"
+          make test-image
+
+      - name: Re-authenticate before push (prevent concurrent pipeline conflicts)
+        if: inputs.requires-docker-login && steps.check-artifact.outputs.needs-build == 'true'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Image to Registry
+        if: steps.check-artifact.outputs.needs-build == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "📦 Pushing ${{ inputs.component }} version $VERSION to registry"
+          make push
+
+      - name: Verify Image Was Published
+        if: steps.check-artifact.outputs.needs-build == 'true'
+        id: verify-publish
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          IMAGE="ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}:${VERSION}"
+          echo "✅ Verifying image was published: $IMAGE"
+          
+          # Retry verification with backoff (registry propagation delay)
+          MAX_RETRIES=10
+          RETRY=0
+          while [ $RETRY -lt $MAX_RETRIES ]; do
+            if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+              echo "✅ Image successfully published to registry (attempt $((RETRY+1)))"
+              exit 0
+            fi
+            RETRY=$((RETRY+1))
+            echo "⏳ Waiting for registry propagation... (attempt $RETRY/$MAX_RETRIES)"
+            sleep 2
+          done
+          
+          echo "❌ ERROR: Image was not found in registry after $MAX_RETRIES attempts"
+          exit 1
+
+      - name: Final Image Status
+        id: final-check
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          IMAGE="ghcr.io/${{ github.repository_owner }}/eightbitsaxlounge-${{ inputs.component }}:${VERSION}"
+          
+          # Direct remote registry check with retry
+          MAX_RETRIES=10
+          RETRY=0
+          while [ $RETRY -lt $MAX_RETRIES ]; do
+            if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+              echo "image-exists=true" >> $GITHUB_OUTPUT
+              echo "✅ Ready for deployment: Image $VERSION exists in registry"
+              exit 0
+            fi
+            RETRY=$((RETRY+1))
+            if [ $RETRY -lt $MAX_RETRIES ]; then
+              echo "⏳ Waiting for registry... (attempt $RETRY/$MAX_RETRIES)"
+              sleep 2
+            fi
+          done
+          
+          echo "image-exists=false" >> $GITHUB_OUTPUT
+          echo "❌ ERROR: Image $VERSION not found in registry after $MAX_RETRIES attempts"
+          exit 1
+
+  deploy:
+    name: Deploy Configuration
+    runs-on: self-hosted
+    needs: [publish]
+    if: always() && inputs.deploy-target != '' && needs.publish.result == 'success' && needs.publish.outputs.image-exists == 'true'
+    defaults:
+      run:
+        working-directory: ./${{ inputs.component }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Display Deployment Info
+        run: |
+          echo "🚀 Deploying ${{ inputs.component }}"
+          echo "   Version: ${{ needs.publish.outputs.version }}"
+          echo "   Namespace: ${{ needs.publish.outputs.namespace }}"
+          echo "   Image verified in registry: ✅"
+
+      - name: Deploy
+        env:
+          VERSION: ${{ needs.publish.outputs.version }}
+          NAMESPACE: ${{ needs.publish.outputs.namespace }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          SECRETS_JSON: ${{ secrets.component-secrets }}
+        run: |
+          # Parse component-specific secrets from JSON and export as env vars
+          if [[ -n "$SECRETS_JSON" ]]; then
+            while IFS="=" read -r key value; do
+              export "$key=$value"
+            done < <(echo "$SECRETS_JSON" | jq -r 'to_entries | .[] | "\(.key)=\(.value)"')
+          fi
+          
+          echo "📦 Deploying configuration for version $VERSION"
+          make ${{ inputs.deploy-target }}
+        shell: bash

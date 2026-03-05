@@ -1,47 +1,40 @@
-"""
-Main entry point for a streaming chatbot.
-Handles application startup, signal handling, and bot lifecycle management.
-
-Implements StreamingBot interface. Options: TwitchBot
-"""
-
 import asyncio
 import logging
-import signal
 import sys
 
+from bots.twitch.bot import Bot as StreamingBot
+from config.logging_config import configure_logging
 from config.settings import settings
-from bots.twitch_bot import TwitchBot
+from services.health_server import HealthServer
 
-logging.basicConfig(
-    level=getattr(logging, settings.log_level.upper()),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+configure_logging(settings.log_level)
 logger = logging.getLogger(__name__)
 
+async def main() -> None:
+    """
+    Main function to run the bot and health server.
+    - Starts the health server first, then the implementation of StreamingBot
+    """
 
-async def main():
-    """Main function to run the bot."""
-    bot = TwitchBot()
-    
-    def signal_handler(signum, frame):
-        logger.info(f'Received signal {signum}, shutting down...')
-        asyncio.create_task(bot.shutdown())
-    
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-    
     try:
-        logger.info(f'Starting {bot.service_name} bot...')
+        bot = StreamingBot()
+        health_server = HealthServer(port=8080, bot_instance=bot)
+
+        await health_server.start()
         await bot.start()
     except KeyboardInterrupt:
-        logger.info('Received keyboard interrupt, shutting down...')
+        logger.warning("Shutting down due to KeyboardInterrupt")
     except Exception as e:
         logger.error(f'Fatal error: {e}')
+        await shutdown_all(bot, health_server)
         sys.exit(1)
     finally:
-        await bot.shutdown()
+        await shutdown_all(bot, health_server)
 
+async def shutdown_all(bot, health_server):
+    """Gracefully shutdown bot and health server."""
+    await bot.shutdown()
+    await health_server.stop()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

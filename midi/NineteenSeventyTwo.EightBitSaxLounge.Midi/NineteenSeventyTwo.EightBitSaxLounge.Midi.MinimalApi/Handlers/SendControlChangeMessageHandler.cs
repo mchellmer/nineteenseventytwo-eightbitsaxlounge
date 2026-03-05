@@ -26,7 +26,7 @@ public class SendControlChangeMessageHandler : IEndpointHandler<SendControlChang
             await _midiDeviceService.SendControlChangeMessageByDeviceMidiConnectNameAsync(
                 request.DeviceMidiConnectName,
                 new() { Address = request.Address, Value = request.Value });
-            
+
             var msg = $"Request to send Control Change Message to device '{request.DeviceMidiConnectName}' processed successfully.";
             _logger.LogInformation(msg);
             return Results.Ok(new { Message = msg });

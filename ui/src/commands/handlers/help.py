@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from commands.handlers.command_handler import CommandHandler
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class HelpHandler(CommandHandler):
         """Get the command description."""
         return "Show available bot commands and usage information"
     
-    async def handle(self, args: list[str], context: Any) -> str:
+    async def handle(self, args: list[str], context: Any) -> list[str]:
         """
         Handle !help commands.
         
@@ -30,11 +31,17 @@ class HelpHandler(CommandHandler):
             context: Command context (Twitch context)
             
         Returns:
-            Response message for chat with command list
+            List of response messages for chat (sent as separate messages)
         """
-        help_text = [
+        # Get available engines dynamically from settings
+        available_engines = ', '.join([e.lower() for e in settings.valid_engines])
+        
+        # Return condensed list of messages to avoid Twitch rate limiting
+        # Grouped into 3 messages instead of 7 for faster delivery
+        return [
             "🎵 EightBitSaxLounge Bot Commands 🎵",
-            "!engine <type> - Change MIDI engine (room, jazz, ambient, rock, electronic)",
-            "!help - Show this help message"
+            f"!engine ({available_engines})",
+            "!time/!predelay/!control1/!control2 (0-10)",
+            "Type !<command> <value> to control the reverb",
+            "Examples: !time 7, !engine room"
         ]
-        return " | ".join(help_text)

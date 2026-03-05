@@ -2,7 +2,7 @@
 
 sudo apt update
 sudo apt upgrade -y
-sudo apt -y install software-properties-common sshpass
+sudo apt -y install software-properties-common sshpass python3-pip
 
 sudo apt -y install ansible
 

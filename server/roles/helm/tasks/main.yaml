@@ -1,23 +1,19 @@
 ---
-- name: Download Helm binary
+- name: Download Helm installation script
   ansible.builtin.get_url:
-    url: "https://get.helm.sh/helm-{{ helm_version }}-linux-arm64.tar.gz"
-    dest: "/tmp/helm-{{ helm_version }}-linux-arm64.tar.gz"
-
-- name: Extract Helm binary
-  ansible.builtin.unarchive:
-    src: "/tmp/helm-{{ helm_version }}-linux-arm64.tar.gz"
-    dest: "/tmp"
-    remote_src: yes
-
-- name: Move Helm binary to install directory
-  ansible.builtin.command:
-    cmd: mv /tmp/linux-arm64/helm {{ helm_install_dir }}/helm
-  become: "{{helm_install_become}}"
-
-- name: Set executable permissions for Helm binary
-  ansible.builtin.file:
-    path: "{{ helm_install_dir }}/helm"
+    url: "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4"
+    dest: "/tmp/get-helm-4.sh"
     mode: '0755'
-    state: file
-  become: "{{helm_install_become}}"
+
+- name: Install Helm using official script
+  ansible.builtin.shell:
+    cmd: /tmp/get-helm-4.sh --version {{ helm_version }} --no-sudo
+  environment:
+    HELM_INSTALL_DIR: "{{ helm_install_dir }}"
+    USE_SUDO: "false"
+  become: "{{ helm_install_become }}"
+
+- name: Clean up installation script
+  ansible.builtin.file:
+    path: "/tmp/get-helm-4.sh"
+    state: absent

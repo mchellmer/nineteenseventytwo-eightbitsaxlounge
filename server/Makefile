@@ -1,16 +1,34 @@
 .PHONY: deploy-kubernetes deploy-cni console-init init-ansible-vault init-cicd
 
 ansible-docker:
-	ansible-playbook k8s-docker.yaml
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook init-docker.yaml -v --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook init-docker.yaml -v -K; \
+	fi
 
 ansible-kubernetes:
-	ansible-playbook k8s-kubernetes.yaml -vv
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook init-kubernetes.yaml -vv --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook init-kubernetes.yaml -vv -K; \
+	fi
 
 ansible-kubernetes-join:
-	ansible-playbook k8s-kubernetes.yaml -vv --skip-tags "install_kubernetes,reset_kubeadm,init_kubeadm"
-
-ansible-netplan:
-	ansible-playbook k8s-netplan.yaml
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook init-kubernetes.yaml -vv --skip-tags "install_kubernetes,reset_kubeadm,init_kubeadm" --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook init-kubernetes.yaml -vv --skip-tags "install_kubernetes,reset_kubeadm,init_kubeadm" -K; \
+	fi
 
 deploy-kubernetes:
 	make ansible-docker
@@ -20,34 +38,105 @@ deploy-cni:
 	ansible-playbook k8s-flannel.yaml
 
 deploy-ingress:
-	ansible-playbook k8s-ingress-nginx.yaml
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook k8s-ingress-nginx.yaml --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook k8s-ingress-nginx.yaml -K; \
+	fi
 
 deploy-loadbalancer:
-	ansible-playbook k8s-metallb.yaml
-
-deploy-monitoring:
-	ansible-playbook k8s-monitoring.yaml
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook k8s-metallb.yaml --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook k8s-metallb.yaml -K; \
+	fi
 
 deploy-namespaces:
 	ansible-playbook k8s-namespaces.yaml
 
+deploy-storage:
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook k8s-storage.yaml --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook k8s-storage.yaml -K; \
+	fi
+
 clean-cicd:
-	@echo "Cleaning up GitHub Actions Runner..."
-	cd ~/actions-runner && sudo ./svc.sh stop || true
-	cd ~/actions-runner && sudo ./svc.sh uninstall || true
-	cd ~/actions-runner && rm -f .credentials .credentials_rsaparams .runner .runner_migrated
-	cd ~/actions-runner && rm -rf _diag
+	@echo "Cleaning up GitHub Actions Runners..."
+	@for runner in ~/actions-runner-*; do \
+		if [ -d "$$runner" ]; then \
+			echo "Cleaning up $$runner..."; \
+			cd "$$runner" && sudo ./svc.sh stop || true; \
+			cd "$$runner" && sudo ./svc.sh uninstall || true; \
+			cd "$$runner" && ./config.sh remove || true; \
+		fi; \
+	done
+	@rm -rf ~/actions-runner-* || true
 	@echo "Cleanup complete. Run 'make init-cicd' to reconfigure."
 
 init-cicd: scripts/github-runner.sh
-	@read -p "Enter the GitHub Actions Runner token: " TOKEN; \
-	bash scripts/github-runner.sh $$TOKEN
+	@echo "You need TWO registration tokens from GitHub:"
+	@echo "  1. Go to: https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge/settings/actions/runners/new"
+	@echo "  2. Copy the token for Runner 1"
+	@echo "  3. Refresh the page and get a NEW token for Runner 2"
+	@echo ""
+	@read -p "Enter token for Runner 1: " TOKEN1; \
+	read -p "Enter token for Runner 2: " TOKEN2; \
+	bash scripts/github-runner.sh "$$TOKEN1" "$$TOKEN2"
 
 init-console: scripts/init.sh
 	bash scripts/init.sh
 
 init-console-ansible-vault: scripts/ansible-vault-init.sh
 	bash scripts/ansible-vault-init.sh
+
+init-console-config:
+	@echo "Init console config..."
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		export ANSIBLE_BECOME_EXE=sudo.ws; \
+		ansible-playbook init-console.yaml --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		export ANSIBLE_BECOME_EXE=sudo.ws; \
+		ansible-playbook init-console.yaml -K; \
+	fi
+
+init-dhcp:
+	ansible-playbook init-dhcp.yaml
+
+init-nodes:
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		export ANSIBLE_HOST_KEY_CHECKING=False; \
+		ansible-playbook init-nodes.yaml --ask-pass --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		export ANSIBLE_HOST_KEY_CHECKING=False; \
+		ansible-playbook init-nodes.yaml --ask-pass -K; \
+	fi
+
+init-pc:
+	@echo "Initializing PC configuration..."
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook init-pc.yaml --ask-pass --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook init-pc.yaml --ask-pass -K; \
+	fi
 
 shutdown-cluster:
 	@echo "⚠️  Initiating cluster shutdown sequence..."
@@ -59,12 +148,6 @@ shutdown-cluster:
 	else \
 		ansible-playbook shutdown.yaml -K; \
 	fi
-
-init-console-config:
-	ansible-playbook k8s-console.yaml
-
-init-nodes:
-	export ANSIBLE_HOST_KEY_CHECKING=False && ansible-playbook k8s-nodes.yaml --ask-pass
 
 scripts/ansible-vault-init.sh:
 	chmod +x scripts/ansible-vault-init.sh
@@ -83,3 +166,7 @@ test-system:
 	@echo "Kernel Version: $$(uname -r)"
 	@echo "Architecture: $$(uname -m)"
 	@echo "Uptime: $$(uptime -p)"
+
+archive-k8s-netplan:
+	@echo "Archiving: netplan configured by default when falshing ubuntu 25.10"
+	ansible-playbook k8s-netplan.yaml

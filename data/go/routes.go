@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 // SetupRoutes returns a configured chi.Router.
@@ -19,10 +20,18 @@ import (
 // Notes:
 //   - chi path params are segment-based (e.g., /{dbname}/{id}).
 //   - Handlers read params with chi.URLParam(r, "dbname") and "id".
-//   - Kubernetes Ingress now uses host-based routing (data[-dev].<ip>.sslip.io) and
-//     sends all requests at path root '/' here, so no /data prefix is required.
+//   - Kubernetes Ingress uses host-based routing (data[-dev].<ip>.sslip.io) and
+//     sends all requests at path root '/' here
 func SetupRoutes(svc CouchService) http.Handler {
 	r := chi.NewRouter()
+
+	// Register all middleware before any routes
+	r.Use(CorrelationIDMiddleware)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Logger)
+
+	// Health endpoint for Kubernetes probes
+	r.Get("/health", HealthCheckHandler(svc))
 
 	// Database-level endpoints (host root based)
 	r.Put("/{dbname}", CreateDatabaseByNameHandler(svc))

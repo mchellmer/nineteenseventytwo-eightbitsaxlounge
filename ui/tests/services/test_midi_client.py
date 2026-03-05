@@ -172,4 +172,94 @@ class TestMidiClient:
             
             assert result["success"] is True
     
-
+    @pytest.mark.asyncio
+    async def test_set_effect_with_selection(self, midi_client):
+        """Test set_effect with selection parameter."""
+        auth_response = create_mock_response(
+            status=200,
+            json_data={"access_token": "token", "expires_in": 3600}
+        )
+        midi_response = create_mock_response(
+            status=200,
+            json_data={"success": True}
+        )
+        
+        mock_session = AsyncMock()
+        mock_session.post = MagicMock(side_effect=[auth_response, midi_response])
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=None)
+        
+        with patch('aiohttp.ClientSession', return_value=mock_session):
+            result = await midi_client.set_effect(
+                device_name="VentrisDualReverb",
+                device_effect_name="ReverbEngineA",
+                device_effect_setting_name="ReverbEngine",
+                selection="Room"
+            )
+            
+            assert result["success"] is True
+    
+    @pytest.mark.asyncio
+    async def test_set_effect_with_value(self, midi_client):
+        """Test set_effect with value parameter."""
+        auth_response = create_mock_response(
+            status=200,
+            json_data={"access_token": "token", "expires_in": 3600}
+        )
+        midi_response = create_mock_response(
+            status=200,
+            json_data={"success": True}
+        )
+        
+        mock_session = AsyncMock()
+        mock_session.post = MagicMock(side_effect=[auth_response, midi_response])
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=None)
+        
+        with patch('aiohttp.ClientSession', return_value=mock_session):
+            result = await midi_client.set_effect(
+                device_name="VentrisDualReverb",
+                device_effect_name="ReverbEngineA",
+                device_effect_setting_name="ReverbEngine",
+                value=50
+            )
+            
+            assert result["success"] is True
+    
+    @pytest.mark.asyncio
+    async def test_set_effect_with_both_selection_and_value(self, midi_client):
+        """Test set_effect with both selection and value parameters."""
+        auth_response = create_mock_response(
+            status=200,
+            json_data={"access_token": "token", "expires_in": 3600}
+        )
+        midi_response = create_mock_response(
+            status=200,
+            json_data={"success": True}
+        )
+        
+        mock_session = AsyncMock()
+        mock_session.post = MagicMock(side_effect=[auth_response, midi_response])
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=None)
+        
+        with patch('aiohttp.ClientSession', return_value=mock_session):
+            result = await midi_client.set_effect(
+                device_name="VentrisDualReverb",
+                device_effect_name="ReverbEngineA",
+                device_effect_setting_name="ReverbEngine",
+                selection="Room",
+                value=75
+            )
+            
+            assert result["success"] is True
+    
+    @pytest.mark.asyncio
+    async def test_set_effect_validation_error_no_params(self, midi_client):
+        """Test set_effect raises ValueError when neither selection nor value is provided."""
+        with pytest.raises(ValueError, match="Either 'selection' or 'value' must be provided"):
+            await midi_client.set_effect(
+                device_name="VentrisDualReverb",
+                device_effect_name="ReverbEngineA",
+                device_effect_setting_name="ReverbEngine"
+            )

@@ -1,14 +1,14 @@
 """Base interface for command handlers."""
 
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, List, Union
 
 
 class CommandHandler(ABC):
     """Abstract base class for command handlers."""
     
     @abstractmethod
-    async def handle(self, args: List[str], context: Any) -> str:
+    async def handle(self, args: List[str], context: Any) -> Union[str, List[str]]:
         """
         Handle a command with the given arguments.
         
@@ -17,7 +17,8 @@ class CommandHandler(ABC):
             context: Command execution context (e.g., message, user info)
             
         Returns:
-            Response message to send to the user
+            Response message(s) to send to the user.
+            Can be a single string or a list of strings (sent as separate messages).
         """
         pass
     

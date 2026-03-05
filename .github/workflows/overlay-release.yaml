@@ -1,0 +1,24 @@
+name: Overlay Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - overlay/*
+    paths:
+      - 'overlay/version.txt'
+
+jobs:
+  release:
+    name: Release Overlay Component
+    permissions:
+      packages: write
+      security-events: write
+    uses: ./.github/workflows/release-template.yaml
+    with:
+      component: 'overlay'
+      test-target: 'test'
+      build-target: 'build'
+      deploy-target: 'deploy'
+      requires-docker-login: true

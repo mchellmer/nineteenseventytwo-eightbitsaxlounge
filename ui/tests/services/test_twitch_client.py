@@ -2,7 +2,6 @@
 
 import pytest
 from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from datetime import datetime, timedelta
 from services.twitch_client import TwitchClient
 
 
@@ -104,7 +103,7 @@ class TestTwitchClient:
         mock_session = create_mock_session_with_response(mock_response)
         
         with patch('aiohttp.ClientSession', return_value=mock_session):
-            result = await twitch_client.validate_and_warn("test_token")
+            await twitch_client.validate_and_warn("test_token")
             
             assert "WARNING" in caplog.text
     

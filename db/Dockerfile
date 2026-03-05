@@ -8,8 +8,9 @@ EXPOSE 5984
 ENV COUCHDB_USER=admin
 ENV COUCHDB_PASSWORD=${DB_COUCHDB_PASSWORD}
 
-# Copy any custom configuration files if needed
-# COPY local.ini /opt/couchdb/etc/local.ini
+# Copy initialization script
+COPY init-couchdb.sh /usr/local/bin/init-couchdb.sh
+RUN chmod +x /usr/local/bin/init-couchdb.sh
 
-# Start CouchDB
-CMD ["couchdb"]
+# Use our initialization script as entrypoint
+ENTRYPOINT ["/usr/local/bin/init-couchdb.sh"]

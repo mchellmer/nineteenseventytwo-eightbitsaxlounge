@@ -95,7 +95,6 @@ Set these in **Settings → Secrets → Actions**:
 | Secret Name | Description | Example |
 |-------------|-------------|---------|
 | `TWITCH_CLIENT_ID` | Your app's Client ID | `abc123xyz` |
-| `TWITCH_BOT_TOKEN` | Bot access token with `oauth:` prefix | `oauth:token123` |
 | `TWITCH_BOT_USERNAME` | Bot account username | `yourbotname` |
 | `TWITCH_CHANNEL` | Your Twitch channel name | `yourchannelname` |
 | `MIDI_CLIENT_ID` | MIDI API client ID | `localhost` |

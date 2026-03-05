@@ -1,7 +1,6 @@
 """Base handler for command handlers that require MIDI API integration."""
 
 import logging
-from typing import Any
 
 from services.midi_client import MidiClient
 from commands.handlers.command_handler import CommandHandler

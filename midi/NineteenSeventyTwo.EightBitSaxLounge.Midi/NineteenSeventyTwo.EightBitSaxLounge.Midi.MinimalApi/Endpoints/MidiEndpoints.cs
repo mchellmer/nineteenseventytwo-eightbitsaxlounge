@@ -26,7 +26,7 @@ public static class MidiEndpoints
             .RequireAuthorization()
             .WithName("InitializeDataModel")
             .WithTags("Data");
-        
+
         app.MapPost("api/Midi/UploadEffects",
             async (UploadEffectsHandler handler) =>
                 await handler.HandleAsync())
@@ -40,5 +40,21 @@ public static class MidiEndpoints
             .RequireAuthorization()
             .WithName("UploadDevice")
             .WithTags("Data");
+
+        app.MapPost("api/Midi/SetEffect",
+                async (
+                    SetEffectHandler handler,
+                    [FromBody] SetEffectRequest request) =>
+                    await handler.HandleAsync(request))
+            .RequireAuthorization()
+            .WithName("SetEffect")
+            .WithTags("Device");
+
+        app.MapPost("api/Midi/ResetDevice/{deviceName}",
+                async (string deviceName, ResetDeviceHandler handler) =>
+                    await handler.HandleAsync(deviceName))
+            .RequireAuthorization()
+            .WithName("ResetDevice")
+            .WithTags("Device");
     }
 }

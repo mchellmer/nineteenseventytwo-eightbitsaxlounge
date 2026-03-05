@@ -34,7 +34,7 @@ func (s *ProdCouchService) GetDocumentByDatabaseNameAndDocumentId(dbname string,
 	if err != nil {
 		return nil, fmt.Errorf("failed to send GET request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -69,7 +69,7 @@ func (s *ProdCouchService) CreateDocumentByDatabaseName(dbname string, doc map[s
 	if err != nil {
 		return fmt.Errorf("failed to send POST request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
@@ -115,7 +115,7 @@ func (s *ProdCouchService) UpdateDocumentByDatabaseNameAndDocumentId(dbname stri
 	if err != nil {
 		return fmt.Errorf("failed to send PUT request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Accept both 200 OK and 201 Created as success responses from CouchDB
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
@@ -153,7 +153,7 @@ func (s *ProdCouchService) DeleteDocumentByDatabaseNameAndDocumentId(dbname stri
 	if err != nil {
 		return fmt.Errorf("failed to send DELETE request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -175,7 +175,7 @@ func (s *ProdCouchService) GetDatabaseByName(dbName string) (map[string]interfac
 	if err != nil {
 		return nil, fmt.Errorf("failed to send GET request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -202,7 +202,7 @@ func (s *ProdCouchService) CreateDatabaseByName(dbName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to send PUT request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusPreconditionFailed {
 		body, _ := io.ReadAll(resp.Body)
@@ -224,7 +224,7 @@ func (s *ProdCouchService) DeleteDatabaseByName(dbName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to send DELETE request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -246,7 +246,7 @@ func (s *ProdCouchService) GetDocumentsByDatabaseName(dbName string) ([]map[stri
 	if err != nil {
 		return nil, fmt.Errorf("failed to send GET request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("_all_docs failed with status %d: %s", resp.StatusCode, string(body))
@@ -266,6 +266,25 @@ func (s *ProdCouchService) GetDocumentsByDatabaseName(dbName string) ([]map[stri
 		}
 	}
 	return docs, nil
+}
+
+// CheckHealth performs: GET /_up
+// Checks if CouchDB is accessible and responding.
+// Returns nil if healthy (200 OK), error otherwise.
+func (s *ProdCouchService) CheckHealth() error {
+	upURL := fmt.Sprintf("%s/_up", couchURL())
+	resp, err := httpClient.Get(upURL)
+	if err != nil {
+		return fmt.Errorf("failed to connect to CouchDB: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("CouchDB health check failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
 }
 
 // couchURL builds the base CouchDB URL with embedded basic-auth credentials.

@@ -34,7 +34,10 @@ class TestCommandRegistry:
         """Test executing help command."""
         response = await command_registry.execute_command("help", [], mock_twitch_context)
         
-        assert "command" in response.lower()
+        # Help returns a list of messages
+        assert isinstance(response, list)
+        full_response = ' '.join(response).lower()
+        assert "command" in full_response
     
     @pytest.mark.asyncio
     async def test_execute_unknown_command(self, command_registry, mock_twitch_context):

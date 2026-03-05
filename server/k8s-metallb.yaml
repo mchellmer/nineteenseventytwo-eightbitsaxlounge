@@ -1,6 +1,6 @@
 ---
 - name: Install and configure MetalLB in L2 mode
-  hosts: all
+  hosts: master, worker
   become: true
   tasks:
     - name: Allow TCP traffic on port 7946
@@ -34,10 +34,12 @@
 
 - name: Install and configure MetalLB in L2 mode
   hosts: master
+  vars:
+    metallb_version: "v0.15.3"
   tasks:
     - name: Download MetalLB manifest
       ansible.builtin.get_url:
-        url: "https://raw.githubusercontent.com/metallb/metallb/v0.14.9/config/manifests/metallb-native.yaml"
+        url: "https://raw.githubusercontent.com/metallb/metallb/{{ metallb_version }}/config/manifests/metallb-native.yaml"
         dest: "/tmp/metallb.yaml"
 
     - name: Apply MetalLB manifest

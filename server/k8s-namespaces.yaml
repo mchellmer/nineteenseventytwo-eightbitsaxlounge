@@ -5,7 +5,6 @@
       ansible.builtin.shell: kubectl create namespace {{ item }}
       loop:
         - eightbitsaxlounge-dev
-        - eightbitsaxlounge-test
         - eightbitsaxlounge-prod
       register: namespace_creation
 

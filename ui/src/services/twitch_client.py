@@ -85,12 +85,12 @@ class TwitchClient:
         if expires_in_days <= 7:
             logger.error(
                 f"⚠️  URGENT: Twitch token expires in {expires_in_days:.1f} days! "
-                f"Update TWITCH_TOKEN in GitHub secrets immediately."
+                f"Update TWITCH_ACCESS_TOKEN in GitHub secrets immediately."
             )
         elif expires_in_days <= 14:
             logger.warning(
                 f"⚠️  WARNING: Twitch token expires in {expires_in_days:.1f} days. "
-                f"Consider updating TWITCH_TOKEN in GitHub secrets soon."
+                f"Consider updating TWITCH_ACCESS_TOKEN in GitHub secrets soon."
             )
         elif expires_in_days <= 30:
             logger.info(

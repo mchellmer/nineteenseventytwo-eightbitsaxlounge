@@ -2,6 +2,15 @@ name: MIDI Data Init
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
 
 jobs:
   init-datamodel:
@@ -14,9 +23,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Set Namespace Based on Branch
+      - name: Set Namespace Based on Environment
         run: |
-          if [[ "${{ github.ref_name }}" == "main" ]]; then
+          if [[ "${{ github.event.inputs.environment }}" == "prod" ]]; then
             echo "NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
           else
             echo "NAMESPACE=eightbitsaxlounge-dev" >> $GITHUB_ENV

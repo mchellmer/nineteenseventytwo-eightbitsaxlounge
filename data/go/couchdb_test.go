@@ -235,3 +235,39 @@ type roundTripperFunc func(req *http.Request) (*http.Response, error)
 func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
+
+// TestCheckHealth tests the CheckHealth method
+func TestCheckHealth(t *testing.T) {
+	svc := &ProdCouchService{}
+
+	t.Run("healthy CouchDB", func(t *testing.T) {
+		body := io.NopCloser(bytes.NewReader([]byte(`{"status":"ok"}`)))
+		resp := &http.Response{StatusCode: 200, Body: body}
+		setMockClient(resp, nil)
+
+		err := svc.CheckHealth()
+		if err != nil {
+			t.Fatalf("expected no error for healthy CouchDB, got: %v", err)
+		}
+	})
+
+	t.Run("unhealthy CouchDB", func(t *testing.T) {
+		body := io.NopCloser(bytes.NewReader([]byte(`{"error":"service unavailable"}`)))
+		resp := &http.Response{StatusCode: 503, Body: body}
+		setMockClient(resp, nil)
+
+		err := svc.CheckHealth()
+		if err == nil {
+			t.Fatal("expected error for unhealthy CouchDB, got nil")
+		}
+	})
+
+	t.Run("connection error", func(t *testing.T) {
+		setMockClient(nil, fmt.Errorf("connection refused"))
+
+		err := svc.CheckHealth()
+		if err == nil {
+			t.Fatal("expected error for connection failure, got nil")
+		}
+	})
+}

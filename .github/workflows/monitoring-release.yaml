@@ -1,0 +1,34 @@
+name: Monitoring Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - monitoring/*
+    paths:
+      - 'monitoring/version.txt'
+
+jobs:
+  deploy:
+    name: Deploy Monitoring Stack
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Debug environment info
+        run: |
+          echo "Workflow: ${{ github.workflow }}"
+          echo "Job: ${{ github.job }}"
+          echo "Runner OS: ${{ runner.os }}"
+          echo "Runner Name: ${{ runner.name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Actor: ${{ github.actor }}"
+
+      - name: Deploy Monitoring
+        working-directory: ./monitoring
+        run: make deploy
+        env:
+          GRAFANA_PASSWORD: ${{ secrets.GRAFANA_PASSWORD }}
