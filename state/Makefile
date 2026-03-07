@@ -14,7 +14,7 @@ build:
 	@test -f version.txt || (echo "ERROR: version.txt not found" && exit 1)
 	@grep -E '^[0-9]+\.[0-9]+\.[0-9]+$$' version.txt > /dev/null || (echo "ERROR: Invalid version format in version.txt" && exit 1)
 	@test -f k8s/service-headless.yaml || (echo "ERROR: k8s/service-headless.yaml not found" && exit 1)
-	@test -f k8s/statefulset.yaml.j2 || (echo "ERROR: k8s/statefulset.yaml.j2 not found" && exit 1)
+	@test -f k8s/statefulset.yaml || (echo "ERROR: k8s/statefulset.yaml not found" && exit 1)
 	@test -f k8s/service-client.yaml || (echo "ERROR: k8s/service-client.yaml not found" && exit 1)
 	@echo "✓ All required files exist"
 	@echo "✓ version.txt is valid ($(VERSION))"

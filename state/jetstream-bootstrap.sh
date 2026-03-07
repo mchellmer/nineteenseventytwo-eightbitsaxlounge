@@ -1,7 +1,6 @@
 #!/bin/sh
 # JetStream stream bootstrap
-# Runs as a postStart lifecycle hook to create domain streams after NATS starts.
-# All output goes to stderr to ensure visibility in pod logs
+# Runs as a postStart lifecycle hook to create domain streams after NATS starts
 
 NATS_URL="${NATS_URL:-nats://127.0.0.1:4222}"
 NATS_USER="${NATS_USER:-system}"
@@ -9,72 +8,72 @@ NATS_PASS="${NATS_PASS:-$SYSTEM_PASS}"
 MAX_RETRIES=30
 RETRY_DELAY=1
 
-# Redirect stdout to stderr so all output appears in pod logs
-exec 1>&2
+log() {
+  echo "[BOOTSTRAP] $*" >&2
+}
 
-echo "[BOOTSTRAP] Starting at $(date)"
-echo "[BOOTSTRAP] NATS_URL: $NATS_URL"
-echo "[BOOTSTRAP] NATS_USER: $NATS_USER"
+log "Starting JetStream bootstrap"
+log "NATS_URL: $NATS_URL"
 
 # Validate required credentials
 if [ -z "$NATS_PASS" ]; then
-  echo "[ERROR] NATS_PASS or SYSTEM_PASS not set"
+  log "ERROR: NATS_PASS or SYSTEM_PASS not set"
   exit 1
 fi
 
-echo "[BOOTSTRAP] Waiting for NATS server to be ready at $NATS_URL ..."
+log "Waiting for NATS server..."
 attempt=1
 while [ $attempt -le $MAX_RETRIES ]; do
   if nats server info -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" >/dev/null 2>&1; then
-    echo "[BOOTSTRAP] NATS server is ready"
+    log "NATS server ready"
     break
   fi
   if [ $attempt -eq $MAX_RETRIES ]; then
-    echo "[ERROR] Failed to connect to NATS after $MAX_RETRIES attempts"
+    log "ERROR: Max retries reached"
     exit 1
   fi
-  echo "[BOOTSTRAP] Attempt $attempt/$MAX_RETRIES — waiting..."
+  log "Attempt $attempt/$MAX_RETRIES"
   sleep $RETRY_DELAY
   attempt=$((attempt + 1))
 done
 
-create_stream() {
-  local name=$1
-  local subjects=$2
-  local max_msgs=$3
-  echo "[BOOTSTRAP] Creating stream: $name (subjects: $subjects, max_msgs: $max_msgs)"
-  output=$(nats stream add "$name" \
-    --subjects "$subjects" \
-    --max-msgs "$max_msgs" \
-    --storage file \
-    --discard old \
-    --replicas 1 \
-    -s "$NATS_URL" \
-    -u "$NATS_USER" \
-    -p "$NATS_PASS" \
-    -n 2>&1)
-  exit_code=$?
-  
-  if [ $exit_code -eq 0 ]; then
-    echo "[BOOTSTRAP] ✓ Stream $name created"
-  else
-    # Check if stream already exists (exit code 1 with specific message)
-    if echo "$output" | grep -q "stream name already in use"; then
-      echo "[BOOTSTRAP] ℹ  Stream $name already exists"
-    else
-      echo "[BOOTSTRAP] WARNING: Stream $name creation returned exit code $exit_code"
-      echo "[BOOTSTRAP]   Output: $output"
-    fi
-  fi
-}
+log "Creating JetStream streams..."
 
-echo "[BOOTSTRAP] Creating JetStream streams..."
-create_stream OVERLAY_UPDATES "overlay.>" 1000
-create_stream UI_CONTROLS "ui.>" 500
-create_stream MIDI_STATE "midi.>" 200
-create_stream DATA_API "data.>" 500
+# Create OVERLAY_UPDATES stream
+if nats stream add OVERLAY_UPDATES --subjects "overlay.>" --max-msgs 1000 --storage file --discard old --replicas 1 -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" -n >/dev/null 2>&1; then
+  log "✓ OVERLAY_UPDATES created"
+elif nats stream info OVERLAY_UPDATES -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" >/dev/null 2>&1; then
+  log "ℹ OVERLAY_UPDATES exists"
+else
+  log "WARNING: OVERLAY_UPDATES creation/check failed"
+fi
 
-echo "[BOOTSTRAP] Verifying streams..."
-nats stream list -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" 2>&1 | sed 's/^/[BOOTSTRAP] /' || echo "[BOOTSTRAP] WARNING: Could not list streams"
+# Create UI_CONTROLS stream
+if nats stream add UI_CONTROLS --subjects "ui.>" --max-msgs 500 --storage file --discard old --replicas 1 -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" -n >/dev/null 2>&1; then
+  log "✓ UI_CONTROLS created"
+elif nats stream info UI_CONTROLS -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" >/dev/null 2>&1; then
+  log "ℹ UI_CONTROLS exists"
+else
+  log "WARNING: UI_CONTROLS creation/check failed"
+fi
 
-echo "[BOOTSTRAP] JetStream bootstrap complete at $(date)"
+# Create MIDI_STATE stream
+if nats stream add MIDI_STATE --subjects "midi.>" --max-msgs 200 --storage file --discard old --replicas 1 -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" -n >/dev/null 2>&1; then
+  log "✓ MIDI_STATE created"
+elif nats stream info MIDI_STATE -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" >/dev/null 2>&1; then
+  log "ℹ MIDI_STATE exists"
+else
+  log "WARNING: MIDI_STATE creation/check failed"
+fi
+
+# Create DATA_API stream
+if nats stream add DATA_API --subjects "data.>" --max-msgs 500 --storage file --discard old --replicas 1 -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" -n >/dev/null 2>&1; then
+  log "✓ DATA_API created"
+elif nats stream info DATA_API -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" >/dev/null 2>&1; then
+  log "ℹ DATA_API exists"
+else
+  log "WARNING: DATA_API creation/check failed"
+fi
+
+log "JetStream bootstrap complete"
+exit 0
