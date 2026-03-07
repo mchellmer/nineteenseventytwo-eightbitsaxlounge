@@ -42,6 +42,7 @@ push:
 test:
 	@echo "Running tests in Docker (node:25-slim)..."
 	docker run --rm \
+		--user $$(id -u):$$(id -g) \
 		-v "$(CURDIR):/app" \
 		-w /app \
 		node:25-slim \
