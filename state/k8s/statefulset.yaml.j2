@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: nats
-          image: nats:2.12
+          image: {{ state_image }}
           args: ["-c", "/etc/nats/nats.conf"]
           ports:
             - name: client
@@ -33,16 +33,33 @@ spec:
             postStart:
               exec:
                 command:
-                  - /bin/bash
+                  - /bin/sh
                   - -c
-                  - chmod +x /etc/nats/jetstream-bootstrap.sh && sleep 2 && /etc/nats/jetstream-bootstrap.sh
+                  - "sleep 2 && /usr/local/bin/jetstream-bootstrap.sh"
           env:
             - name: NATS_URL
               value: "nats://127.0.0.1:4222"
+            - name: OVERLAY_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: state-nats-creds
+                  key: overlay_pass
+            - name: UI_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: state-nats-creds
+                  key: ui_pass
+            - name: MIDI_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: state-nats-creds
+                  key: midi_pass
+            - name: DATA_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: state-nats-creds
+                  key: data_pass
           volumeMounts:
-            - name: config
-              mountPath: /etc/nats
-              readOnly: true
             - name: data
               mountPath: /data
           resources:
@@ -64,13 +81,6 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
             failureThreshold: 3
-      volumes:
-        - name: config
-          configMap:
-            name: nats-config
-            items:
-              - key: nats.conf
-                path: nats.conf
   volumeClaimTemplates:
     - metadata:
         name: data

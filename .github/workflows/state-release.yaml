@@ -21,7 +21,7 @@ jobs:
       test-target: 'test'
       build-target: 'build'
       deploy-target: 'deploy'
-      requires-docker-login: false
+      requires-docker-login: true
     secrets:
       component-secrets: |
         {
