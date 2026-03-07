@@ -6,7 +6,7 @@ authorization {
   users = [
     {
       user: "system"
-      password: $SYSTEM_PASS
+      password: "$SYSTEM_PASS"
       permissions: {
         publish: [">"]
         subscribe: [">"]
@@ -14,7 +14,7 @@ authorization {
     }
     {
       user: "overlay"
-      password: $OVERLAY_PASS
+      password: "$OVERLAY_PASS"
       permissions: {
         publish: ["overlay.>"]
         subscribe: ["ui.effect>"]
@@ -22,7 +22,7 @@ authorization {
     }
     {
       user: "ui"
-      password: $UI_PASS
+      password: "$UI_PASS"
       permissions: {
         publish: ["ui.>"]
         subscribe: []
@@ -30,7 +30,7 @@ authorization {
     }
     {
       user: "midi"
-      password: $MIDI_PASS
+      password: "$MIDI_PASS"
       permissions: {
         publish: ["midi.>"]
         subscribe: []
@@ -38,7 +38,7 @@ authorization {
     }
     {
       user: "data"
-      password: $DATA_PASS
+      password: "$DATA_PASS"
       permissions: {
         publish: ["data.>"]
         subscribe: []
