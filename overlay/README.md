@@ -78,8 +78,3 @@ Troubleshooting
 - If the overlay is blank in OBS but works in a normal browser: open `http://localhost:3000/grid.html` in Chrome/Firefox and check devtools for console/network errors.
 - Confirm the overlay server is running (logs show `overlay: listening on 3000`) and that NATS is reachable (server logs show `emit event overlay.*`).
 - If OBS fails to load remote (HTTPS) overlay, ensure the ingress has valid TLS and the URL is reachable from the OBS host.
-
-Next steps
-- Add JWT/NATS credentials and ACLs for production.
-- Add ingress and TLS if you want OBS to access the overlay via a public URL.
-- Add unit tests and CI/CD build/release workflow.

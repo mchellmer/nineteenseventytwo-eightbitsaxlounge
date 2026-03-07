@@ -18,11 +18,7 @@ authorization {
       permissions: {
         publish: ["overlay.>"]
         subscribe: [
-            "overlay.engine",
-            "overlay.delay",
-            "overlay.time",
-            "overlay.dial1",
-            "overlay.dial2"
+            "overlay.>"
           ]
       }
     }
