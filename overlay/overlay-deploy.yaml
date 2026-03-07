@@ -58,7 +58,6 @@
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 
-    # TODO: rather have all deployment files use the deployment version than patching after deploying 'latest'
     - name: Deploy Overlay Ingress
       ansible.builtin.shell: |
         kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/ingress.yaml
@@ -76,13 +75,11 @@
         GITHUB_REPOSITORY_OWNER: "{{ lookup('env', 'GITHUB_REPOSITORY_OWNER') | default('', true) }}"
         IMAGE_BASE: "{{ lookup('env', 'IMAGE_BASE') | default('', true) }}"
 
-    - name: Annotate Deployment with change cause
+    - name: Restart Deployment pods
       ansible.builtin.shell: |
-        kubectl -n "$NAMESPACE" annotate deploy/eightbitsaxlounge-overlay \
-          kubernetes.io/change-cause="overlay ${VERSION}" --overwrite
+        kubectl -n "$NAMESPACE" rollout restart deploy/eightbitsaxlounge-overlay
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
-        VERSION: "{{ lookup('env', 'VERSION') }}"
 
     - name: Wait for rollout to complete
       ansible.builtin.shell: |
