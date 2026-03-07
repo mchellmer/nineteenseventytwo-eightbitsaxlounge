@@ -6,13 +6,14 @@
       ansible.builtin.assert:
         that:
           - lookup('env','NAMESPACE') | length > 0
+          - lookup('env','SYSTEM_PASS') | length > 0
           - lookup('env','OVERLAY_PASS') | length > 0
           - lookup('env','UI_PASS') | length > 0
           - lookup('env','MIDI_PASS') | length > 0
           - lookup('env','DATA_PASS') | length > 0
           - lookup('env','VERSION') | length > 0
           - lookup('env','GITHUB_REPOSITORY_OWNER') | length > 0
-        fail_msg: "Missing required env var. Ensure NAMESPACE, VERSION, GITHUB_REPOSITORY_OWNER and all PASS vars are set."
+        fail_msg: "Missing required env var. Ensure NAMESPACE, SYSTEM_PASS, VERSION, GITHUB_REPOSITORY_OWNER and all other PASS vars are set."
 
     - name: Create a temporary directory for manifests
       ansible.builtin.tempfile:
@@ -40,6 +41,7 @@
     - name: Create NATS credentials secret
       ansible.builtin.shell: |
         kubectl create secret generic state-nats-creds \
+          --from-literal=system_pass="${SYSTEM_PASS}" \
           --from-literal=overlay_pass="${OVERLAY_PASS}" \
           --from-literal=ui_pass="${UI_PASS}" \
           --from-literal=midi_pass="${MIDI_PASS}" \
@@ -48,6 +50,7 @@
           --dry-run=client -o yaml | kubectl apply -f -
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
+        SYSTEM_PASS: "{{ lookup('env','SYSTEM_PASS') }}"
         OVERLAY_PASS: "{{ lookup('env','OVERLAY_PASS') }}"
         UI_PASS: "{{ lookup('env','UI_PASS') }}"
         MIDI_PASS: "{{ lookup('env','MIDI_PASS') }}"

@@ -4,12 +4,14 @@
 set -e
 
 NATS_URL="${NATS_URL:-nats://127.0.0.1:4222}"
+NATS_USER="${NATS_USER:-system}"
+NATS_PASS="${NATS_PASS:-$SYSTEM_PASS}"
 MAX_RETRIES=30
 RETRY_DELAY=2
 
 echo "Waiting for NATS server to be ready at $NATS_URL ..."
 for attempt in $(seq 1 $MAX_RETRIES); do
-  if nats server info -s "$NATS_URL" >/dev/null 2>&1; then
+  if nats server info -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" >/dev/null 2>&1; then
     echo "NATS server is ready"
     break
   fi
@@ -32,6 +34,8 @@ create_stream() {
     --discard old \
     --replicas 1 \
     -s "$NATS_URL" \
+    -u "$NATS_USER" \
+    -p "$NATS_PASS" \
     -n 2>/dev/null \
     && echo "✓ Stream $name created" \
     || echo "ℹ  Stream $name already exists — skipping"
@@ -45,4 +49,4 @@ create_stream MIDI_STATE "midi.>" 200
 create_stream DATA_API "data.>" 500
 
 echo "JetStream bootstrap complete"
-nats stream list -s "$NATS_URL"
+nats stream list -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS"

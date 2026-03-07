@@ -39,6 +39,11 @@ spec:
           env:
             - name: NATS_URL
               value: "nats://127.0.0.1:4222"
+            - name: SYSTEM_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: state-nats-creds
+                  key: system_pass
             - name: OVERLAY_PASS
               valueFrom:
                 secretKeyRef:

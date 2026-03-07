@@ -44,6 +44,7 @@ test:
 	@echo "Running smoke tests using custom image $(IMAGE_BASE):$(VERSION)..."
 	@echo "Starting NATS in background for health check..."
 	docker run -d --name nats-smoke-test -p 4222:4222 -p 8222:8222 \
+		-e SYSTEM_PASS=systempass \
 		-e OVERLAY_PASS=smoketest \
 		-e UI_PASS=smoketest \
 		-e MIDI_PASS=smoketest \
@@ -75,6 +76,7 @@ test:
 test-local:
 	@echo "Starting NATS+JetStream in Podman (foreground). Press Ctrl-C to stop."
 	podman run --rm --name nats-test -p 4222:4222 -p 8222:8222 \
+		-e SYSTEM_PASS=systempass \
 		-e OVERLAY_PASS=overlaypw \
 		-e UI_PASS=uipw \
 		-e MIDI_PASS=midipw \
@@ -87,6 +89,7 @@ test-local-ps:
 		"& { Write-Host 'Starting NATS+JetStream in Podman (foreground). Press Ctrl-C to stop.'; \
 		$$image = '$(IMAGE_BASE):$(VERSION)'; \
 		podman run --rm --name nats-test -p 4222:4222 -p 8222:8222 \
+			-e SYSTEM_PASS=systempass \
 			-e OVERLAY_PASS=overlaypw \
 			-e UI_PASS=uipw \
 			-e MIDI_PASS=midipw \
@@ -96,28 +99,30 @@ test-local-ps:
 # Deploy NATS to Kubernetes cluster
 deploy:
 	@test -n "$$NAMESPACE" || (echo "ERROR: NAMESPACE env var not set" && exit 1)
+	@test -n "$$SYSTEM_PASS" || (echo "ERROR: SYSTEM_PASS env var not set" && exit 1)
 	@test -n "$$OVERLAY_PASS" || (echo "ERROR: OVERLAY_PASS env var not set" && exit 1)
 	@test -n "$$UI_PASS" || (echo "ERROR: UI_PASS env var not set" && exit 1)
 	@test -n "$$MIDI_PASS" || (echo "ERROR: MIDI_PASS env var not set" && exit 1)
 	@test -n "$$DATA_PASS" || (echo "ERROR: DATA_PASS env var not set" && exit 1)
 	@echo "🚀 Deploying NATS to namespace $$NAMESPACE"
-	NAMESPACE="$$NAMESPACE" OVERLAY_PASS="$$OVERLAY_PASS" UI_PASS="$$UI_PASS" MIDI_PASS="$$MIDI_PASS" DATA_PASS="$$DATA_PASS" \
+	NAMESPACE="$$NAMESPACE" SYSTEM_PASS="$$SYSTEM_PASS" OVERLAY_PASS="$$OVERLAY_PASS" UI_PASS="$$UI_PASS" MIDI_PASS="$$MIDI_PASS" DATA_PASS="$$DATA_PASS" \
 		ansible-playbook state-nats.yaml
 
 # Manual deployment with interactive prompts for secrets
 deploy-nats-manual:
-	@if [ -z "$$NAMESPACE" ] || [ -z "$$OVERLAY_PASS" ] || [ -z "$$UI_PASS" ] || [ -z "$$MIDI_PASS" ] || [ -z "$$DATA_PASS" ]; then \
+	@if [ -z "$$NAMESPACE" ] || [ -z "$$SYSTEM_PASS" ] || [ -z "$$OVERLAY_PASS" ] || [ -z "$$UI_PASS" ] || [ -z "$$MIDI_PASS" ] || [ -z "$$DATA_PASS" ]; then \
 		echo "⚠️  Manual deployment mode: using prompts for secrets"; \
 		read -p "Enter NAMESPACE (default: eightbitsaxlounge-dev): " ns; \
 		NAMESPACE="$${ns:-eightbitsaxlounge-dev}"; \
+		read -sp "Enter SYSTEM_PASS: " system_pass; echo; \
 		read -sp "Enter OVERLAY_PASS: " overlay_pass; echo; \
 		read -sp "Enter UI_PASS: " ui_pass; echo; \
 		read -sp "Enter MIDI_PASS: " midi_pass; echo; \
 		read -sp "Enter DATA_PASS: " data_pass; echo; \
-		NAMESPACE="$$NAMESPACE" OVERLAY_PASS="$$overlay_pass" UI_PASS="$$ui_pass" MIDI_PASS="$$midi_pass" DATA_PASS="$$data_pass" \
+		NAMESPACE="$$NAMESPACE" SYSTEM_PASS="$$system_pass" OVERLAY_PASS="$$overlay_pass" UI_PASS="$$ui_pass" MIDI_PASS="$$midi_pass" DATA_PASS="$$data_pass" \
 			ansible-playbook state-nats.yaml; \
 	else \
-		NAMESPACE="$$NAMESPACE" OVERLAY_PASS="$$OVERLAY_PASS" UI_PASS="$$UI_PASS" MIDI_PASS="$$MIDI_PASS" DATA_PASS="$$DATA_PASS" \
+		NAMESPACE="$$NAMESPACE" SYSTEM_PASS="$$SYSTEM_PASS" OVERLAY_PASS="$$OVERLAY_PASS" UI_PASS="$$UI_PASS" MIDI_PASS="$$MIDI_PASS" DATA_PASS="$$DATA_PASS" \
 			ansible-playbook state-nats.yaml; \
 	fi
 
