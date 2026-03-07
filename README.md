@@ -32,6 +32,10 @@ Ansible-based infrastructure as code managing the Kubernetes cluster across Rasp
 
 For architectural diagrams and visual overviews, see the [diagrams/](diagrams/) folder.
 
+### **State Layer** ([state/](state/))
+Nats messaging to support event based state management.
+- broadcast view updates via message from the ui layer subscribed to by the overlay layer
+
 ## Infrastructure
 
 - **Kubernetes Cluster**: Self-hosted K8s cluster

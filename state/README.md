@@ -1,84 +1,162 @@
-# State layer
+# Overview
 
-Manage state across the eightbitsaxlounge via a message broker
+The state layer provides a centralized event message broker for microservice communication using NATS with JetStream stream persistence.
 
-Purpose
-- Provide a dedicated, stateful message broker via NATS for microservice events.
-- Persistent storage via JetStream
+**Architecture:**
+- NATS 2.12 with JetStream enabled for message persistence and durability
+- Single-node StatefulSet deployment with PersistentVolumeClaim storage
 
-Usage
+**Event Streams:**
+- `OVERLAY_UPDATES` - Overlay state changes (subject: `overlay.>`)
+- `UI_CONTROLS` - UI to system commands (subject: `ui.>`)
+- `MIDI_STATE` - MIDI device state observations (subject: `midi.>`)
+- `DATA_API` - Data layer events (subject: `data.>`)
 
-The state layer runs a single‑node NATS server with JetStream enabled.  To
-reach it from other components use the Kubernetes service DNS name
-(`eightbitsaxlounge-state-client`).
+**Authentication:**
+- Five users with role-based ACL:
+  - `system` - Full publish/subscribe (bootstrap operations)
+  - `overlay` - Publish `overlay.*` + Subscribe to `ui.effect.*` commands
+  - `ui` - Publish `ui.*` only
+  - `midi` - Publish `midi.*` only
+  - `data` - Publish `data.*` only
+- Credentials managed via Kubernetes secret `state-nats-creds` with 5 password keys
 
-A centralized credential secret (`state-nats-creds`) is created by the state
-playbook.  You may override any of the default user/password pairs by
-exporting environment variables.
+# Deployment
 
-Credentials are managed centrally via a secret named `state-nats-creds`.
-This secret contains the following base64‑encoded keys:
+## Kubernetes Deployment
 
-```
-overlay_pass
-ui_pass
-midi_pass
-data_pass
-```
+Containerized NATS server deployed as Kubernetes StatefulSet with persistent storage. Event streams are automatically initialized at pod startup.
 
-```sh
-# from another pod in the same namespace
-export NATS_URL=nats://eightbitsaxlounge-state-client:4222
-# or with host/port explicitly
-export NATS_URL=nats://eightbitsaxlounge-state-client.default.svc.cluster.local:4222
-```
-
-For step‑1 testing with the overlay service you can exercise the
-new authorization rules:
-
-```sh
-cd state && make test &                # start NATS locally via Podman
-export NATS_URL=nats://127.0.0.1:4222
-export NATS_USER=overlay
-export NATS_PASS=overlaypw
-cd ../overlay && make podman-build && make podman-run
-cd ../overlay && make smoke          # publish a test message
+**Deployment:**
+```bash
+make deploy     # Deploy to target namespace with version from version.txt
 ```
 
-The overlay container should connect and updates will appear at
-`http://localhost:3000/grid.html`.  If the credentials are wrong the
-NATS connection will be rejected.
+**Manual Deployment with Specific Namespace:**
+```bash
+make deploy-nats-manual   # Interactive prompts for namespace and passwords
+```
 
-Testing
-- Local Podman test:
-  1. cd state
-  2. make test            # runs NATS+JetStream in foreground (Ctrl-C to stop)
-  3. Verify via: curl http://localhost:8222/
+**Configuration:**
+- Image: `ghcr.io/mchellmer/eightbitsaxlounge-state:<version>`
+- Deployment pattern: Static manifest with `imagePullPolicy: Always`, versioned tag updated via `kubectl set image` after apply
+- StatefulSet: Single replica with 30s readiness probe delay to allow bootstrap completion
+- Storage: 1Gi PersistentVolumeClaim (storageClass: longhorn) for JetStream persistence
+- Lifecycle: postStart hook runs bootstrap script to create 4 JetStream streams
 
-Next steps
-1. **Secure the broker.**
-   - Define NATS accounts/users and generate credentials.
-   - Write ACL rules so that e.g. the overlay service may publish to `ui.overlay.*` but cannot subscribe to internal streams.
-   - For early testing the configmap already contains a simple `overlay:overlaypw` user; overlay components can connect with
-     `NATS_USER=overlay NATS_PASS=overlaypw` or by creating a secret containing those values.
-   - Consider storing creds in Kubernetes secrets (e.g. `overlay-nats-creds`) and mounting/consuming them via environment
-     variables in your deployment manifests.
+## Stream Configuration
 
-2. **Structure JetStream.**
-   - Create streams for your domain areas (`UI_OVERLAY`, `DATA_API`, etc.).
-   - Configure limits/retention policies appropriate for state data versus event logs.
-   - Experiment locally using the CLI or the management APIs (`nc.jetstream()` in JS).
+Each stream configured with:
+- Message retention: 1000 messages per stream (configurable)
+- Storage backend: File-based (persistent across pod restarts)
+- Replicas: 1 (single-node deployment)
+- Discard policy: Old messages are discarded when limit reached
 
-3. **Client helpers.**
-   - Build or document wrapper functions for common patterns (e.g. `publishOverlayUpdate(id,val)`).
-   - The overlay service already acts as a subscriber; similar scaffolding could be added to the data API or any other consumer.
+**Stream Details:**
+```
+Stream Name           | Subject Pattern | Max Messages | Purpose
+OVERLAY_UPDATES       | overlay.>       | 1000         | Overlay state publishing
+UI_CONTROLS           | ui.>            | 1000         | UI command broadcasting
+MIDI_STATE            | midi.>          | 1000         | MIDI device observations
+DATA_API              | data.>          | 1000         | Data layer events
+```
 
-4. **Integration and CI.**
-   - Extend the existing `make test` to create streams and verify basic publishes/subscribes.
-   - Add Ansible playbook steps to create streams/accounts when deploying to a cluster.
+## Service Configuration
 
-5. **Scale & HA.**
-   - Consider running 3+ replicas of the StatefulSet and enabling clustering in `nats.conf` once you need redundancy.
-   - Update the headless service and ingress logic accordingly.
+NATS exposed via Kubernetes service `eightbitsaxlounge-state-client` on port 4222 (client connections) and 8222 (monitoring endpoint).
 
-Following these steps will turn the lightweight proof‑of‑concept broker into a production‑ready state layer with authentication, structured streams, and automation.
+**DNS Names:**
+```
+In-cluster: eightbitsaxlounge-state-client:4222
+In-cluster (specific namespace): eightbitsaxlounge-state-client.<namespace>.svc.cluster.local:4222
+```
+
+# CI/CD
+
+**Workflow Trigger:**
+- Changes to `state/version.txt` on `main` branch
+- Manual workflow dispatch
+
+**Pipeline:**
+1. Build Docker image with version tag
+2. Push to GitHub Container Registry (GHCR)
+3. Deploy to Kubernetes cluster via Ansible
+4. Apply StatefulSet and update image tag
+5. Restart pods to pull new image
+
+**Deployment Process:**
+- Ansible playbook (`state-nats.yaml`) handles credential injection and service deployment
+- Creates `state-nats-creds` secret with 5 password environment variables from GitHub Actions secrets
+- Uses `kubectl set image` to patch versioned container tag (follows midi-api-deploy pattern)
+- Runs `kubectl rollout restart` to force pod recreation with new image
+- Waits for rollout completion (180s timeout)
+- Verifies running image matches deployed version
+
+**Manual Build and Test:**
+```bash
+make build              # Validate required files
+make build-image        # Build and tag Docker image locally
+make test               # Run smoke test with NATS+JetStream
+```
+
+# Scope
+
+**Current Implementation:**
+- Single-node NATS server with JetStream persistence
+- 4 pre-defined event streams with subject-based routing
+- Per-service ACL for publish/subscribe restrictions
+- Automatic stream initialization at pod startup
+- Persistent storage via Kubernetes PersistentVolumeClaim
+- HTTP monitoring endpoint on port 8222
+
+**Message Publishing:**
+```
+Service Pod → NATS Client Connection (nats://host:4222)
+           → Authenticate with service user/password
+           → Publish to subject (e.g., overlay.state, ui.effect.reverb)
+           → Message stored in corresponding JetStream stream
+```
+
+**Stream Subscription:**
+```
+Service Pod → NATS Client Connection
+          → Authenticate with service user/password
+          → Subscribe to filtered subjects (ACL controls)
+          → Receive persisted messages from stream
+```
+
+**Testing and Verification:**
+
+Connect to NATS and verify streams exist:
+```bash
+# From inside pod
+kubectl exec -it eightbitsaxlounge-state-0 -- sh
+
+# Inside pod shell, run:
+NATS_URL="nats://127.0.0.1:4222"
+NATS_USER="system"
+NATS_PASS="<system-password-from-secret>"
+
+# List streams
+nats --server "$NATS_URL" --user "$NATS_USER" --password "$NATS_PASS" stream ls
+
+# Get stream info
+nats --server "$NATS_URL" --user "$NATS_USER" --password "$NATS_PASS" stream info OVERLAY_UPDATES
+
+# Publish test message
+nats --server "$NATS_URL" --user "$NATS_USER" --password "$NATS_PASS" \
+  pub overlay.test '{"event":"test","timestamp":"2026-01-01T00:00:00Z"}'
+
+# Subscribe to stream messages
+nats --server "$NATS_URL" --user "$NATS_USER" --password "$NATS_PASS" \
+  sub --all-headers "overlay.>" --from-sequence 1 OVERLAY_UPDATES
+```
+
+**Monitoring:**
+```bash
+# HTTP monitoring endpoint (from pod)
+wget -q -O - http://127.0.0.1:8222/varz | head -20
+
+# Event stream monitoring
+kubectl logs -f eightbitsaxlounge-state-0
+```

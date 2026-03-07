@@ -1,0 +1,31 @@
+# Changelog
+
+## [0.0.15] - 2026-03-07
+
+### Added
+- NATS 2.12 JetStream state layer with centralized event message broker
+- Four JetStream event streams: OVERLAY_UPDATES, UI_CONTROLS, MIDI_STATE, DATA_API
+- Per-service ACL configuration with role-based publish/subscribe restrictions
+  - System user: Full publish/subscribe (bootstrap operations)
+  - Service users (overlay, ui, midi, data): Restricted publish to service subjects
+- Custom Alpine Docker image with baked-in nats-cli and bootstrap tooling
+- Entrypoint script for runtime password substitution via sed into nats.conf template
+- PostStart lifecycle hook for automatic JetStream stream creation at pod startup
+- Kubernetes StatefulSet deployment with PersistentVolumeClaim storage (1Gi, longhorn)
+- HTTP monitoring endpoint on port 8222 for cluster health checks
+- Makefile build/test/deploy automation matching other layers
+- GitHub Actions CI/CD workflow with secret injection for 5 service passwords
+- Ansible playbook for credential injection and versioned image deployment
+- Bootstrap script with HTTP readiness monitoring (wget) and nats CLI stream creation
+- Comprehensive documentation and verification procedures
+
+### Changed
+- Image versioning pattern: Static manifest with `imagePullPolicy: Always`, versioned tag updated via `kubectl set image` after apply (follows midi-api-deploy pattern)
+- Readiness probe: 35s initialDelaySeconds to allow bootstrap completion
+- Bootstrap readiness check: HTTP-based monitoring instead of NATS-specific commands
+
+### Fixed
+- NATS CLI authentication: Using long-form `--user` and `--password` flags with proper shell variable substitution for special characters
+- Stream creation: Added `--defaults` flag to skip interactive prompts in postStart hook
+- CLI compatibility: Removed unsupported `-n` flag from nats stream add commands
+- Password substitution: Fixed sed replacement patterns to handle special regex characters

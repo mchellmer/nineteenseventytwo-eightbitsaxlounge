@@ -20,7 +20,8 @@ spec:
     spec:
       containers:
         - name: nats
-          image: nats:2.12
+          image: ghcr.io/mchellmer/eightbitsaxlounge-state:latest
+          imagePullPolicy: Always
           args: ["-c", "/etc/nats/nats.conf"]
           ports:
             - name: client
@@ -29,10 +30,42 @@ spec:
               containerPort: 8222
             - name: cluster
               containerPort: 6222
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - "sleep 2 && /usr/local/bin/jetstream-bootstrap.sh 2>&1 || true"
+          env:
+            - name: NATS_URL
+              value: "nats://127.0.0.1:4222"
+            - name: SYSTEM_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: state-nats-creds
+                  key: system_pass
+            - name: OVERLAY_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: state-nats-creds
+                  key: overlay_pass
+            - name: UI_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: state-nats-creds
+                  key: ui_pass
+            - name: MIDI_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: state-nats-creds
+                  key: midi_pass
+            - name: DATA_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: state-nats-creds
+                  key: data_pass
           volumeMounts:
-            - name: config
-              mountPath: /etc/nats
-              readOnly: true
             - name: data
               mountPath: /data
           resources:
@@ -51,16 +84,11 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 4222
-            initialDelaySeconds: 5
+            initialDelaySeconds: 35
             periodSeconds: 5
-            failureThreshold: 3
-      volumes:
-        - name: config
-          configMap:
-            name: nats-config
-            items:
-              - key: nats.conf
-                path: nats.conf
+            failureThreshold: 2
+            timeoutSeconds: 3
+      terminationGracePeriodSeconds: 120
   volumeClaimTemplates:
     - metadata:
         name: data
