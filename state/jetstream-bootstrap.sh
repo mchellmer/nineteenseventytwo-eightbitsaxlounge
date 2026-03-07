@@ -58,39 +58,43 @@ log "Authentication OK"
 log "Creating JetStream streams..."
 
 # Create OVERLAY_UPDATES stream
-if nats_cmd stream add OVERLAY_UPDATES --subjects "overlay.>" --max-msgs 1000 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
+output=$(nats_cmd stream add OVERLAY_UPDATES --subjects "overlay.>" --max-msgs 1000 --storage file --discard old --replicas 1 -n 2>&1)
+if [ $? -eq 0 ]; then
   log "✓ OVERLAY_UPDATES created"
 elif nats_cmd stream info OVERLAY_UPDATES >/dev/null 2>&1; then
   log "ℹ OVERLAY_UPDATES exists"
 else
-  log "WARNING: OVERLAY_UPDATES failed"
+  log "WARNING: OVERLAY_UPDATES failed: $output"
 fi
 
 # Create UI_CONTROLS stream
-if nats_cmd stream add UI_CONTROLS --subjects "ui.>" --max-msgs 500 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
+output=$(nats_cmd stream add UI_CONTROLS --subjects "ui.>" --max-msgs 500 --storage file --discard old --replicas 1 -n 2>&1)
+if [ $? -eq 0 ]; then
   log "✓ UI_CONTROLS created"
 elif nats_cmd stream info UI_CONTROLS >/dev/null 2>&1; then
   log "ℹ UI_CONTROLS exists"
 else
-  log "WARNING: UI_CONTROLS failed"
+  log "WARNING: UI_CONTROLS failed: $output"
 fi
 
 # Create MIDI_STATE stream
-if nats_cmd stream add MIDI_STATE --subjects "midi.>" --max-msgs 200 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
+output=$(nats_cmd stream add MIDI_STATE --subjects "midi.>" --max-msgs 200 --storage file --discard old --replicas 1 -n 2>&1)
+if [ $? -eq 0 ]; then
   log "✓ MIDI_STATE created"
 elif nats_cmd stream info MIDI_STATE >/dev/null 2>&1; then
   log "ℹ MIDI_STATE exists"
 else
-  log "WARNING: MIDI_STATE failed"
+  log "WARNING: MIDI_STATE failed: $output"
 fi
 
 # Create DATA_API stream
-if nats_cmd stream add DATA_API --subjects "data.>" --max-msgs 500 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
+output=$(nats_cmd stream add DATA_API --subjects "data.>" --max-msgs 500 --storage file --discard old --replicas 1 -n 2>&1)
+if [ $? -eq 0 ]; then
   log "✓ DATA_API created"
 elif nats_cmd stream info DATA_API >/dev/null 2>&1; then
   log "ℹ DATA_API exists"
 else
-  log "WARNING: DATA_API failed"
+  log "WARNING: DATA_API failed: $output"
 fi
 
 log "JetStream bootstrap complete"
