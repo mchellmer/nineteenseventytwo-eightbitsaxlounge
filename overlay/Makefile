@@ -76,10 +76,10 @@ docker-run:
 
 # Publish a test message to the local NATS (useful when you run `state make test`)
 smoke:
-	@echo "Publishing sample ui.overlay.engine -> NATS (NATS_URL=$${NATS_URL:-nats://127.0.0.1:4222}, USER=$${NATS_USER:-}, PASS=$${NATS_PASS:-})"
+	@echo "Publishing sample overlay.engine -> NATS (NATS_URL=$${NATS_URL:-nats://127.0.0.1:4222}, USER=$${NATS_USER:-}, PASS=$${NATS_PASS:-})"
 	node scripts/publish-sample.js
 
-# Run the integration test which publishes multiple ui.overlay.* messages
+# Run the integration test which publishes multiple overlay.* messages
 # and leaves instructions to view the overlay grid (uses tests/test_integration.sh)
 deps:
 	@echo "Installing node dependencies (overlay)"
