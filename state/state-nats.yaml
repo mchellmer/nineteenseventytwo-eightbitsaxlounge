@@ -27,6 +27,7 @@
         dest: "{{ tempdir.path }}/statefulset.yaml"
       vars:
         state_image: "ghcr.io/{{ lookup('env','GITHUB_REPOSITORY_OWNER') }}/eightbitsaxlounge-state:{{ lookup('env','VERSION') }}"
+        deployment_timestamp: "{{ ansible_date_time.iso8601_basic_short }}"
 
     - name: Copy NATS headless service to temp directory
       ansible.builtin.copy:

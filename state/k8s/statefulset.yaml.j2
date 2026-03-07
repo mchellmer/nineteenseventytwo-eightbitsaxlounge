@@ -17,6 +17,8 @@ spec:
       labels:
         app: eightbitsaxlounge
         component: state
+      annotations:
+        deployment.kubernetes.io/restart: "{{ deployment_timestamp }}"
     spec:
       containers:
         - name: nats
@@ -36,7 +38,7 @@ spec:
                 command:
                   - /bin/sh
                   - -c
-                  - "sleep 2 && /usr/local/bin/jetstream-bootstrap.sh"
+                  - "sleep 2 && /usr/local/bin/jetstream-bootstrap.sh 2>&1"
           env:
             - name: NATS_URL
               value: "nats://127.0.0.1:4222"
@@ -84,9 +86,11 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 4222
-            initialDelaySeconds: 5
+            initialDelaySeconds: 35
             periodSeconds: 5
-            failureThreshold: 3
+            failureThreshold: 2
+            timeoutSeconds: 3
+      terminationGracePeriodSeconds: 120
   volumeClaimTemplates:
     - metadata:
         name: data
