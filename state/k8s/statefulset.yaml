@@ -29,6 +29,16 @@ spec:
               containerPort: 8222
             - name: cluster
               containerPort: 6222
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/bash
+                  - -c
+                  - chmod +x /etc/nats/jetstream-bootstrap.sh && sleep 2 && /etc/nats/jetstream-bootstrap.sh
+          env:
+            - name: NATS_URL
+              value: "nats://127.0.0.1:4222"
           volumeMounts:
             - name: config
               mountPath: /etc/nats

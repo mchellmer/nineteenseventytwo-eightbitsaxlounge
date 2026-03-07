@@ -21,4 +21,12 @@ jobs:
       test-target: 'test'
       build-target: 'build'
       deploy-target: 'deploy'
-      requires-docker-login: true
+      requires-docker-login: false
+    secrets:
+      component-secrets: |
+        {
+          "OVERLAY_PASS": "${{ secrets.STATE_OVERLAY_PASS }}",
+          "UI_PASS": "${{ secrets.STATE_UI_PASS }}",
+          "MIDI_PASS": "${{ secrets.STATE_MIDI_PASS }}",
+          "DATA_PASS": "${{ secrets.STATE_DATA_PASS }}"
+        }

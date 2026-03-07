@@ -10,6 +10,32 @@ data:
   ui_user: ui
   midi_user: midi
   data_user: data
+  jetstream-bootstrap.sh: |
+    #!/bin/bash
+    set -e
+    NATS_URL="${NATS_URL:-nats://localhost:4222}"
+    MAX_RETRIES=30
+    RETRY_DELAY=2
+    echo "Waiting for NATS server to be ready..."
+    for attempt in $(seq 1 $MAX_RETRIES); do
+      if nats server info -s "$NATS_URL" &>/dev/null; then
+        echo "NATS server is ready"
+        break
+      fi
+      if [ $attempt -eq $MAX_RETRIES ]; then
+        echo "Failed to connect to NATS after $MAX_RETRIES attempts"
+        exit 1
+      fi
+      echo "Attempt $attempt/$MAX_RETRIES: Waiting for NATS..."
+      sleep $RETRY_DELAY
+    done
+    echo "Creating JetStream streams..."
+    nats stream add OVERLAY_UPDATES --subjects "overlay.>" --max-msgs 1000 --storage file --discard old -s "$NATS_URL" --replicas 1 -n || echo "Stream OVERLAY_UPDATES already exists"
+    nats stream add UI_CONTROLS --subjects "ui.>" --max-msgs 500 --storage file --discard old -s "$NATS_URL" --replicas 1 -n || echo "Stream UI_CONTROLS already exists"
+    nats stream add MIDI_STATE --subjects "midi.>" --max-msgs 200 --storage file --discard old -s "$NATS_URL" --replicas 1 -n || echo "Stream MIDI_STATE already exists"
+    nats stream add DATA_API --subjects "data.>" --max-msgs 500 --storage file --discard old -s "$NATS_URL" --replicas 1 -n || echo "Stream DATA_API already exists"
+    echo "JetStream streams initialized successfully"
+    nats stream list -s "$NATS_URL"
   nats.conf: |
     ## NATS server configuration with JetStream enabled
     port: 4222
@@ -18,7 +44,7 @@ data:
 
     authorization {
       users = [
-        { user: "overlay", password: "{{ overlay_pass }}", permissions: { publish: ["overlay.*"], subscribe: [] } }
+        { user: "overlay", password: "{{ overlay_pass }}", permissions: { publish: ["overlay.*"], subscribe: ["ui.effect*"] } }
         { user: "ui", password: "{{ ui_pass }}", permissions: { publish: ["ui.*"], subscribe: [] } }
         { user: "midi", password: "{{ midi_pass }}", permissions: { publish: ["midi.*"], subscribe: [] } }
         { user: "data", password: "{{ data_pass }}", permissions: { publish: ["data.*"], subscribe: [] } }
