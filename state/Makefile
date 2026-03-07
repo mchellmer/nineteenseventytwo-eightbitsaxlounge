@@ -7,7 +7,8 @@ IMAGE_BASE ?= ghcr.io/$(GITHUB_REPOSITORY_OWNER)/eightbitsaxlounge-state
 build:
 	@echo "Validating configuration..."
 	@test -f Dockerfile || (echo "ERROR: Dockerfile not found" && exit 1)
-	@test -f nats.conf || (echo "ERROR: nats.conf not found" && exit 1)
+	@test -f entrypoint.sh || (echo "ERROR: entrypoint.sh not found" && exit 1)
+	@test -f nats.conf.template || (echo "ERROR: nats.conf.template not found" && exit 1)
 	@test -f jetstream-bootstrap.sh || (echo "ERROR: jetstream-bootstrap.sh not found" && exit 1)
 	@test -f state-nats.yaml || (echo "ERROR: state-nats.yaml not found" && exit 1)
 	@test -f version.txt || (echo "ERROR: version.txt not found" && exit 1)
@@ -104,8 +105,9 @@ deploy:
 	@test -n "$$UI_PASS" || (echo "ERROR: UI_PASS env var not set" && exit 1)
 	@test -n "$$MIDI_PASS" || (echo "ERROR: MIDI_PASS env var not set" && exit 1)
 	@test -n "$$DATA_PASS" || (echo "ERROR: DATA_PASS env var not set" && exit 1)
-	@echo "🚀 Deploying NATS to namespace $$NAMESPACE"
-	NAMESPACE="$$NAMESPACE" SYSTEM_PASS="$$SYSTEM_PASS" OVERLAY_PASS="$$OVERLAY_PASS" UI_PASS="$$UI_PASS" MIDI_PASS="$$MIDI_PASS" DATA_PASS="$$DATA_PASS" \
+	@echo "🚀 Deploying NATS to namespace $$NAMESPACE with version $(VERSION)"
+	NAMESPACE="$$NAMESPACE" VERSION="$(VERSION)" GITHUB_REPOSITORY_OWNER="$(GITHUB_REPOSITORY_OWNER)" \
+		SYSTEM_PASS="$$SYSTEM_PASS" OVERLAY_PASS="$$OVERLAY_PASS" UI_PASS="$$UI_PASS" MIDI_PASS="$$MIDI_PASS" DATA_PASS="$$DATA_PASS" \
 		ansible-playbook state-nats.yaml
 
 # Manual deployment with interactive prompts for secrets
@@ -119,10 +121,12 @@ deploy-nats-manual:
 		read -sp "Enter UI_PASS: " ui_pass; echo; \
 		read -sp "Enter MIDI_PASS: " midi_pass; echo; \
 		read -sp "Enter DATA_PASS: " data_pass; echo; \
-		NAMESPACE="$$NAMESPACE" SYSTEM_PASS="$$system_pass" OVERLAY_PASS="$$overlay_pass" UI_PASS="$$ui_pass" MIDI_PASS="$$midi_pass" DATA_PASS="$$data_pass" \
+		NAMESPACE="$$NAMESPACE" VERSION="$(VERSION)" GITHUB_REPOSITORY_OWNER="$(GITHUB_REPOSITORY_OWNER)" \
+			SYSTEM_PASS="$$system_pass" OVERLAY_PASS="$$overlay_pass" UI_PASS="$$ui_pass" MIDI_PASS="$$midi_pass" DATA_PASS="$$data_pass" \
 			ansible-playbook state-nats.yaml; \
 	else \
-		NAMESPACE="$$NAMESPACE" SYSTEM_PASS="$$SYSTEM_PASS" OVERLAY_PASS="$$OVERLAY_PASS" UI_PASS="$$UI_PASS" MIDI_PASS="$$MIDI_PASS" DATA_PASS="$$DATA_PASS" \
+		NAMESPACE="$$NAMESPACE" VERSION="$(VERSION)" GITHUB_REPOSITORY_OWNER="$(GITHUB_REPOSITORY_OWNER)" \
+			SYSTEM_PASS="$$SYSTEM_PASS" OVERLAY_PASS="$$OVERLAY_PASS" UI_PASS="$$UI_PASS" MIDI_PASS="$$MIDI_PASS" DATA_PASS="$$DATA_PASS" \
 			ansible-playbook state-nats.yaml; \
 	fi
 

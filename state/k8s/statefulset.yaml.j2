@@ -21,6 +21,7 @@ spec:
       containers:
         - name: nats
           image: {{ state_image }}
+          imagePullPolicy: Always
           args: ["-c", "/etc/nats/nats.conf"]
           ports:
             - name: client
