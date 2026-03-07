@@ -58,7 +58,7 @@ log "Authentication OK"
 log "Creating JetStream streams..."
 
 # Create OVERLAY_UPDATES stream
-output=$(nats_cmd stream add OVERLAY_UPDATES --subjects "overlay.>" --max-msgs 1000 --storage file --discard old --replicas 1 -n 2>&1)
+output=$(nats_cmd stream add OVERLAY_UPDATES --subjects "overlay.>" --max-msgs 1000 --storage file --discard old --replicas 1 2>&1)
 if [ $? -eq 0 ]; then
   log "✓ OVERLAY_UPDATES created"
 elif nats_cmd stream info OVERLAY_UPDATES >/dev/null 2>&1; then
@@ -68,7 +68,7 @@ else
 fi
 
 # Create UI_CONTROLS stream
-output=$(nats_cmd stream add UI_CONTROLS --subjects "ui.>" --max-msgs 500 --storage file --discard old --replicas 1 -n 2>&1)
+output=$(nats_cmd stream add UI_CONTROLS --subjects "ui.>" --max-msgs 500 --storage file --discard old --replicas 1 2>&1)
 if [ $? -eq 0 ]; then
   log "✓ UI_CONTROLS created"
 elif nats_cmd stream info UI_CONTROLS >/dev/null 2>&1; then
@@ -78,7 +78,7 @@ else
 fi
 
 # Create MIDI_STATE stream
-output=$(nats_cmd stream add MIDI_STATE --subjects "midi.>" --max-msgs 200 --storage file --discard old --replicas 1 -n 2>&1)
+output=$(nats_cmd stream add MIDI_STATE --subjects "midi.>" --max-msgs 200 --storage file --discard old --replicas 1 2>&1)
 if [ $? -eq 0 ]; then
   log "✓ MIDI_STATE created"
 elif nats_cmd stream info MIDI_STATE >/dev/null 2>&1; then
@@ -88,7 +88,7 @@ else
 fi
 
 # Create DATA_API stream
-output=$(nats_cmd stream add DATA_API --subjects "data.>" --max-msgs 500 --storage file --discard old --replicas 1 -n 2>&1)
+output=$(nats_cmd stream add DATA_API --subjects "data.>" --max-msgs 500 --storage file --discard old --replicas 1 2>&1)
 if [ $? -eq 0 ]; then
   log "✓ DATA_API created"
 elif nats_cmd stream info DATA_API >/dev/null 2>&1; then
