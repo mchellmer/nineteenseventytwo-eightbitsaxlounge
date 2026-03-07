@@ -21,12 +21,15 @@ if [ -z "$NATS_PASS" ]; then
   exit 1
 fi
 
-# Wait for NATS to be ready by checking the monitoring endpoint
+# Build auth string for nats:// URL: nats://user:pass@host:port
+NATS_AUTH_URL="nats://${NATS_USER}:${NATS_PASS}@127.0.0.1:4222"
+
+# Wait for NATS to be ready using wget against monitoring endpoint
 log "Waiting for NATS server..."
 attempt=1
 while [ $attempt -le $MAX_RETRIES ]; do
-  if curl -s http://127.0.0.1:8222/varz > /dev/null 2>&1; then
-    log "NATS server ready"
+  if wget -q -O /dev/null http://127.0.0.1:8222/varz 2>/dev/null; then
+    log "NATS monitoring endpoint ready"
     break
   fi
   if [ $attempt -eq $MAX_RETRIES ]; then
@@ -38,42 +41,59 @@ while [ $attempt -le $MAX_RETRIES ]; do
   attempt=$((attempt + 1))
 done
 
+# Verify nats CLI can authenticate
+log "Testing nats CLI authentication..."
+if ! nats --server "$NATS_AUTH_URL" stream ls >/dev/null 2>&1; then
+  log "WARNING: nats CLI stream ls failed, retrying once..."
+  sleep 2
+  if ! nats --server "$NATS_AUTH_URL" stream ls >/dev/null 2>&1; then
+    log "ERROR: nats CLI cannot connect/authenticate"
+    nats --server "$NATS_AUTH_URL" stream ls 2>&1 | while IFS= read -r line; do log "  $line"; done
+    exit 1
+  fi
+fi
+log "Authentication OK"
+
 log "Creating JetStream streams..."
 
+nats_cmd() {
+  nats --server "$NATS_AUTH_URL" "$@"
+}
+
 # Create OVERLAY_UPDATES stream
-if nats --creds=/dev/null -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" stream add OVERLAY_UPDATES --subjects "overlay.>" --max-msgs 1000 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
+if nats_cmd stream add OVERLAY_UPDATES --subjects "overlay.>" --max-msgs 1000 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
   log "✓ OVERLAY_UPDATES created"
-elif nats --creds=/dev/null -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" stream info OVERLAY_UPDATES >/dev/null 2>&1; then
+elif nats_cmd stream info OVERLAY_UPDATES >/dev/null 2>&1; then
   log "ℹ OVERLAY_UPDATES exists"
 else
-  log "WARNING: OVERLAY_UPDATES creation/check failed"
+  log "WARNING: OVERLAY_UPDATES failed"
 fi
 
 # Create UI_CONTROLS stream
-if nats --creds=/dev/null -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" stream add UI_CONTROLS --subjects "ui.>" --max-msgs 500 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
+if nats_cmd stream add UI_CONTROLS --subjects "ui.>" --max-msgs 500 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
   log "✓ UI_CONTROLS created"
-elif nats --creds=/dev/null -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" stream info UI_CONTROLS >/dev/null 2>&1; then
+elif nats_cmd stream info UI_CONTROLS >/dev/null 2>&1; then
   log "ℹ UI_CONTROLS exists"
 else
-  log "WARNING: UI_CONTROLS creation/check failed"
+  log "WARNING: UI_CONTROLS failed"
 fi
 
 # Create MIDI_STATE stream
-if nats --creds=/dev/null -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" stream add MIDI_STATE --subjects "midi.>" --max-msgs 200 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
+if nats_cmd stream add MIDI_STATE --subjects "midi.>" --max-msgs 200 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
   log "✓ MIDI_STATE created"
-elif nats --creds=/dev/null -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" stream info MIDI_STATE >/dev/null 2>&1; then
+elif nats_cmd stream info MIDI_STATE >/dev/null 2>&1; then
   log "ℹ MIDI_STATE exists"
 else
-  log "WARNING: MIDI_STATE creation/check failed"
+  log "WARNING: MIDI_STATE failed"
 fi
 
 # Create DATA_API stream
-if nats --creds=/dev/null -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" stream add DATA_API --subjects "data.>" --max-msgs 500 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
+if nats_cmd stream add DATA_API --subjects "data.>" --max-msgs 500 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
   log "✓ DATA_API created"
-elif nats --creds=/dev/null -s "$NATS_URL" -u "$NATS_USER" -p "$NATS_PASS" stream info DATA_API >/dev/null 2>&1; then
+elif nats_cmd stream info DATA_API >/dev/null 2>&1; then
   log "ℹ DATA_API exists"
 else
-  log "WARNING: DATA_API creation/check failed"
+  log "WARNING: DATA_API failed"
 fi
 
 log "JetStream bootstrap complete"
