@@ -38,12 +38,13 @@ push:
 	docker push "$(IMAGE_BASE):latest"
 	@echo "✓ Image pushed successfully"
 
-# Run unit tests and image asset checks (CI test target)
-test:
-	@echo "Installing dependencies..."
-	npm ci
-	@echo "Running unit tests and image checks..."
-	npm test
+# Run unit tests and image asset checks
+	@echo "Running tests in Docker (node:25-slim)..."
+	docker run --rm \
+		-v "$(CURDIR):/app" \
+		-w /app \
+		node:25-slim \
+		sh -c "npm ci && npm test"
 
 # Deploy overlay to Kubernetes cluster
 deploy:
