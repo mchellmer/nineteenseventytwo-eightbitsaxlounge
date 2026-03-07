@@ -21,8 +21,9 @@ if [ -z "$NATS_PASS" ]; then
   exit 1
 fi
 
-# Build auth string for nats:// URL: nats://user:pass@host:port
-NATS_AUTH_URL="nats://${NATS_USER}:${NATS_PASS}@127.0.0.1:4222"
+nats_cmd() {
+  nats --server "$NATS_URL" --user "$NATS_USER" --password "$NATS_PASS" "$@"
+}
 
 # Wait for NATS to be ready using wget against monitoring endpoint
 log "Waiting for NATS server..."
@@ -43,22 +44,18 @@ done
 
 # Verify nats CLI can authenticate
 log "Testing nats CLI authentication..."
-if ! nats --server "$NATS_AUTH_URL" stream ls >/dev/null 2>&1; then
+if ! nats_cmd stream ls >/dev/null 2>&1; then
   log "WARNING: nats CLI stream ls failed, retrying once..."
   sleep 2
-  if ! nats --server "$NATS_AUTH_URL" stream ls >/dev/null 2>&1; then
+  if ! nats_cmd stream ls >/dev/null 2>&1; then
     log "ERROR: nats CLI cannot connect/authenticate"
-    nats --server "$NATS_AUTH_URL" stream ls 2>&1 | while IFS= read -r line; do log "  $line"; done
+    nats_cmd stream ls 2>&1 | while IFS= read -r line; do log "  $line"; done
     exit 1
   fi
 fi
 log "Authentication OK"
 
 log "Creating JetStream streams..."
-
-nats_cmd() {
-  nats --server "$NATS_AUTH_URL" "$@"
-}
 
 # Create OVERLAY_UPDATES stream
 if nats_cmd stream add OVERLAY_UPDATES --subjects "overlay.>" --max-msgs 1000 --storage file --discard old --replicas 1 -n >/dev/null 2>&1; then
