@@ -25,10 +25,7 @@ spec:
         - name: NATS_URL
           value: "nats://eightbitsaxlounge-state-client:4222"
         - name: NATS_USER
-          valueFrom:
-            configMapKeyRef:
-              name: eightbitsaxlounge-state
-              key: overlay_user
+          value: "overlay"
         - name: NATS_PASS
           valueFrom:
             secretKeyRef:

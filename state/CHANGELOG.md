@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.0.17] - 2026-03-07
+
+### Changed
+- UI user ACL: Added explicit publish permissions to overlay state subjects (overlay.engine, overlay.delay, overlay.time, overlay.dial1, overlay.dial2)
+- Clarified subject namespace separation: UI publishes to overlay.* subjects for broadcast control
+
+### Fixed
+- Overlay user ACL: Changed subscribe permission from `ui.effect>` to `overlay.>` to allow overlay service to receive broadcast state updates
+- Direct subject publishing: Overlay service now subscribes to `overlay.*` subjects published by UI layer
+
 ## [0.0.15] - 2026-03-07
 
 ### Added

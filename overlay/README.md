@@ -3,7 +3,7 @@
 The overlay service manages updating the channel broadcast view based on the changing state of the 8-Bit Sax Lounge. It stores views and connects to the broadcasting service in order to update these.
 
 ## Implementation
-A Node.js service that subscribes to `ui.overlay.*` NATS subjects and forwards events to connected browsers via `socket.io`. The connected browser is OBS which broadcasts the stream. Html stored here defines what broadcast members see with js scripts that respond based on the event.
+A Node.js service that subscribes to `overlay.*` NATS subjects and forwards events to connected browsers via `socket.io`. The connected browser is OBS which broadcasts the stream. Html stored here defines what broadcast members see with js scripts that respond based on the event.
 
 Usage
 - The Node entrypoint (`src/index.js`) sets up an Express webserver and listens on the provided port.
@@ -45,7 +45,7 @@ Test
   - Update values: `make test-integration` -> should see values updated
 
 How it works
-- Subscribes to `ui.overlay.*` (e.g. `ui.overlay.engine`) and emits socket.io events where event name = `overlay.<tail>` (e.g. `overlay.engine`).
+- Subscribes to `overlay.*` (e.g. `overlay.engine`) and emits socket.io events where event name = `overlay.<tail>` (e.g. `overlay.engine`).
 - Image mapping: `engine` images live in `public/images/engine/<name>.svg` (e.g. `engine/lofi.svg`, `engine/room.svg`).
 - Shared numeric/level images live in `public/images/values/<n>.svg` — `time`, `delay`, `control1` and `control2` resolve their `value` into this `values` folder (e.g. `public/images/values/3.svg`).
 
@@ -78,8 +78,3 @@ Troubleshooting
 - If the overlay is blank in OBS but works in a normal browser: open `http://localhost:3000/grid.html` in Chrome/Firefox and check devtools for console/network errors.
 - Confirm the overlay server is running (logs show `overlay: listening on 3000`) and that NATS is reachable (server logs show `emit event overlay.*`).
 - If OBS fails to load remote (HTTPS) overlay, ensure the ingress has valid TLS and the URL is reachable from the OBS host.
-
-Next steps
-- Add JWT/NATS credentials and ACLs for production.
-- Add ingress and TLS if you want OBS to access the overlay via a public URL.
-- Add unit tests and CI/CD build/release workflow.

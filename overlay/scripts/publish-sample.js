@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Publish a sample ui.overlay.engine message to NATS (used by `make smoke`)
+// Publish a sample overlay.engine message to NATS (used by `make smoke`)
 const { connect, StringCodec } = require('nats');
 
 const NATS_URL = process.env.NATS_URL || 'nats://127.0.0.1:4222';

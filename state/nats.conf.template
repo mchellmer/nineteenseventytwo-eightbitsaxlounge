@@ -17,14 +17,23 @@ authorization {
       password: "$OVERLAY_PASS"
       permissions: {
         publish: ["overlay.>"]
-        subscribe: ["ui.effect>"]
+        subscribe: [
+            "overlay.>"
+          ]
       }
     }
     {
       user: "ui"
       password: "$UI_PASS"
       permissions: {
-        publish: ["ui.>"]
+        publish: [
+            "ui.>",
+            "overlay.engine",
+            "overlay.delay",
+            "overlay.time",
+            "overlay.dial1",
+            "overlay.dial2"
+          ]
         subscribe: []
       }
     }

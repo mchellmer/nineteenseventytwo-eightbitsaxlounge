@@ -33,8 +33,12 @@ Ansible-based infrastructure as code managing the Kubernetes cluster across Rasp
 For architectural diagrams and visual overviews, see the [diagrams/](diagrams/) folder.
 
 ### **State Layer** ([state/](state/))
-Nats messaging to support event based state management.
-- broadcast view updates via message from the ui layer subscribed to by the overlay layer
+NATS JetStream event broker for real-time state management across services. Provides persistent message streams and ACL-based routing for event-driven architecture.
+- Four JetStream streams: OVERLAY_UPDATES, UI_CONTROLS, MIDI_STATE, DATA_API
+- Per-service ACL: UI publishes to overlay.*, MIDI publishes to midi.*, etc.
+
+### **Overlay Layer** ([overlay/](overlay/))
+Node.js-based browser overlay service for OBS broadcast integration. Subscribes to overlay state changes from NATS and forwards updates to connected browsers via socket.io for real-time broadcast control.
 
 ## Infrastructure
 
