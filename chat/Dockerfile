@@ -8,7 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 
 RUN useradd --create-home --shell /bin/bash --uid 1000 app \
-    && chown -R app:app /app
+    && chown -R app:app /app \
+    && mkdir -p /app/tokens \
+    && chown -R app:app /app/tokens
 USER app
 
 ENV PYTHONPATH=/app/src

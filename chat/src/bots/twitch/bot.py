@@ -1,5 +1,6 @@
 import asqlite
 import logging
+import os
 from typing import TYPE_CHECKING
 from twitchio import eventsub
 if TYPE_CHECKING:
@@ -40,12 +41,10 @@ class Bot(StreamingBot):
 
     async def start(self) -> None:
         """Start the bot and connect to Twitch."""
-        import os
         async def runner() -> None:
-            # Ensure tokens directory exists
-            os.makedirs("/app/tokens", exist_ok=True)
+            db_path = "/app/tokens/tokens.db"
             
-            async with asqlite.create_pool("/app/tokens/tokens.db") as tdb:
+            async with asqlite.create_pool(db_path) as tdb:
                 tokens, subs = await self._setup_database(tdb)
                 logger.info(f"Loaded {len(tokens)} tokens and {len(subs)} subscriptions from the database")
 
