@@ -45,10 +45,21 @@
         src: k8s/deployment.yaml
         dest: "{{ tempdir.path }}/deployment.yaml"
 
+    - name: Copy PersistentVolumeClaim manifest to temp directory
+      ansible.builtin.copy:
+        src: k8s/persistentvolumeclaim.yaml
+        dest: "{{ tempdir.path }}/persistentvolumeclaim.yaml"
+
     - name: Template ConfigMap manifest to temp directory
       ansible.builtin.template:
         src: k8s/configmap.yaml
         dest: "{{ tempdir.path }}/configmap.yaml"
+
+    - name: Deploy Chat PersistentVolumeClaim
+      ansible.builtin.shell: |
+        kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/persistentvolumeclaim.yaml
+      environment:
+        NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 
     - name: Apply Chat ConfigMap (deploy what's in k8s/configmap.yaml)
       ansible.builtin.shell: |

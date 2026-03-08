@@ -40,7 +40,7 @@ class Bot(StreamingBot):
     async def start(self) -> None:
         """Start the bot and connect to Twitch."""
         async def runner() -> None:
-            async with asqlite.create_pool("tokens.db") as tdb:
+            async with asqlite.create_pool("/app/tokens/tokens.db") as tdb:
                 tokens, subs = await self._setup_database(tdb)
                 logger.info(f"Loaded {len(tokens)} tokens and {len(subs)} subscriptions from the database")
 

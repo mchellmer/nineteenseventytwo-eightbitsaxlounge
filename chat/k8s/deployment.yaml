@@ -85,6 +85,9 @@ spec:
         ports:
         - containerPort: 8080
           name: health
+        volumeMounts:
+        - name: tokens-volume
+          mountPath: /app/tokens
         resources:
           requests:
             memory: "64Mi"
@@ -120,4 +123,8 @@ spec:
           capabilities:
             drop:
             - ALL
+      volumes:
+      - name: tokens-volume
+        persistentVolumeClaim:
+          claimName: eightbitsaxlounge-chat-tokens
       restartPolicy: Always
