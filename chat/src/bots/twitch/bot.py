@@ -23,6 +23,7 @@ class Bot(StreamingBot):
         
         self._shutdown = False
         self._connected = False
+        self._bot = None
     
     async def send_message(self, channel_id: str, message: str) -> None:
         if not self._bot:
@@ -39,7 +40,11 @@ class Bot(StreamingBot):
 
     async def start(self) -> None:
         """Start the bot and connect to Twitch."""
+        import os
         async def runner() -> None:
+            # Ensure tokens directory exists
+            os.makedirs("/app/tokens", exist_ok=True)
+            
             async with asqlite.create_pool("/app/tokens/tokens.db") as tdb:
                 tokens, subs = await self._setup_database(tdb)
                 logger.info(f"Loaded {len(tokens)} tokens and {len(subs)} subscriptions from the database")
