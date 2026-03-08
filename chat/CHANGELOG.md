@@ -47,7 +47,7 @@
 - Case-insensitive command support - commands now work regardless of capitalization (e.g., !engine, !Engine, !ENGINE)
 - New value-based commands with 0-10 to MIDI 0-127 scaling:
   - `!time <0-10>` - Set reverb decay time
-  - `!predelay <0-10>` - Set reverb pre-delay
+  - `!delay <0-10>` - Set reverb pre-delay
   - `!control1 <0-10>` - Set custom control 1
   - `!control2 <0-10>` - Set custom control 2
 - Multi-message help command for better Twitch chat display

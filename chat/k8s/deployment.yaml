@@ -84,6 +84,21 @@ spec:
             configMapKeyRef:
               name: eightbitsaxlounge-chat-config
               key: log_level
+        - name: NATS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: eightbitsaxlounge-chat-config
+              key: nats_url
+        - name: NATS_USER
+          valueFrom:
+            configMapKeyRef:
+              name: eightbitsaxlounge-chat-config
+              key: nats_user
+        - name: NATS_PASS
+          valueFrom:
+            secretKeyRef:
+              name: state-nats-creds
+              key: chat_pass
         ports:
         - containerPort: 8080
           name: health

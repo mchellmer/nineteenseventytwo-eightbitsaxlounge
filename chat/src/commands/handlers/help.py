@@ -41,7 +41,7 @@ class HelpHandler(CommandHandler):
         return [
             "🎵 EightBitSaxLounge Bot Commands 🎵",
             f"!engine ({available_engines})",
-            "!time/!predelay/!control1/!control2 (0-10)",
+            "!time/!delay/!dial1/!dial2 (0-10)",
             "Type !<command> <value> to control the reverb",
             "Examples: !time 7, !engine room"
         ]

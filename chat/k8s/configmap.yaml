@@ -12,3 +12,5 @@ data:
   bot_name: "EightBitSaxBot"
   bot_id: "896950964"
   bot_owner_id: "1424580736"
+  nats_url: "nats://eightbitsaxlounge-state-client:4222"
+  nats_user: "chat"

@@ -32,7 +32,8 @@ authorization {
             "overlay.delay",
             "overlay.time",
             "overlay.dial1",
-            "overlay.dial2"
+            "overlay.dial2",
+            "overlay.player"
           ]
         subscribe: []
       }
