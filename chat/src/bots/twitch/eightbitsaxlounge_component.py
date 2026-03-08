@@ -21,7 +21,7 @@ class EightBitSaxLoungeComponent(commands.Component):
     """Main component for the EightBitSaxLounge Twitch bot."""
 
     def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+        super().__init__()
         self._nats = NatsPublisher()
         self._nats_connected = False
 
