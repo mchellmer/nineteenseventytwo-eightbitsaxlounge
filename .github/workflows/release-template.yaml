@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       component:
-        description: 'Component name (matches directory: db, data, midi, ui)'
+        description: 'Component name (matches directory: db, data, midi, state, chat, overlay)'
         required: true
         type: string
       version-file:

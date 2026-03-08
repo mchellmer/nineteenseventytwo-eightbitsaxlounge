@@ -10,10 +10,10 @@
 ## [3.0.10] - 2026-02-12
 
 ### Changed
-- Unified log format: `[timestamp] [Information] [ui] message correlationID=<id>`
+- Unified log format: `[timestamp] [Information] [chat] message correlationID=<id>`
 - Correlation ID propagation to MIDI and Data layers
 - Health check log exclusion for correlation ID tracking
-- Grafana dashboard improvements for UI logs and health
+- Grafana dashboard improvements for CHAT logs and health
 - Version labels on pods for deployment tracking
 
 ## [3.0.7] - 2026-02-08
@@ -38,7 +38,7 @@
 - Twitch message rate limiting - added 1.5s delays between multi-line messages
 - Help command tests updated to handle list return type
 
-[3.0.7]: https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge/releases/tag/ui-v3.0.7
+[3.0.7]: https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge/releases/tag/chat-v3.0.7
 
 ## [2.0.1] - 2026-01-26
 
@@ -66,4 +66,4 @@
 - Internal cluster communication replaces external endpoint access
 - Improved deployment consistency and security through service mesh communication
 
-[2.0.0]: https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge/releases/tag/ui-v2.0.0
+[2.0.0]: https://github.com/mchellmer/nineteenseventytwo-eightbitsaxlounge/releases/tag/chat-v2.0.0

@@ -16,7 +16,7 @@ The app runs an implementation of StreamingBot, currently set to a TwitchIO base
 
 To change to another service create a new impelementation in ./src/bots and update ./src/main.py.
 
-#### CHAT Element Response
+#### Chat Element Response
 
 Chat elements viewers can interact with are mapped to elements defined in ./src/commands. E.g. a viewer in Twitch types in chat !engine room -> the engine command updates the chat service and the 8bsl to the 'room' reverb engine.
 
@@ -37,7 +37,7 @@ Configured commands (case-insensitive):
 The 8bsl has several services that handle updating music hardware, state data, etc. Integration with these services is defined in ./src/services.
 
 Configured services:
-- midi_client - this handles requests to update midi data and devices inline with CHAT element state
+- midi_client - this handles requests to update midi data and devices inline with chat element state
 - twitch_client - handles monitoring token validity [depracated]
 - All logs include correlationID for request tracing
 
@@ -73,7 +73,7 @@ make docker-run
 Deployed to Kubernetes with separate dev and prod namespaces. GitHub Actions handles CI/CD on version.txt changes which triggers an ansible deployment from the cicd server to the cluster.
 
 **Switch Active Environment:**
-- Navigate to Actions → "CHAT Set Active Environment"
+- Navigate to Actions → "Chat Set Active Environment"
 - Select dev or prod from dropdown
 - Only one environment runs at a time (prevents duplicate bot messages)
 

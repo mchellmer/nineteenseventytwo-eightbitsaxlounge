@@ -217,7 +217,7 @@ cat chat/version.txt
 # Update version (triggers deployment when pushed)
 echo "1.1.0" > chat/version.txt
 git add chat/version.txt
-git commit -m "Bump CHAT version to 1.1.0"
+git commit -m "Bump chat version to 1.1.0"
 git push
 ```
 

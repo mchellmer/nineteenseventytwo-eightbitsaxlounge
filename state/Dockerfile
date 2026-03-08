@@ -17,7 +17,7 @@ RUN chmod +x /usr/local/bin/jetstream-bootstrap.sh
 COPY nats.conf.template /etc/nats/nats.conf.template
 
 # Env vars expected:
-#   SYSTEM_PASS, OVERLAY_PASS, UI_PASS, MIDI_PASS, DATA_PASS
+#   SYSTEM_PASS, OVERLAY_PASS, CHAT_PASS, MIDI_PASS, DATA_PASS
 
 EXPOSE 4222 8222 6222
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

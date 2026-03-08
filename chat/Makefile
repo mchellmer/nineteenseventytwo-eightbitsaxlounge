@@ -1,7 +1,7 @@
 # Variables
 VERSION ?= $(shell cat version.txt)
 NAMESPACE ?= eightbitsaxlounge-dev
-IMAGE_BASE ?= ghcr.io/$(GITHUB_REPOSITORY_OWNER)/eightbitsaxlounge-ui
+IMAGE_BASE ?= ghcr.io/$(GITHUB_REPOSITORY_OWNER)/eightbitsaxlounge-chat
 GITHUB_REPOSITORY_OWNER ?= mchellmer
 
 # Lint Python code
@@ -38,7 +38,7 @@ push:
 
 # Deploy to Kubernetes via Ansible
 deploy:
-	ansible-playbook ui-deploy.yaml
+	ansible-playbook chat-deploy.yaml
 
 # Local development targets
 install:
@@ -64,13 +64,13 @@ clean:
 	find . -name "*__pycache__*" -type d -exec rm -rf {} + 2>/dev/null || true
 
 docker-build:
-	docker build -t eightbitsaxlounge-ui:local .
+	docker build -t eightbitsaxlounge-chat:local .
 
 docker-run:
-	docker run --rm -it --env-file .env eightbitsaxlounge-ui:local
+	docker run --rm -it --env-file .env eightbitsaxlounge-chat:local
 
 set-environment:
-	ansible-playbook ui-set-environment.yaml
+	ansible-playbook chat-set-environment.yaml
 
 # Help target
 help:
@@ -97,4 +97,4 @@ help:
 	@echo "  NAMESPACE          - K8s namespace (default: eightbitsaxlounge-dev)"
 	@echo "  GITHUB_REPOSITORY_OWNER - Docker registry owner (default: mchellmer)"
 
-.PHONY: lint test build-image test-image push deploy deploy-ui install install-dev dev test-local clean docker-build docker-run set-environment help
+.PHONY: lint test build-image test-image push deploy deploy-chat install install-dev dev test-local clean docker-build docker-run set-environment help

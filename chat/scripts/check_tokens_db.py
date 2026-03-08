@@ -2,7 +2,7 @@
 """Locate tokens.db files in the repo and print their `tokens` table rows.
 
 Usage:
-  python ui/scripts/check_tokens_db.py
+  python chat/scripts/check_tokens_db.py
 
 This script does not modify the DB; it only reads and prints rows.
 """

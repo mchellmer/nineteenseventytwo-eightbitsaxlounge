@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: eightbitsaxlounge-ui-config
+  name: eightbitsaxlounge-chat-config
   labels:
     app: eightbitsaxlounge
-    component: ui
+    component: chat
 data:
   twitch_channel: "the8bitsaxlounge"
   midi_device_url: "http://eightbitsaxlounge-midi-service:8080"

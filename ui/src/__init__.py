@@ -1,1 +1,0 @@
-"""UI src package initializer."""

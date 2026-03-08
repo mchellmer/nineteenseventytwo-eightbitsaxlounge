@@ -254,6 +254,6 @@ curl -X POST http://localhost:5000/api/Midi/SetEffect \
 
 ## Monitoring & Logging
 - Unified log format: `[timestamp] [Information] [midi] message correlationID=<id>`
-- Correlation ID is propagated from UI to MIDI to Data for end-to-end tracing in Grafana
+- Correlation ID is propagated from Chat to MIDI to Data for end-to-end tracing in Grafana
 - Health check endpoints excluded from correlation ID logging
 - Version labels on pods for deployment tracking

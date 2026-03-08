@@ -1,5 +1,5 @@
 ---
-- name: Switch Active UI Bot Environment
+- name: Switch Active Chat Bot Environment
   hosts: master
   tasks:
     - name: Ensure required environment variables are provided
@@ -13,13 +13,13 @@
     - name: Display switch information
       ansible.builtin.debug:
         msg:
-          - "Switching UI bot to: {{ lookup('env', 'ACTIVE_ENV') }}"
+          - "Switching Chat bot to: {{ lookup('env', 'ACTIVE_ENV') }}"
           - "Active namespace: {{ lookup('env', 'ACTIVE_NAMESPACE') }}"
           - "Inactive namespace: {{ lookup('env', 'INACTIVE_NAMESPACE') }}"
 
     - name: Scale down inactive environment
       ansible.builtin.shell: |
-        kubectl scale deployment/eightbitsaxlounge-ui \
+        kubectl scale deployment/eightbitsaxlounge-chat \
           --replicas=0 \
           --namespace="$INACTIVE_NAMESPACE"
       environment:
@@ -34,7 +34,7 @@
     - name: Wait for inactive environment to scale down
       ansible.builtin.shell: |
         kubectl wait --for=delete pod \
-          -l app=eightbitsaxlounge,component=ui \
+          -l app=eightbitsaxlounge,component=chat \
           --namespace="$INACTIVE_NAMESPACE" \
           --timeout=60s || true
       environment:
@@ -43,7 +43,7 @@
 
     - name: Scale up active environment
       ansible.builtin.shell: |
-        kubectl scale deployment/eightbitsaxlounge-ui \
+        kubectl scale deployment/eightbitsaxlounge-chat \
           --replicas=1 \
           --namespace="$ACTIVE_NAMESPACE"
       environment:
@@ -51,7 +51,7 @@
 
     - name: Wait for active environment to be ready
       ansible.builtin.shell: |
-        kubectl rollout status deployment/eightbitsaxlounge-ui \
+        kubectl rollout status deployment/eightbitsaxlounge-chat \
           --namespace="$ACTIVE_NAMESPACE" \
           --timeout=120s
       environment:
@@ -60,7 +60,7 @@
     - name: Get active pod status
       ansible.builtin.shell: |
         kubectl get pods -n "$ACTIVE_NAMESPACE" \
-          -l app=eightbitsaxlounge,component=ui \
+          -l app=eightbitsaxlounge,component=chat \
           -o wide
       register: active_pods
       environment:
@@ -73,7 +73,7 @@
     - name: Get recent logs from active environment
       ansible.builtin.shell: |
         kubectl logs -n "$ACTIVE_NAMESPACE" \
-          -l app=eightbitsaxlounge,component=ui \
+          -l app=eightbitsaxlounge,component=chat \
           --tail=20
       register: active_logs
       environment:

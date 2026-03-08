@@ -1,16 +1,16 @@
 ---
-- name: Deploy Eightbitsaxlounge UI Chatbot on Kubernetes
+- name: Deploy Eightbitsaxlounge Chat Chatbot on Kubernetes
   hosts: master
   vars:
     # Service Configuration
     midi_service_url: "http://eightbitsaxlounge-midi-service:8080"
     
     # Kubernetes Configuration
-    secret_name: "eightbitsaxlounge-ui-secrets"
-    configmap_name: "eightbitsaxlounge-ui-config"
-    deployment_name: "eightbitsaxlounge-ui"
+    secret_name: "eightbitsaxlounge-chat-secrets"
+    configmap_name: "eightbitsaxlounge-chat-config"
+    deployment_name: "eightbitsaxlounge-chat"
     app_label: "eightbitsaxlounge"
-    component_label: "ui"
+    component_label: "chat"
     container_name: "twitch-bot"
     
     # Default Values
@@ -37,7 +37,7 @@
     - name: Create a temporary directory for manifests
       ansible.builtin.tempfile:
         state: directory
-        suffix: ui-k8s
+        suffix: chat-k8s
       register: tempdir
 
     - name: Template deployment manifest to temp directory
@@ -50,13 +50,13 @@
         src: k8s/configmap.yaml
         dest: "{{ tempdir.path }}/configmap.yaml"
 
-    - name: Apply UI ConfigMap (deploy what's in k8s/configmap.yaml)
+    - name: Apply Chat ConfigMap (deploy what's in k8s/configmap.yaml)
       ansible.builtin.shell: |
         kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/configmap.yaml
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 
-    - name: Create UI Secrets
+    - name: Create Chat Secrets
       ansible.builtin.shell: |
         kubectl create secret generic {{ secret_name }} \
           --from-literal=client-id="$TWITCH_CLIENT_ID" \
@@ -72,7 +72,7 @@
         MIDI_CLIENT_SECRET: "{{ lookup('env', 'MIDI_CLIENT_SECRET') }}"
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
 
-    - name: Deploy UI Deployment
+    - name: Deploy Chat Deployment
       ansible.builtin.shell: |
         kubectl apply -n $NAMESPACE -f {{ tempdir.path }}/deployment.yaml
       environment:
@@ -80,7 +80,7 @@
 
     - name: Patch Deployment image to versioned tag
       ansible.builtin.shell: |
-        IMAGE_BASE=${IMAGE_BASE:-{{ default_image_base }}/${GITHUB_REPOSITORY_OWNER}/eightbitsaxlounge-ui}
+        IMAGE_BASE=${IMAGE_BASE:-{{ default_image_base }}/${GITHUB_REPOSITORY_OWNER}/eightbitsaxlounge-chat}
         kubectl -n "$NAMESPACE" set image deploy/{{ deployment_name }} \
           {{ container_name }}="${IMAGE_BASE}:${VERSION}"
       environment:
@@ -92,7 +92,7 @@
     - name: Annotate Deployment with change cause
       ansible.builtin.shell: |
         kubectl -n "$NAMESPACE" annotate deploy/{{ deployment_name }} \
-          kubernetes.io/change-cause="ui-chatbot ${VERSION}" --overwrite
+          kubernetes.io/change-cause="chat-chatbot ${VERSION}" --overwrite
       environment:
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
         VERSION: "{{ lookup('env', 'VERSION') }}"

@@ -1,53 +1,53 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: eightbitsaxlounge-ui
+  name: eightbitsaxlounge-chat
   labels:
     app: eightbitsaxlounge
-    component: ui
+    component: chat
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: eightbitsaxlounge
-      component: ui
+      component: chat
   template:
     metadata:
       labels:
         app: eightbitsaxlounge
-        component: ui
+        component: chat
         version: "{{ lookup('env', 'VERSION') | default('latest', true) }}"
     spec:
       containers:
       - name: twitch-bot
-        image: ghcr.io/mchellmer/eightbitsaxlounge-ui:{{ lookup('env', 'VERSION') | default('latest', true) }}
+        image: ghcr.io/mchellmer/eightbitsaxlounge-chat:{{ lookup('env', 'VERSION') | default('latest', true) }}
         imagePullPolicy: IfNotPresent
         env:
         # Twitch Configuration
         - name: TWITCH_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: eightbitsaxlounge-ui-secrets
+              name: eightbitsaxlounge-chat-secrets
               key: client-id
         - name: TWITCH_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: eightbitsaxlounge-ui-secrets
+              name: eightbitsaxlounge-chat-secrets
               key: client-secret
         - name: TWITCH_CHANNEL
           valueFrom:
             configMapKeyRef:
-              name: eightbitsaxlounge-ui-config
+              name: eightbitsaxlounge-chat-config
               key: twitch_channel
         - name: TWITCH_BOT_ID
           valueFrom:
             configMapKeyRef:
-              name: eightbitsaxlounge-ui-config
+              name: eightbitsaxlounge-chat-config
               key: bot_id
         - name: TWITCH_OWNER_ID
           valueFrom:
             configMapKeyRef:
-              name: eightbitsaxlounge-ui-config
+              name: eightbitsaxlounge-chat-config
               key: bot_owner_id
         - name: TWITCH_PREFIX
           value: "!"
@@ -55,17 +55,17 @@ spec:
         - name: MIDI_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: eightbitsaxlounge-ui-secrets
+              name: eightbitsaxlounge-chat-secrets
               key: midi-client-id
         - name: MIDI_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: eightbitsaxlounge-ui-secrets
+              name: eightbitsaxlounge-chat-secrets
               key: midi-client-secret
         - name: MIDI_DEVICE_URL
           valueFrom:
             configMapKeyRef:
-              name: eightbitsaxlounge-ui-config
+              name: eightbitsaxlounge-chat-config
               key: midi_device_url
         - name: MIDI_API_TIMEOUT
           value: "30"
@@ -75,12 +75,12 @@ spec:
         - name: BOT_NAME
           valueFrom:
             configMapKeyRef:
-              name: eightbitsaxlounge-ui-config
+              name: eightbitsaxlounge-chat-config
               key: bot_name
         - name: LOG_LEVEL
           valueFrom:
             configMapKeyRef:
-              name: eightbitsaxlounge-ui-config
+              name: eightbitsaxlounge-chat-config
               key: log_level
         ports:
         - containerPort: 8080

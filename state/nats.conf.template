@@ -23,11 +23,11 @@ authorization {
       }
     }
     {
-      user: "ui"
-      password: "$UI_PASS"
+      user: "chat"
+      password: "$CHAT_PASS"
       permissions: {
         publish: [
-            "ui.>",
+            "chat.>",
             "overlay.engine",
             "overlay.delay",
             "overlay.time",

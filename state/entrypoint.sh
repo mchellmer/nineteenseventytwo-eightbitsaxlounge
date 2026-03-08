@@ -5,9 +5,9 @@
 set -e
 
 # Verify required environment variables are set
-if [ -z "$SYSTEM_PASS" ] || [ -z "$OVERLAY_PASS" ] || [ -z "$UI_PASS" ] || [ -z "$MIDI_PASS" ] || [ -z "$DATA_PASS" ]; then
+if [ -z "$SYSTEM_PASS" ] || [ -z "$OVERLAY_PASS" ] || [ -z "$CHAT_PASS" ] || [ -z "$MIDI_PASS" ] || [ -z "$DATA_PASS" ]; then
   echo "ERROR: Missing required password environment variables"
-  echo "Required: SYSTEM_PASS, OVERLAY_PASS, UI_PASS, MIDI_PASS, DATA_PASS"
+  echo "Required: SYSTEM_PASS, OVERLAY_PASS, CHAT_PASS, MIDI_PASS, DATA_PASS"
   exit 1
 fi
 
@@ -19,7 +19,7 @@ mkdir -p /etc/nats
 sed \
   -e "s|\$SYSTEM_PASS|$SYSTEM_PASS|g" \
   -e "s|\$OVERLAY_PASS|$OVERLAY_PASS|g" \
-  -e "s|\$UI_PASS|$UI_PASS|g" \
+  -e "s|\$CHAT_PASS|$CHAT_PASS|g" \
   -e "s|\$MIDI_PASS|$MIDI_PASS|g" \
   -e "s|\$DATA_PASS|$DATA_PASS|g" \
   /etc/nats/nats.conf.template > /etc/nats/nats.conf

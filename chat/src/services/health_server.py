@@ -39,7 +39,7 @@ class HealthServer:
         """
         return web.json_response({
             'status': 'healthy',
-            'service': 'eightbitsaxlounge-ui'
+            'service': 'eightbitsaxlounge-chat'
         })
     
     #TODO: review
@@ -56,7 +56,7 @@ class HealthServer:
         
         return web.json_response({
             'status': 'ready',
-            'service': 'eightbitsaxlounge-ui'
+            'service': 'eightbitsaxlounge-chat'
         })
     
     async def start(self):

@@ -3,7 +3,7 @@
 
 ### Changed
 - Unified log format across all layers: `[timestamp] [Information] [layer] message correlationID=<id>`
-- Correlation ID propagation: UI → MIDI → Data → DB for end-to-end tracing
+- Correlation ID propagation: chat → MIDI → Data → DB for end-to-end tracing
 - Health check log exclusion for correlation ID tracking
 - Grafana dashboards updated for pod/node/deployment health and correlation ID tracking
 - Table panel transformations for deployment status
@@ -14,7 +14,7 @@
 ### Added
 - Comprehensive Grafana Cloud setup guide (GRAFANA_SETUP.md)
 - Health probes for all service layers:
-  - UI: HTTP health endpoints (/health, /ready)
+  - chat: HTTP health endpoints (/health, /ready)
   - Data: /health endpoint with CouchDB connectivity check
   - DB: CouchDB built-in /_up endpoint
   - MIDI: Already had /health endpoint
@@ -26,7 +26,7 @@
 - LogQL and PromQL query examples
 - Alert configurations for critical issues
 - Free tier optimization strategies and usage monitoring
-- Health check server for UI Python bot
+- Health check server for chat Python bot
 
 ### Documentation
 - Log query patterns by service and severity

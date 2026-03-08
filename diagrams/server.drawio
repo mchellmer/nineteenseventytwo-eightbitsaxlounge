@@ -1,17 +1,17 @@
 <mxfile host="65bd71144e">
     <diagram id="3dqU6impjqxLbrSppdJr" name="Page-1">
-        <mxGraphModel dx="722" dy="659" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="1148" dy="907" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
                 <mxCell id="2" value="raspberry pi - ubuntu" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="161" width="350" height="470" as="geometry"/>
+                    <mxGeometry x="40" y="161" width="350" height="579" as="geometry"/>
                 </mxCell>
                 <mxCell id="3" value="server layer" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-                    <mxGeometry x="60" y="191" width="310" height="420" as="geometry"/>
+                    <mxGeometry x="60" y="191" width="310" height="539" as="geometry"/>
                 </mxCell>
                 <mxCell id="4" value="kubernetes" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;" parent="1" vertex="1">
-                    <mxGeometry x="70" y="221" width="140" height="380" as="geometry"/>
+                    <mxGeometry x="70" y="221" width="140" height="449" as="geometry"/>
                 </mxCell>
                 <mxCell id="5" value="loadbalancer&lt;div&gt;metallb&lt;/div&gt;&lt;div&gt;public endpoints&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="80" y="391" width="120" height="60" as="geometry"/>
@@ -52,8 +52,11 @@
                 <mxCell id="18" value="&lt;div&gt;&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;network&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;lan switch&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;ethernet comms&lt;/span&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="440" y="331" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="19" value="The server layer initialises and maintains the infrastructure running the 8bsl. There are some scripts to initialise raspberry pis to act as a bare metal cluster and ansible playbooks to configure container runtime, networking, kubernetes, cicd, monitoring etc.&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Essentially a master and two worker nodes are configured on three raspberry pis with a fourth acting as a deployment host with ansible and a github actions runner configured. Kubernetes has a basic flannel CNI configured and dev/prod namespaces with grafana containers handling monitoring. Metallb and nginx ingress handle communication from outside the cluster and ssh is configured to allow deployment host ansible connection to the cluster pis and windows PC&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;" vertex="1" parent="1">
+                <mxCell id="19" value="The server layer initialises and maintains the infrastructure running the 8bsl. There are some scripts to initialise raspberry pis to act as a bare metal cluster and ansible playbooks to configure container runtime, networking, kubernetes, cicd, monitoring etc.&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Essentially a master and two worker nodes are configured on three raspberry pis with a fourth acting as a deployment host with ansible and a github actions runner configured. Kubernetes has a basic flannel CNI configured and dev/prod namespaces with grafana containers handling monitoring. Metallb and nginx ingress handle communication from outside the cluster and ssh is configured to allow deployment host ansible connection to the cluster pis and windows PC&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;align=left;" parent="1" vertex="1">
                     <mxGeometry x="40" y="10" width="680" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="&lt;div&gt;&lt;font color=&quot;#000000&quot;&gt;storage&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;longhorn&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;persistant storage&lt;/span&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="80" y="600" width="120" height="60" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>

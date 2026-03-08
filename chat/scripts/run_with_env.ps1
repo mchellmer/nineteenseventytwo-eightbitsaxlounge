@@ -11,14 +11,14 @@ processes started by this script.
 
 try {
     $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
-    $CHATRoot = Resolve-Path (Join-Path $ScriptRoot "..")
-    $EnvFile = Join-Path $CHATRoot ".env"
+    $chatRoot = Resolve-Path (Join-Path $ScriptRoot "..")
+    $EnvFile = Join-Path $chatRoot ".env"
     if (-not (Test-Path $EnvFile)) {
-        $EnvFile = Join-Path $CHATRoot ".env.template"
+        $EnvFile = Join-Path $chatRoot ".env.template"
     }
 
     if (-not (Test-Path $EnvFile)) {
-        Write-Error "No .env or .env.template found in $CHATRoot"
+        Write-Error "No .env or .env.template found in $chatRoot"
         exit 1
     }
 
@@ -35,8 +35,8 @@ try {
         Write-Host "Set $name"
     }
 
-    $Python = Join-Path $CHATRoot ".venv\Scripts\python.exe"
-    $Main = Join-Path $CHATRoot "src\main.py"
+    $Python = Join-Path $chatRoot ".venv\Scripts\python.exe"
+    $Main = Join-Path $chatRoot "src\main.py"
 
     if (-not (Test-Path $Python)) {
         Write-Error "Python executable not found at: $Python. Activate venv or create .venv first."

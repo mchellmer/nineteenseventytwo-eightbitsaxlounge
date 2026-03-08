@@ -33,7 +33,7 @@ This layer deploys comprehensive monitoring infrastructure to the Kubernetes clu
 - Zipkin receiver (port 9411)
 - Support for distributed tracing
 - **Version labels** on all pods for deployment tracking
-- **Correlation ID propagation**: UI → MIDI → Data → DB for full request tracing
+- **Correlation ID propagation**: chat → MIDI → Data → DB for full request tracing
 
 ### Alloy Agents
 - **alloy-metrics** - Metrics collection with remote configuration
