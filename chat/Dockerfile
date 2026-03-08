@@ -7,7 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
 
-RUN useradd --create-home --shell /bin/bash app \
+RUN useradd --create-home --shell /bin/bash --uid 1000 app \
     && chown -R app:app /app
 USER app
 
