@@ -11,7 +11,7 @@ from bots.streaming_bot import StreamingBot
 import bots.twitch.twitchio_autobot as twitchio_autobot
 
 logger = logging.getLogger(__name__)
-BOT_ID: str = str(settings.twitch_bot_id)  # The Account ID of the bot user...
+BOT_ID = settings.twitch_bot_id  # The Account ID of the bot user...
 
 
 class Bot(StreamingBot):
