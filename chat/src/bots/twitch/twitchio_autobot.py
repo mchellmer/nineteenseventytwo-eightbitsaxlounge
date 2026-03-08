@@ -42,7 +42,7 @@ class TwitchioAutoBot(commands.AutoBot):
         if not payload.user_id:
             return
 
-        if payload.user_id == str(self.bot_id):
+        if str(payload.user_id) == str(self.bot_id):
             # We usually don't want to subscribe to events on the bots channel...
             return
 
