@@ -12,7 +12,7 @@ A deliberately overengineered Kubernetes-based platform for live music streaming
 
 The system is split into layers:
 
-### **UI Layer** ([ui/](ui/))
+### **Chat Layer** ([chat/](chat/))
 Python-based Twitch chatbot that monitors chat and responds to viewer commands. Supports case-insensitive commands like `!engine`, `!time`, `!predelay` to control audio effects. Communicates with the MIDI layer to translate chat commands into hardware control signals.
 
 ### **MIDI Layer** ([midi/](midi/))
@@ -22,7 +22,7 @@ Python-based Twitch chatbot that monitors chat and responds to viewer commands. 
 Go-based data service providing a RESTful API for MIDI device configurations, presets, and state. Acts as the application's data access layer, abstracting CouchDB operations for other services.
 
 ### **DB Layer** ([db/](db/))
-CouchDB instance serving as the source of truth for device configurations, presets, and application state. Ensures consistent state across UI, MIDI devices, and chat interactions.
+CouchDB instance serving as the source of truth for device configurations, presets, and application state. Ensures consistent state across CHAT, MIDI devices, and chat interactions.
 
 ### **Monitoring Layer** ([monitoring/](monitoring/))
 Grafana Cloud-based observability stack with Alloy agents for comprehensive monitoring. Collects metrics, logs, and traces from all cluster components. Includes OpenCost for cost tracking and Kepler for energy monitoring.
@@ -34,8 +34,8 @@ For architectural diagrams and visual overviews, see the [diagrams/](diagrams/) 
 
 ### **State Layer** ([state/](state/))
 NATS JetStream event broker for real-time state management across services. Provides persistent message streams and ACL-based routing for event-driven architecture.
-- Four JetStream streams: OVERLAY_UPDATES, UI_CONTROLS, MIDI_STATE, DATA_API
-- Per-service ACL: UI publishes to overlay.*, MIDI publishes to midi.*, etc.
+- Four JetStream streams: OVERLAY_UPDATES, CHAT_CONTROLS, MIDI_STATE, DATA_API
+- Per-service ACL: Chat publishes to overlay.*, MIDI publishes to midi.*, etc.
 
 ### **Overlay Layer** ([overlay/](overlay/))
 Node.js-based browser overlay service for OBS broadcast integration. Subscribes to overlay state changes from NATS and forwards updates to connected browsers via socket.io for real-time broadcast control.
@@ -56,7 +56,7 @@ Each layer has its own build/test/deploy pipeline, with releases triggered by ve
 ## Getting Started
 
 Each layer has detailed documentation in its respective README:
-- [UI Layer Documentation](ui/README.md)
+- [Chat Layer Documentation](chat/README.md)
 - [MIDI Layer Documentation](midi/README.md)
 - [Data Layer Documentation](data/README.md)
 - [DB Layer Documentation](db/README.md)
@@ -64,7 +64,7 @@ Each layer has detailed documentation in its respective README:
 - [Server Layer Documentation](server/README.md)
 
 ## Feature Roadmap
-UI Layer
+Chat Layer
 - ensure dev/prod services not both accessible at once
 - service to update obs resources
 
@@ -76,7 +76,7 @@ Data Layer
 - requests for midi details handled with appropriate response
 
 Db layer
-- source of true state -> UI and device track
+- source of true state -> CHAT and device track
 
 Monitoring layer
 - vulnerabilitiesbilities
@@ -101,6 +101,6 @@ Cloud replication
 - capability to spin-up/down infrastructure outside of midi layer in AWS/Azure/gcp
 
 State Layer?
-- unified state to ensure consistent: UI and db match midi and chat states
+- unified state to ensure consistent: CHAT and db match midi and chat states
 - default state stored and applied as needed
-- enforce db as true state of UI and midi device
+- enforce db as true state of CHAT and midi device

@@ -3,21 +3,21 @@
 ## [0.0.17] - 2026-03-07
 
 ### Changed
-- UI user ACL: Added explicit publish permissions to overlay state subjects (overlay.engine, overlay.delay, overlay.time, overlay.dial1, overlay.dial2)
-- Clarified subject namespace separation: UI publishes to overlay.* subjects for broadcast control
+- chat user ACL: Added explicit publish permissions to overlay state subjects (overlay.engine, overlay.delay, overlay.time, overlay.dial1, overlay.dial2)
+- Clarified subject namespace separation: Chat publishes to overlay.* subjects for broadcast control
 
 ### Fixed
-- Overlay user ACL: Changed subscribe permission from `ui.effect>` to `overlay.>` to allow overlay service to receive broadcast state updates
-- Direct subject publishing: Overlay service now subscribes to `overlay.*` subjects published by UI layer
+- Overlay user ACL: Changed subscribe permission from `chat.effect>` to `overlay.>` to allow overlay service to receive broadcast state updates
+- Direct subject publishing: Overlay service now subscribes to `overlay.*` subjects published by Chat layer
 
 ## [0.0.15] - 2026-03-07
 
 ### Added
 - NATS 2.12 JetStream state layer with centralized event message broker
-- Four JetStream event streams: OVERLAY_UPDATES, UI_CONTROLS, MIDI_STATE, DATA_API
+- Four JetStream event streams: OVERLAY_UPDATES, CHAT_CONTROLS, MIDI_STATE, DATA_API
 - Per-service ACL configuration with role-based publish/subscribe restrictions
   - System user: Full publish/subscribe (bootstrap operations)
-  - Service users (overlay, ui, midi, data): Restricted publish to service subjects
+  - Service users (overlay, chat, midi, data): Restricted publish to service subjects
 - Custom Alpine Docker image with baked-in nats-cli and bootstrap tooling
 - Entrypoint script for runtime password substitution via sed into nats.conf template
 - PostStart lifecycle hook for automatic JetStream stream creation at pod startup

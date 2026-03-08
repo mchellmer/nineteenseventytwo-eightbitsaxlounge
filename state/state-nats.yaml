@@ -9,7 +9,7 @@
           - lookup('env','VERSION') | length > 0
           - lookup('env','SYSTEM_PASS') | length > 0
           - lookup('env','OVERLAY_PASS') | length > 0
-          - lookup('env','UI_PASS') | length > 0
+          - lookup('env','CHAT_PASS') | length > 0
           - lookup('env','MIDI_PASS') | length > 0
           - lookup('env','DATA_PASS') | length > 0
           - lookup('env','GITHUB_REPOSITORY_OWNER') | length > 0
@@ -47,7 +47,7 @@
         kubectl create secret generic state-nats-creds \
           --from-literal=system_pass="${SYSTEM_PASS}" \
           --from-literal=overlay_pass="${OVERLAY_PASS}" \
-          --from-literal=ui_pass="${UI_PASS}" \
+          --from-literal=chat_pass="${CHAT_PASS}" \
           --from-literal=midi_pass="${MIDI_PASS}" \
           --from-literal=data_pass="${DATA_PASS}" \
           --namespace $NAMESPACE \
@@ -56,7 +56,7 @@
         NAMESPACE: "{{ lookup('env', 'NAMESPACE') }}"
         SYSTEM_PASS: "{{ lookup('env','SYSTEM_PASS') }}"
         OVERLAY_PASS: "{{ lookup('env','OVERLAY_PASS') }}"
-        UI_PASS: "{{ lookup('env','UI_PASS') }}"
+        CHAT_PASS: "{{ lookup('env','CHAT_PASS') }}"
         MIDI_PASS: "{{ lookup('env','MIDI_PASS') }}"
         DATA_PASS: "{{ lookup('env','DATA_PASS') }}"
       changed_when: false

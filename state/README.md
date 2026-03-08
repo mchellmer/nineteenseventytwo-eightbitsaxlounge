@@ -8,15 +8,15 @@ The state layer provides a centralized event message broker for microservice com
 
 **Event Streams:**
 - `OVERLAY_UPDATES` - Overlay state changes (subject: `overlay.>`)
-- `UI_CONTROLS` - UI to system commands (subject: `ui.>`)
+- `CHAT_CONTROLS` - CHAT to system commands (subject: `chat.>`)
 - `MIDI_STATE` - MIDI device state observations (subject: `midi.>`)
 - `DATA_API` - Data layer events (subject: `data.>`)
 
 **Authentication:**
 - Five users with role-based ACL:
   - `system` - Full publish/subscribe (bootstrap operations)
-  - `overlay` - Publish `overlay.*` + Subscribe to `ui.effect.*` commands
-  - `ui` - Publish `ui.*` only
+  - `overlay` - Publish `overlay.*` + Subscribe to `chat.effect.*` commands
+  - `chat` - Publish `chat.*` only
   - `midi` - Publish `midi.*` only
   - `data` - Publish `data.*` only
 - Credentials managed via Kubernetes secret `state-nats-creds` with 5 password keys
@@ -56,7 +56,7 @@ Each stream configured with:
 ```
 Stream Name           | Subject Pattern | Max Messages | Purpose
 OVERLAY_UPDATES       | overlay.>       | 1000         | Overlay state publishing
-UI_CONTROLS           | ui.>            | 1000         | UI command broadcasting
+CHAT_CONTROLS           | chat.>            | 1000         | CHAT command broadcasting
 MIDI_STATE            | midi.>          | 1000         | MIDI device observations
 DATA_API              | data.>          | 1000         | Data layer events
 ```
@@ -113,7 +113,7 @@ make test               # Run smoke test with NATS+JetStream
 ```
 Service Pod → NATS Client Connection (nats://host:4222)
            → Authenticate with service user/password
-           → Publish to subject (e.g., overlay.state, ui.effect.reverb)
+           → Publish to subject (e.g., overlay.state, chat.effect.reverb)
            → Message stored in corresponding JetStream stream
 ```
 

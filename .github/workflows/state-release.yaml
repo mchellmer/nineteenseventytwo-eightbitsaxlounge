@@ -27,7 +27,7 @@ jobs:
         {
           "SYSTEM_PASS": "${{ secrets.STATE_SYSTEM_PASS }}",
           "OVERLAY_PASS": "${{ secrets.STATE_OVERLAY_PASS }}",
-          "UI_PASS": "${{ secrets.STATE_UI_PASS }}",
+          "CHAT_PASS": "${{ secrets.STATE_CHAT_PASS }}",
           "MIDI_PASS": "${{ secrets.STATE_MIDI_PASS }}",
           "DATA_PASS": "${{ secrets.STATE_DATA_PASS }}"
         }

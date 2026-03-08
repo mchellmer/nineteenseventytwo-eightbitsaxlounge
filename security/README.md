@@ -80,7 +80,7 @@ spec:
               name: security-scan-secret
               key: github_pat
         - name: IMAGES
-          value: "ghcr.io/mchellmer/eightbitsaxlounge-data:latest,ghcr.io/mchellmer/eightbitsaxlounge-midi:latest,ghcr.io/mchellmer/eightbitsaxlounge-db:latest,ghcr.io/mchellmer/eightbitsaxlounge-ui:latest"
+          value: "ghcr.io/mchellmer/eightbitsaxlounge-data:latest,ghcr.io/mchellmer/eightbitsaxlounge-midi:latest,ghcr.io/mchellmer/eightbitsaxlounge-db:latest,ghcr.io/mchellmer/eightbitsaxlounge-chat:latest"
         volumeMounts:
         - name: trivy-cache
           mountPath: /var/lib/trivy

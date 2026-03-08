@@ -67,14 +67,14 @@ else
   log "WARNING: OVERLAY_UPDATES failed: $output"
 fi
 
-# Create UI_CONTROLS stream
-output=$(nats_cmd stream add UI_CONTROLS --subjects "ui.>" --max-msgs 500 --storage file --discard old --replicas 1 --defaults 2>&1)
+# Create CHAT_CONTROLS stream
+output=$(nats_cmd stream add CHAT_CONTROLS --subjects "chat.>" --max-msgs 500 --storage file --discard old --replicas 1 --defaults 2>&1)
 if [ $? -eq 0 ]; then
-  log "✓ UI_CONTROLS created"
-elif nats_cmd stream info UI_CONTROLS >/dev/null 2>&1; then
-  log "ℹ UI_CONTROLS exists"
+  log "✓ CHAT_CONTROLS created"
+elif nats_cmd stream info CHAT_CONTROLS >/dev/null 2>&1; then
+  log "ℹ CHAT_CONTROLS exists"
 else
-  log "WARNING: UI_CONTROLS failed: $output"
+  log "WARNING: CHAT_CONTROLS failed: $output"
 fi
 
 # Create MIDI_STATE stream
