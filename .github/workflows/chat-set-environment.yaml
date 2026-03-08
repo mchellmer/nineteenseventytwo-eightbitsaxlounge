@@ -1,4 +1,4 @@
-name: UI Set Active Environment
+name: Chat Set Active Environment
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
 
 jobs:
   switch-environment:
-    name: Switch Active UI Environment
+    name: Switch Active Chat Environment
     runs-on: self-hosted
     steps:
     - name: Checkout Code
@@ -31,8 +31,8 @@ jobs:
           echo "INACTIVE_NAMESPACE=eightbitsaxlounge-prod" >> $GITHUB_ENV
         fi
 
-    - name: Switch UI Environment via Ansible
-      working-directory: ./ui
+    - name: Switch Chat Environment via Ansible
+      working-directory: ./chat
       env:
         ACTIVE_NAMESPACE: ${{ env.ACTIVE_NAMESPACE }}
         INACTIVE_NAMESPACE: ${{ env.INACTIVE_NAMESPACE }}

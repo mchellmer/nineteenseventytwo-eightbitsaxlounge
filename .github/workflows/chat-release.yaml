@@ -1,23 +1,23 @@
-name: UI Release
+name: Chat Release
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
-      - ui/*
+      - chat/*
     paths:
-      - 'ui/version.txt'
+      - 'chat/version.txt'
 
 jobs:
   release:
-    name: Release UI Component
+    name: Release Chat Component
     permissions:
       packages: write
       security-events: write
     uses: ./.github/workflows/release-template.yaml
     with:
-      component: 'ui'
+      component: 'chat'
       test-target: 'test'
       build-target: 'build'
       deploy-target: 'deploy'
