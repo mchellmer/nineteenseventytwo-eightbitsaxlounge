@@ -37,11 +37,11 @@ class HelpHandler(CommandHandler):
         available_engines = ', '.join([e.lower() for e in settings.valid_engines])
         
         # Return condensed list of messages to avoid Twitch rate limiting
-        # Grouped into 3 messages instead of 7 for faster delivery
+        # Note: uses ！(fullwidth exclamation) not ! to prevent twitchio re-processing as commands
         return [
             "🎵 EightBitSaxLounge Bot Commands 🎵",
-            f"!engine ({available_engines})",
-            "!time/!delay/!dial1/!dial2 (0-10)",
+            f"！engine ({available_engines})",
+            "！time / ！delay / ！dial1 / ！dial2 (0-10)",
             "Type !<command> <value> to control the reverb",
             "Examples: !time 7, !engine room"
         ]
