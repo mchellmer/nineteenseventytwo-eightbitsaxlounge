@@ -1,5 +1,30 @@
 # Changelog
  
+## [5.0.8] - 2026-03-08
+
+### Added
+- PersistentVolumeClaim for token database storage (`/app/tokens/tokens.db`) on Longhorn
+- Persistent token storage survives pod restarts without re-authorization
+- Comprehensive Twitch setup documentation with OAuth authorization flow
+- Error event handler (`event_error`) to surface silent twitchio errors
+- Component initialization logging for debugging
+
+### Changed
+- renamed layer from 'ui' to 'chat'
+- Migrated from ephemeral container storage to persistent volume-backed tokens
+- Fixed user ID type handling: convert all user IDs to strings for EventSub subscriptions (int/string consistency)
+- Updated Dockerfile to create app user with explicit UID 1000 for permission compatibility
+- Added pod-level `fsGroup: 1000` security context for PVC ownership handling
+- Improved OAuth subscription error handling: 409 conflicts logged at INFO level (already exists)
+- Updated Ansible playbook to deploy PersistentVolumeClaim during initial setup
+- Deployment now uses `longhorn` storage class instead of local-path
+
+### Fixed
+- Database file creation permissions issue in mounted PVC
+- User ID type mismatches causing EventSub subscription failures
+- Bot account channel exclusion logic (skip self-subscription)
+- PVC mount permission errors by using fsGroup in pod security context
+
 ## [4.0.28] - 2026-02-17
 
 ### Added
