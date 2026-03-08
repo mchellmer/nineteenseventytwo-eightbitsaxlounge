@@ -18,6 +18,8 @@ spec:
         component: chat
         version: "{{ lookup('env', 'VERSION') | default('latest', true) }}"
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
       - name: twitch-bot
         image: ghcr.io/mchellmer/eightbitsaxlounge-chat:{{ lookup('env', 'VERSION') | default('latest', true) }}
