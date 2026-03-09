@@ -124,6 +124,19 @@ podman-run-ps:
 		$$natsPass = if ($$env:NATS_PASS) { $$env:NATS_PASS } else { '' }; \
 		podman run --rm -p 3000:3000 -e NATS_URL=$$natsUrl -e NATS_USER=$$natsUser -e NATS_PASS=$$natsPass eightbitsaxlounge-overlay:local }"
 
+# Run overlay connected to local NATS container (uses dev credentials from state/Makefile test-local)
+podman-run-local:
+	podman run --rm -p 3000:3000 \
+		-e NATS_URL=nats://host.containers.internal:4222 \
+		-e NATS_USER=overlay \
+		-e NATS_PASS=overlaypw \
+		eightbitsaxlounge-overlay:local
+
+# PowerShell version for Windows
+podman-run-local-ps:
+	powershell -NoProfile -Command \
+		"podman run --rm -p 3000:3000 -e NATS_URL=nats://host.containers.internal:4222 -e NATS_USER=overlay -e NATS_PASS=overlaypw eightbitsaxlounge-overlay:local"
+
 # Run the smoke publisher from inside a container (connects to host NATS by default)
 podman-smoke:
 	podman run --rm \
@@ -132,4 +145,4 @@ podman-smoke:
 		-e NATS_PASS=$${NATS_PASS:-} \
 		eightbitsaxlounge-overlay:local npm run smoke
 
-.PHONY: build build-image test-image push test deploy deploy-overlay-manual docker-build docker-run smoke deps test-integration test-integration-ps test-unit test-images podman-build podman-run podman-run-ps podman-smoke
+.PHONY: build build-image test-image push test deploy deploy-overlay-manual docker-build docker-run smoke deps test-integration test-integration-ps test-unit test-images podman-build podman-run podman-run-ps podman-run-local podman-run-local-ps podman-smoke

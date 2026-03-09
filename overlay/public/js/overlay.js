@@ -8,8 +8,16 @@
 function adjustPanels() {
   document.querySelectorAll('.panel-text').forEach(el => {
     const h = el.getBoundingClientRect().height;
-    // choose a scale factor that makes the digits occupy most of the box
-    el.style.fontSize = (h * 0.7) + 'px';
+    let scale = 0.7;
+
+    // For the engine panel: step down font scale for longer words
+    if (el.id === 'panel-engine') {
+      const len = (el.textContent || '').length;
+      if (len >= 8)      scale = 0.4;
+      else if (len >= 6) scale = 0.6;
+    }
+
+    el.style.fontSize = (h * scale) + 'px';
   });
 }
 
