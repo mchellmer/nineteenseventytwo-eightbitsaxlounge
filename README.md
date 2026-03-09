@@ -13,7 +13,7 @@ A deliberately overengineered Kubernetes-based platform for live music streaming
 The system is split into layers:
 
 ### **Chat Layer** ([chat/](chat/))
-Python-based Twitch chatbot that monitors chat and responds to viewer commands. Supports case-insensitive commands like `!engine`, `!time`, `!predelay` to control audio effects. Communicates with the MIDI layer to translate chat commands into hardware control signals.
+Python-based Twitch chatbot that monitors chat and responds to viewer commands. Supports case-insensitive commands like `!engine`, `!time`, `!delay` to control audio effects. Translates chat commands into MIDI hardware control signals and publishes real-time events to NATS for overlay and monitoring integration.
 
 ### **MIDI Layer** ([midi/](midi/))
 .NET Minimal API that manages MIDI device communication and abstracts hardware control. Provides RESTful endpoints for controlling audio equipment (currently Ventris Dual Reverb). Handles device state management and MIDI message formatting.

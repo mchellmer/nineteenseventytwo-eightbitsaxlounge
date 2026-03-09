@@ -1,5 +1,20 @@
 # Changelog
- 
+
+## [6.0.2] - 2026-03-09
+
+### Added
+- Event publishing via NATS for real-time overlay updates
+- NatsPublisher service for async event broadcasting to JetStream subjects
+- Command-driven overlay event emission: `!engine`, `!time`, `!delay`, `!dial1`, `!dial2` now publish to NATS
+- New `!player <name>` command to update player panel on overlay via NATS (accepts 3-character string)
+- Overlay event subject mapping for targeted event routing
+- Lazy NATS connection on first command execution
+- Configuration support for NATS credentials (URL, user, password) via settings
+
+### Changed
+- Command execution now includes optional overlay event publication on success
+- Enhanced logging for NATS publish operations and connection states
+
 ## [5.0.8] - 2026-03-08
 
 ### Added

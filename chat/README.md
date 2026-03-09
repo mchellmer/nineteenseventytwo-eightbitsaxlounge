@@ -25,6 +25,7 @@ Register a new command in ./src/commands/command_registry.py and create a handle
 Configured commands (case-insensitive):
 - General
     - `!help` - Shows available commands
+    - `!player <name>` - Updates player panel on overlay (3-character string, e.g., `!player BOB`)
 - Ventris Dual Reverb
     - `!engine <engine name>` - Sets reverb engine A (e.g., room, hall, plate, spring, reverse, modulate, echo)
     - `!time <0-10>` - Set reverb decay time (scales to MIDI 0-127)
@@ -32,13 +33,27 @@ Configured commands (case-insensitive):
     - `!dial1 <0-10>` - Set custom control 1 (scales to MIDI 0-127)
     - `!dial2 <0-10>` - Set custom control 2 (scales to MIDI 0-127)
 
+#### Event Broadcasting via NATS
+
+The chat layer publishes real-time events to NATS for integration with other services (overlay, monitoring, etc.). When commands execute successfully, the chat bot emits overlay events to JetStream subjects:
+
+- `overlay.engine` - Engine selection updates
+- `overlay.time` - Reverb decay time updates
+- `overlay.delay` - Reverb pre-delay updates
+- `overlay.dial1` - Custom control 1 updates
+- `overlay.dial2` - Custom control 2 updates
+- `overlay.player` - Player panel updates (via `!player` command)
+
+Events are published asynchronously with lazy connection initialization to the NATS server.
+
 #### App Services
 
-The 8bsl has several services that handle updating music hardware, state data, etc. Integration with these services is defined in ./src/services.
+The 8bsl has several services that handle updating music hardware, state data, event publishing, etc. Integration with these services is defined in ./src/services.
 
 Configured services:
 - midi_client - this handles requests to update midi data and devices inline with chat element state
-- twitch_client - handles monitoring token validity [depracated]
+- nats_publisher - publishes overlay events to NATS JetStream for real-time state updates
+- twitch_client - handles monitoring token validity [deprecated]
 - All logs include correlationID for request tracing
 
 #### App config
