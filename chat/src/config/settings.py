@@ -53,6 +53,11 @@ class Settings(BaseSettings):
     bot_name: str = "EightBitSaxBot"
     log_level: str = "INFO"
 
+    # NATS Configuration
+    nats_url: str = "nats://eightbitsaxlounge-state-client:4222"
+    nats_user: str = "chat"
+    nats_pass: str = ""
+
 
 # Global settings instance
 settings = Settings()
