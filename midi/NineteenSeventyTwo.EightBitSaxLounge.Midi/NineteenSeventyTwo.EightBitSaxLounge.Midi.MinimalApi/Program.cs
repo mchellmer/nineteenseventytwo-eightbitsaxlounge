@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Logging;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Middleware;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -129,6 +130,7 @@ else
 }
 
 // Register handlers that depend on IMidiDeviceService
+builder.Services.AddSingleton<INatsPublisher, NatsPublisher>();
 builder.Services.AddTransient<SendControlChangeMessageHandler>();
 builder.Services.AddTransient<InitializeDataModelHandler>();
 builder.Services.AddTransient<UploadEffectsHandler>();

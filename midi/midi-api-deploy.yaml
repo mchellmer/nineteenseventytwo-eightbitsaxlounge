@@ -76,6 +76,7 @@
         kubectl create configmap eightbitsaxlounge-midi-config \
           --from-literal=device_service_url="$DEVICE_SERVICE_URL" \
           --from-literal=token_expiry_minutes="$TOKEN_EXPIRY" \
+          --from-literal=nats_user="midi" \
           --namespace $NAMESPACE \
           --dry-run=client -o yaml | kubectl apply -f -
       environment:
