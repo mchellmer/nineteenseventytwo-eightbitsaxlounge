@@ -32,7 +32,7 @@ class CommandRegistry:
         self._help_handler = HelpHandler()
         
         # Value-based commands using ValueHandler
-        # To add more commands like !decay, !predelay, etc.:
+        # To add more commands like !decay, !delay, etc.:
         # 1. Create a handler instance with ValueHandler
         # 2. Add it to self._commands dict below
         # 3. Register it in twitch_bot.py (add_command and add handler method)
@@ -46,9 +46,9 @@ class CommandRegistry:
             max_value=10
         )
         
-        self._predelay_handler = ValueHandler(
+        self._delay_handler = ValueHandler(
             midi_client=self._midi_client,
-            command_name="predelay",
+            command_name="delay",
             device_name="VentrisDualReverb",
             device_effect_name="ReverbEngineA",
             device_effect_setting_name="PreDelay",
@@ -56,9 +56,9 @@ class CommandRegistry:
             max_value=10
         )
         
-        self._control1_handler = ValueHandler(
+        self._dial1_handler = ValueHandler(
             midi_client=self._midi_client,
-            command_name="control1",
+            command_name="dial1",
             device_name="VentrisDualReverb",
             device_effect_name="ReverbEngineA",
             device_effect_setting_name="Control1",
@@ -66,9 +66,9 @@ class CommandRegistry:
             max_value=10
         )
         
-        self._control2_handler = ValueHandler(
+        self._dial2_handler = ValueHandler(
             midi_client=self._midi_client,
-            command_name="control2",
+            command_name="dial2",
             device_name="VentrisDualReverb",
             device_effect_name="ReverbEngineA",
             device_effect_setting_name="Control2",
@@ -85,17 +85,17 @@ class CommandRegistry:
                 self._time_handler.handle,
                 self._time_handler.description
             ),
-            'predelay': (
-                self._predelay_handler.handle,
-                self._predelay_handler.description
+            'delay': (
+                self._delay_handler.handle,
+                self._delay_handler.description
             ),
-            'control1': (
-                self._control1_handler.handle,
-                self._control1_handler.description
+            'dial1': (
+                self._dial1_handler.handle,
+                self._dial1_handler.description
             ),
-            'control2': (
-                self._control2_handler.handle,
-                self._control2_handler.description
+            'dial2': (
+                self._dial2_handler.handle,
+                self._dial2_handler.description
             ),
             'help': (
                 self._help_handler.handle,
