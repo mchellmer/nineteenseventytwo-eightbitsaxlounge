@@ -1,6 +1,6 @@
 # Changelog
 
-## [6.0.2] - 2026-03-09
+## [6.0.3] - 2026-03-09
 
 ### Added
 - Event publishing via NATS for real-time overlay updates
