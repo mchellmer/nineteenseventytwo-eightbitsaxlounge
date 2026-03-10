@@ -5,6 +5,7 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Services;
 
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.UnitTests.EndpointTests;
 
@@ -17,6 +18,7 @@ public class SetEffectHandlerTests : TestBase
         var loggerMock = new Mock<ILogger<SetEffectHandler>>();
         var dataServiceMock = new Mock<IMidiDataService>();
         var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var natsPublisherMock = new Mock<INatsPublisher>();
 
         var device = new MidiDevice
         {
@@ -52,7 +54,7 @@ public class SetEffectHandlerTests : TestBase
         dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync("VentrisDualReverb", "ReverbEngineA", "Time", 64))
             .ReturnsAsync(new ControlChangeMessage { Address = 10, Value = 64 });
 
-        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
+        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object, natsPublisherMock.Object);
         var request = new SetEffectRequest("VentrisDualReverb", "ReverbEngineA", "Time", Value: 64);
 
         // Act
@@ -73,6 +75,7 @@ public class SetEffectHandlerTests : TestBase
         var loggerMock = new Mock<ILogger<SetEffectHandler>>();
         var dataServiceMock = new Mock<IMidiDataService>();
         var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var natsPublisherMock = new Mock<INatsPublisher>();
 
         var device = new MidiDevice
         {
@@ -98,7 +101,7 @@ public class SetEffectHandlerTests : TestBase
         dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync("VentrisDualReverb", "ReverbEngineA", "Time", 64))
             .ThrowsAsync(new InvalidOperationException("Midi configuration 'Time' not found"));
 
-        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
+        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object, natsPublisherMock.Object);
         var request = new SetEffectRequest("VentrisDualReverb", "ReverbEngineA", "Time", Value: 64);
 
         // Act
@@ -117,6 +120,7 @@ public class SetEffectHandlerTests : TestBase
         var loggerMock = new Mock<ILogger<SetEffectHandler>>();
         var dataServiceMock = new Mock<IMidiDataService>();
         var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var natsPublisherMock = new Mock<INatsPublisher>();
 
         var device = new MidiDevice
         {
@@ -149,7 +153,7 @@ public class SetEffectHandlerTests : TestBase
         dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync("VentrisDualReverb", "ReverbEngineA", "Time", 64))
             .ThrowsAsync(new InvalidOperationException("No control change addresses defined"));
 
-        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
+        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object, natsPublisherMock.Object);
         var request = new SetEffectRequest("VentrisDualReverb", "ReverbEngineA", "Time", Value: 64);
 
         // Act
@@ -168,10 +172,11 @@ public class SetEffectHandlerTests : TestBase
         var loggerMock = new Mock<ILogger<SetEffectHandler>>();
         var dataServiceMock = new Mock<IMidiDataService>();
         var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var natsPublisherMock = new Mock<INatsPublisher>();
 
         dataServiceMock.Setup(m => m.GetDeviceByNameAsync(It.IsAny<string>())).ThrowsAsync(new Exception("DB Error"));
 
-        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
+        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object, natsPublisherMock.Object);
         var request = new SetEffectRequest("Device", "Effect", "Setting");
 
         // Act
@@ -190,6 +195,7 @@ public class SetEffectHandlerTests : TestBase
         var loggerMock = new Mock<ILogger<SetEffectHandler>>();
         var dataServiceMock = new Mock<IMidiDataService>();
         var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var natsPublisherMock = new Mock<INatsPublisher>();
 
         var device = new MidiDevice
         {
@@ -235,7 +241,7 @@ public class SetEffectHandlerTests : TestBase
         dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingSelectionAsync("VentrisDualReverb", "ReverbEngineA", "ReverbEngine", "Room"))
             .ReturnsAsync(new ControlChangeMessage { Address = 1, Value = 0 });
 
-        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
+        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object, natsPublisherMock.Object);
         var request = new SetEffectRequest("VentrisDualReverb", "ReverbEngineA", "ReverbEngine", Selection: "Room");
 
         // Act
@@ -256,6 +262,7 @@ public class SetEffectHandlerTests : TestBase
         var loggerMock = new Mock<ILogger<SetEffectHandler>>();
         var dataServiceMock = new Mock<IMidiDataService>();
         var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var natsPublisherMock = new Mock<INatsPublisher>();
 
         var deviceName = "VentrisDualReverb";
         var effectName = "ReverbEngineA";
@@ -337,7 +344,7 @@ public class SetEffectHandlerTests : TestBase
         dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync(deviceName, effectName, settingName, 127))
             .ReturnsAsync(new ControlChangeMessage { Address = 15, Value = 127 });
 
-        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
+        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object, natsPublisherMock.Object);
         var request = new SetEffectRequest(deviceName, effectName, settingName, Value: 127);
 
         // Act
