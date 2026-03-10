@@ -110,7 +110,8 @@ public class SetEffectHandler : IEndpointHandler<SetEffectRequest, IResult>
                                         settingToReset.Name, settingToReset.DefaultValue, deviceEffectSetting.Name);
                                     settingToReset.Value = settingToReset.DefaultValue;
 
-                                    _ = _natsPublisher.PublishAsync($"overlay.{resetSettingName.ToLowerInvariant()}", settingToReset.DefaultValue.ToString());
+                                    var scaled = _handlerHelper.ScaleFrom127ToBase(settingToReset.DefaultValue, 10);
+                                    _ = _natsPublisher.PublishAsync($"overlay.{resetSettingName.ToLowerInvariant()}", scaled.ToString());
                                 }
                             }
                         }
