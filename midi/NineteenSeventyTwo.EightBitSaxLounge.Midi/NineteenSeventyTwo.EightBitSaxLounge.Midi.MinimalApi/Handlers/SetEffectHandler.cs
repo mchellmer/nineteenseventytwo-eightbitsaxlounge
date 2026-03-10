@@ -111,6 +111,7 @@ public class SetEffectHandler : IEndpointHandler<SetEffectRequest, IResult>
                                     settingToReset.Value = settingToReset.DefaultValue;
 
                                     var scaled = _handlerHelper.ScaleFrom127ToBase(settingToReset.DefaultValue, 10);
+                                    _logger.LogInformation("Publishing overlay {Overlay} scaled from {DefaultValue} to {Scaled}", $"overlay.{resetSettingName.ToLowerInvariant()}", settingToReset.DefaultValue, scaled);
                                     _ = _natsPublisher.PublishAsync($"overlay.{resetSettingName.ToLowerInvariant()}", scaled.ToString());
                                 }
                             }

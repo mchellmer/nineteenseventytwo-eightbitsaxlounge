@@ -77,12 +77,6 @@ public class HandlerHelper
             throw new ArgumentOutOfRangeException(nameof(targetBase), "targetBase must be greater than zero.");
         }
 
-        // If the value already appears to be in the target range, return it unchanged.
-        if (value >= 0 && value <= targetBase)
-        {
-            return value;
-        }
-
         // Clamp input to expected MIDI CC range
         int clamped = Math.Max(0, Math.Min(127, value));
 

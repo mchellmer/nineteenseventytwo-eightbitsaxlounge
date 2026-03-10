@@ -94,7 +94,7 @@ public class ResetsFeatureTests : TestBase
         )), Times.Once);
 
         // Verify NATS was published for the reset setting
-        natsPublisherMock.Verify(m => m.PublishAsync($"overlay.{resetSettingName.ToLowerInvariant()}", "10"), Times.Once);
+        natsPublisherMock.Verify(m => m.PublishAsync($"overlay.{resetSettingName.ToLowerInvariant()}", "1"), Times.Once);
     }
 
     [Fact]
