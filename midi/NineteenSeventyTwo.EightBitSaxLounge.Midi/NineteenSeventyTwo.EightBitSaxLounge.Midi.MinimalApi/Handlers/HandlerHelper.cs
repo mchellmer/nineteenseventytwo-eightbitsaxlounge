@@ -64,9 +64,8 @@ public class HandlerHelper
 
     /// <summary>
     /// Scales a value in the 0-127 MIDI range to a 0..targetBase integer range (inclusive).
-    /// Example: ScaleFrom127ToBase(127, 10) => 10
-    ///
-    /// The UI displays values 0-10 vs the midi range of 0-127.
+    /// If the input value is already within 0..targetBase it is returned unchanged (assumed to already be in target base).
+    /// Example: ScaleFrom127ToBase(127, 10) => 10; ScaleFrom127ToBase(10, 10) => 10
     /// </summary>
     /// <param name="value">The source value (expected 0..127). Values outside this range will be clamped.</param>
     /// <param name="targetBase">The target maximum value (e.g. 10).</param>
@@ -76,6 +75,12 @@ public class HandlerHelper
         if (targetBase <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(targetBase), "targetBase must be greater than zero.");
+        }
+
+        // If the value already appears to be in the target range, return it unchanged.
+        if (value >= 0 && value <= targetBase)
+        {
+            return value;
         }
 
         // Clamp input to expected MIDI CC range
