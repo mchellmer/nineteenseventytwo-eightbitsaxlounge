@@ -13,7 +13,8 @@ function adjustPanels() {
     // For the engine panel: step down font scale for longer words
     if (el.id === 'panel-engine') {
       const len = (el.textContent || '').length;
-      if (len >= 7)      scale = 0.4;
+      if (len >= 8)      scale = 0.4;
+      if (len == 7)      scale = 0.5;
       else if (len >= 6) scale = 0.6;
     }
 
