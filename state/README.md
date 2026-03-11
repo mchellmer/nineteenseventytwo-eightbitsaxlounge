@@ -15,9 +15,9 @@ The state layer provides a centralized event message broker for microservice com
 **Authentication:**
 - Five users with role-based ACL:
   - `system` - Full publish/subscribe (bootstrap operations)
-  - `overlay` - Publish `overlay.*` + Subscribe to `chat.effect.*` commands
-  - `chat` - Publish `chat.*` only
-  - `midi` - Publish `midi.*` only
+  - `overlay` - Subscribe `overlay.*` (receives all overlay state updates)
+  - `chat` - Publish `chat.*` + Publish `overlay.engine`, `overlay.delay`, `overlay.time`, `overlay.dial1`, `overlay.dial2`, `overlay.player`
+  - `midi` - Publish `midi.*` + Publish `overlay.engine`, `overlay.predelay`, `overlay.time`, `overlay.control1`, `overlay.control2`
   - `data` - Publish `data.*` only
 - Credentials managed via Kubernetes secret `state-nats-creds` with 5 password keys
 

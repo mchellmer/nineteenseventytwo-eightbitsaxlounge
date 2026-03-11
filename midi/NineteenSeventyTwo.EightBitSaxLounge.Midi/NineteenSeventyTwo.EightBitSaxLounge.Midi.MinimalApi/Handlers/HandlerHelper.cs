@@ -61,4 +61,32 @@ public class HandlerHelper
             throw;
         }
     }
+
+    /// <summary>
+    /// Scales a value in the 0-127 MIDI range to a 0..targetBase integer range (inclusive).
+    /// If the input value is already within 0..targetBase it is returned unchanged (assumed to already be in target base).
+    /// Example: ScaleFrom127ToBase(127, 10) => 10; ScaleFrom127ToBase(10, 10) => 10
+    /// </summary>
+    /// <param name="value">The source value (expected 0..127). Values outside this range will be clamped.</param>
+    /// <param name="targetBase">The target maximum value (e.g. 10).</param>
+    /// <returns>An integer in the range 0..targetBase.</returns>
+    public int ScaleFrom127ToBase(int value, int targetBase = 10)
+    {
+        if (targetBase <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(targetBase), "targetBase must be greater than zero.");
+        }
+
+        // Clamp input to expected MIDI CC range
+        int clamped = Math.Max(0, Math.Min(127, value));
+
+        // Perform a proportional scaling and round to nearest integer
+        int scaled = (int)Math.Round(clamped * (targetBase / 127.0));
+
+        // Ensure final value is within 0..targetBase bounds
+        if (scaled < 0) scaled = 0;
+        if (scaled > targetBase) scaled = targetBase;
+
+        return scaled;
+    }
 }

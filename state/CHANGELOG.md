@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.19] - 2026-03-09
+
+### Changed
+- chat user ACL: Added `overlay.player` to publish permissions
+- midi user ACL: Added overlay subject publish permissions — `overlay.engine`, `overlay.predelay`, `overlay.time`, `overlay.control1`, `overlay.control2` — to support MIDI layer publishing overlay state directly
+
 ## [0.0.17] - 2026-03-07
 
 ### Changed

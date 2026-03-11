@@ -1,4 +1,18 @@
 # Changelog
+## [3.0.2] - 2026-03-10
+
+### Added
+- NATS publisher service (`INatsPublisher` interface + `NatsPublisher` implementation) for broadcasting overlay state from the MIDI layer
+- `SetEffectHandler` now publishes overlay events after each successful effect change: `overlay.engine`, `overlay.predelay`, `overlay.time`, `overlay.control1`, `overlay.control2`
+- Overlay events also published when resetting dependent effect settings
+- `HandlerHelper` utility class for scaling MIDI control values (0–127) to display range (0–10) for overlay panels
+- Unit tests for `HandlerHelper` value scaling (`HandlerHelperTests`)
+- NATS configuration in `appsettings.json` and Kubernetes deployment (`NATS_URL`, `NATS_USER`, `NATS_PASS` env vars injected from `state-nats-creds` secret)
+
+### Changed
+- Major version bump (2.x → 3.x) reflects addition of outbound NATS overlay publishing
+- `midi-api-deploy.yaml` updated to pass NATS secret reference
+
 ## [2.0.18] - 2026-02-12
 
 ### Changed

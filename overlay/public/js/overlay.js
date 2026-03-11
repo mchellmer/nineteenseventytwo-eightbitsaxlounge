@@ -8,8 +8,17 @@
 function adjustPanels() {
   document.querySelectorAll('.panel-text').forEach(el => {
     const h = el.getBoundingClientRect().height;
-    // choose a scale factor that makes the digits occupy most of the box
-    el.style.fontSize = (h * 0.7) + 'px';
+    let scale = 0.7;
+
+    // For the engine panel: step down font scale for longer words
+    if (el.id === 'panel-engine') {
+      const len = (el.textContent || '').length;
+      if (len >= 8)      scale = 0.4;
+      else if (len == 7) scale = 0.5;
+      else if (len == 6) scale = 0.6;
+    }
+
+    el.style.fontSize = (h * scale) + 'px';
   });
 }
 
@@ -27,8 +36,11 @@ function init() {
   socket.on('overlay.engine', msg => setPanelText('engine', msg));
   socket.on('overlay.time',   msg => setPanelText('time',   msg));
   socket.on('overlay.delay',  msg => setPanelText('delay',  msg));
+  socket.on('overlay.predelay',  msg => setPanelText('delay',  msg));
   socket.on('overlay.dial1',  msg => setPanelText('dial1',  msg));
+  socket.on('overlay.control1',  msg => setPanelText('dial1',  msg));
   socket.on('overlay.dial2',  msg => setPanelText('dial2',  msg));
+  socket.on('overlay.control2',  msg => setPanelText('dial2',  msg));
   socket.on('overlay.player', msg => setPanelText('player', msg));
   socket.onAny((evt, msg) => console.debug('socket', evt, msg));
 

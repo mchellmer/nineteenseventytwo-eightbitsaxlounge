@@ -3,6 +3,7 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Services;
 
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 
@@ -11,16 +12,19 @@ public class SetEffectHandler : IEndpointHandler<SetEffectRequest, IResult>
     private readonly ILogger<SetEffectHandler> _logger;
     private readonly IMidiDataService _midiDataService;
     private readonly IMidiDeviceService _midiDeviceService;
+    private readonly INatsPublisher _natsPublisher;
     private readonly HandlerHelper _handlerHelper;
 
     public SetEffectHandler(
         ILogger<SetEffectHandler> logger,
         IMidiDataService midiDataService,
-        IMidiDeviceService midiDeviceService)
+        IMidiDeviceService midiDeviceService,
+        INatsPublisher natsPublisher)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _midiDataService = midiDataService ?? throw new ArgumentNullException(nameof(midiDataService));
         _midiDeviceService = midiDeviceService ?? throw new ArgumentNullException(nameof(midiDeviceService));
+        _natsPublisher = natsPublisher ?? throw new ArgumentNullException(nameof(natsPublisher));
         _handlerHelper = new HandlerHelper(_logger, _midiDeviceService, _midiDataService);
     }
 
@@ -105,6 +109,10 @@ public class SetEffectHandler : IEndpointHandler<SetEffectRequest, IResult>
                                     _logger.LogInformation("Resetting setting {SettingName} to default value {DefaultValue} due to change in {TriggerSetting}",
                                         settingToReset.Name, settingToReset.DefaultValue, deviceEffectSetting.Name);
                                     settingToReset.Value = settingToReset.DefaultValue;
+
+                                    var scaled = _handlerHelper.ScaleFrom127ToBase(settingToReset.DefaultValue, 10);
+                                    _logger.LogInformation("Publishing overlay {Overlay} scaled from {DefaultValue} to {Scaled}", $"overlay.{resetSettingName.ToLowerInvariant()}", settingToReset.DefaultValue, scaled);
+                                    _ = _natsPublisher.PublishAsync($"overlay.{resetSettingName.ToLowerInvariant()}", scaled.ToString());
                                 }
                             }
                         }

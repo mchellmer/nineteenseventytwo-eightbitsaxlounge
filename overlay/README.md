@@ -55,9 +55,11 @@ The demo pages reference a common stylesheet (`/css/overlay.css`) and script (`/
 
 The JavaScript file contains the logic that listens for socket.io events matching `overlay.*` and updates the DOM accordingly:
 
-* `setImage` and `setText` helper functions take an element id (or id prefix) and the event payload, pulling a `value` property when available. Images are swapped by setting the `src` attribute; text elements have their `textContent` replaced.
-* A mapping function (`getFolderForId`) determines which image subfolder to use (e.g. numeric controls point at `values/`).
-* Event handlers for each of the five named fields are wired immediately after the helpers, with a generic `socket.onAny` logger at the end.
+* `setPanelText(id, msg)` sets the `textContent` of `#panel-<id>`, pulling `msg.data.value` when available.
+* `adjustPanels()` recalculates font sizes for all `.panel-text` elements based on their rendered height, with extra steps for the engine panel to handle long names (≥6, ≥7, ≥8 chars).
+* Event handlers are registered for `overlay.engine`, `overlay.time`, `overlay.delay`, `overlay.predelay` (→ delay), `overlay.dial1`, `overlay.control1` (→ dial1), `overlay.dial2`, `overlay.control2` (→ dial2), and `overlay.player`.
+* A generic `socket.onAny` logger is wired at the end for debugging.
+* Pure functions (`setPanelText`, `adjustPanels`) are exported for Jest unit testing; `init()` only auto-runs in browser context.
 
 ## OBS setup 🎛️
 

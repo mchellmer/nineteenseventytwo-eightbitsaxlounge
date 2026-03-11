@@ -84,6 +84,16 @@ spec:
             secretKeyRef:
               name: eightbitsaxlounge-midi-secrets
               key: connection-string
+        - name: Nats__User
+          valueFrom:
+            configMapKeyRef:
+              name: eightbitsaxlounge-midi-config
+              key: nats_user
+        - name: Nats__Pass
+          valueFrom:
+            secretKeyRef:
+              name: state-nats-creds
+              key: midi_pass
         resources:
           requests:
             memory: "128Mi"

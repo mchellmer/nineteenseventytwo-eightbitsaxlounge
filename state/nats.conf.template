@@ -42,7 +42,13 @@ authorization {
       user: "midi"
       password: "$MIDI_PASS"
       permissions: {
-        publish: ["midi.>"]
+        publish: ["midi.>",
+            "overlay.engine",
+            "overlay.predelay",
+            "overlay.time",
+            "overlay.control1",
+            "overlay.control2"
+          ]
         subscribe: []
       }
     }

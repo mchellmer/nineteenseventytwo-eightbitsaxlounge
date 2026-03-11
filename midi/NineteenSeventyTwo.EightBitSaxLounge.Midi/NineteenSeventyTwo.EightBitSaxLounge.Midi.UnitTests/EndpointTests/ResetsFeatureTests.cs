@@ -6,6 +6,7 @@ using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
+using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Services;
 using Xunit;
 
 namespace NineteenSeventyTwo.EightBitSaxLounge.Midi.UnitTests.EndpointTests;
@@ -19,6 +20,7 @@ public class ResetsFeatureTests : TestBase
         var loggerMock = new Mock<ILogger<SetEffectHandler>>();
         var dataServiceMock = new Mock<IMidiDataService>();
         var deviceServiceMock = new Mock<IMidiDeviceService>();
+        var natsPublisherMock = new Mock<INatsPublisher>();
 
         var deviceName = "TestDevice";
         var effectName = "TestEffect";
@@ -71,7 +73,7 @@ public class ResetsFeatureTests : TestBase
         dataServiceMock.Setup(m => m.GetControlChangeMessageToSetDeviceEffectSettingAsync(deviceName, effectName, triggerSettingName, 50))
             .ReturnsAsync(new ControlChangeMessage { Address = 1, Value = 50 });
 
-        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object);
+        var handler = new SetEffectHandler(loggerMock.Object, dataServiceMock.Object, deviceServiceMock.Object, natsPublisherMock.Object);
         var request = new SetEffectRequest(deviceName, effectName, triggerSettingName, Value: 50);
 
         // Act
@@ -90,6 +92,9 @@ public class ResetsFeatureTests : TestBase
             d.DeviceEffects[0].EffectSettings[0].Name == triggerSettingName && d.DeviceEffects[0].EffectSettings[0].Value == 50 &&
             d.DeviceEffects[0].EffectSettings[1].Name == resetSettingName && d.DeviceEffects[0].EffectSettings[1].Value == 10
         )), Times.Once);
+
+        // Verify NATS was published for the reset setting
+        natsPublisherMock.Verify(m => m.PublishAsync($"overlay.{resetSettingName.ToLowerInvariant()}", "1"), Times.Once);
     }
 
     [Fact]
