@@ -31,6 +31,19 @@
             "name": "dial2",
             "pixel-top-left": [27,470],
             "pixel-bottom-right": [154,543]
+        },
+        {
+            "name": "chat",
+            "pixel-top-left": [751,180],
+            "pixel-bottom-right": [950,522],
+            "stream-elements": {
+                "type": "twitch-chat",
+                "overlay-px": [1920,1080],
+                "width-px": "391",
+                "height-px": "671",
+                "top-px": "340",
+                "left-px": "1476"
+            }
         }
     ]
 }
