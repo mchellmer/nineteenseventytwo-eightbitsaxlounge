@@ -1,5 +1,19 @@
 # Changelog
 
+## [6.0.4] - 2026-03-12
+
+### Added
+- `CommandError` exception class in `commands/handlers/errors.py` for handler-level validation failures
+- Handlers now raise `CommandError` with a user-facing message instead of returning error strings, giving the component a reliable signal to suppress downstream side-effects
+
+### Changed
+- `_execute_command` in `EightBitSaxLoungeComponent` catches `CommandError` and sends the error message to chat, then returns early — overlay NATS events are no longer published on invalid input
+- `EngineHandler`: invalid engine type, missing args, and MIDI failures all raise `CommandError`
+- `ValueHandler`: out-of-range values, non-numeric input, missing args, and MIDI failures all raise `CommandError`
+
+### Fixed
+- Overlay panels were incorrectly updated when commands were issued with invalid arguments (e.g. `!engine invalid`, `!dial1 99`); the NATS publish now only fires after confirmed successful execution
+
 ## [6.0.3] - 2026-03-09
 
 ### Added
