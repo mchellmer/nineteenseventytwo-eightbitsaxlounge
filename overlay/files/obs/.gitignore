@@ -1,0 +1,4 @@
+# OBS backup noise — auto-generated files not worth tracking
+*.bak
+**/*.crash
+**/crashes/

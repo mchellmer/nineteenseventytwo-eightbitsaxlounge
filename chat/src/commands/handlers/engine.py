@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+from commands.handlers.errors import CommandError
 from commands.handlers.midi_base import MidiBaseHandler
 from config.settings import settings
 from services.midi_client import MidiClient
@@ -48,7 +49,7 @@ class EngineHandler(MidiBaseHandler):
         valid_engines_lower = [e.lower() for e in settings.valid_engines]
         
         if not args:
-            return f"Usage: !engine <type>. Available engines: {', '.join(valid_engines_lower)}"
+            raise CommandError(f"Usage: !engine <type>. Available engines: {', '.join(valid_engines_lower)}")
         
         engine_type = args[0].lower()
         
@@ -60,7 +61,7 @@ class EngineHandler(MidiBaseHandler):
                 break
         
         if not matching_engine:
-            return f"Invalid engine type: {engine_type}. Available engines: {', '.join(valid_engines_lower)}"
+            raise CommandError(f"Invalid engine type: {engine_type}. Available engines: {', '.join(valid_engines_lower)}")
         
         try:
             requester = context.author.name if hasattr(context, 'author') else "chatbot"
@@ -78,4 +79,4 @@ class EngineHandler(MidiBaseHandler):
             
         except Exception as e:
             logger.error(f"Failed to set engine to {engine_type}: {e}")
-            return f"❌ Failed to set engine to '{engine_type}'. Please try again later."
+            raise CommandError(f"❌ Failed to set engine to '{engine_type}'. Please try again later.")

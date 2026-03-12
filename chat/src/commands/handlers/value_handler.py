@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+from commands.handlers.errors import CommandError
 from commands.handlers.midi_base import MidiBaseHandler
 from services.midi_client import MidiClient
 
@@ -90,7 +91,7 @@ class ValueHandler(MidiBaseHandler):
             Response message for chat
         """
         if not args:
-            return f"Usage: !{self._command_name} <value>. Range: {self._min_value}-{self._max_value}"
+            raise CommandError(f"Usage: !{self._command_name} <value>. Range: {self._min_value}-{self._max_value}")
         
         try:
             # Parse the input value
@@ -98,7 +99,7 @@ class ValueHandler(MidiBaseHandler):
             
             # Validate range
             if input_value < self._min_value or input_value > self._max_value:
-                return f"❌ Value must be between {self._min_value} and {self._max_value}"
+                raise CommandError(f"❌ Value must be between {self._min_value} and {self._max_value}")
             
             # Scale to MIDI range (0-127)
             midi_value = scale_value_to_midi(input_value, self._min_value, self._max_value)
@@ -119,10 +120,12 @@ class ValueHandler(MidiBaseHandler):
             display_value = int(input_value) if input_value == int(input_value) else input_value
             return f"🎵 {self._command_name.capitalize()} set to {display_value}! 🎵"
             
+        except CommandError:
+            raise
         except ValueError as e:
             if "outside the range" in str(e):
-                return f"❌ Value must be between {self._min_value} and {self._max_value}"
-            return f"❌ Invalid value. Please provide a number between {self._min_value} and {self._max_value}"
+                raise CommandError(f"❌ Value must be between {self._min_value} and {self._max_value}")
+            raise CommandError(f"❌ Invalid value. Please provide a number between {self._min_value} and {self._max_value}")
         except Exception as e:
             logger.error(f"Failed to set {self._command_name} to {args[0]}: {e}")
-            return f"❌ Failed to set {self._command_name}. Please try again later."
+            raise CommandError(f"❌ Failed to set {self._command_name}. Please try again later.")

@@ -3,6 +3,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
+from commands.handlers.errors import CommandError
 from commands.handlers.value_handler import ValueHandler, scale_value_to_midi
 from services.midi_client import MidiClient
 
@@ -126,37 +127,29 @@ class TestValueHandler:
     @pytest.mark.asyncio
     async def test_handle_no_args(self, value_handler, mock_twitch_context, mock_midi_client):
         """Test handling command without arguments."""
-        result = await value_handler.handle([], mock_twitch_context)
-        
-        assert "usage" in result.lower()
-        assert "0-10" in result.lower()
+        with pytest.raises(CommandError, match="Usage"):
+            await value_handler.handle([], mock_twitch_context)
         mock_midi_client.set_effect.assert_not_called()
     
     @pytest.mark.asyncio
     async def test_handle_invalid_number(self, value_handler, mock_twitch_context, mock_midi_client):
         """Test handling invalid numeric input."""
-        result = await value_handler.handle(["abc"], mock_twitch_context)
-        
-        assert "❌" in result
-        assert "invalid" in result.lower()
+        with pytest.raises(CommandError, match="Invalid value"):
+            await value_handler.handle(["abc"], mock_twitch_context)
         mock_midi_client.set_effect.assert_not_called()
     
     @pytest.mark.asyncio
     async def test_handle_value_too_low(self, value_handler, mock_twitch_context, mock_midi_client):
         """Test handling value below minimum."""
-        result = await value_handler.handle(["-1"], mock_twitch_context)
-        
-        assert "❌" in result
-        assert "between 0 and 10" in result.lower()
+        with pytest.raises(CommandError, match="between 0 and 10"):
+            await value_handler.handle(["-1"], mock_twitch_context)
         mock_midi_client.set_effect.assert_not_called()
     
     @pytest.mark.asyncio
     async def test_handle_value_too_high(self, value_handler, mock_twitch_context, mock_midi_client):
         """Test handling value above maximum."""
-        result = await value_handler.handle(["11"], mock_twitch_context)
-        
-        assert "❌" in result
-        assert "between 0 and 10" in result.lower()
+        with pytest.raises(CommandError, match="between 0 and 10"):
+            await value_handler.handle(["11"], mock_twitch_context)
         mock_midi_client.set_effect.assert_not_called()
     
     @pytest.mark.asyncio
@@ -175,10 +168,8 @@ class TestValueHandler:
         """Test handling API error during set_effect call."""
         mock_midi_client.set_effect.side_effect = Exception("API Error")
         
-        result = await value_handler.handle(["5"], mock_twitch_context)
-        
-        assert "❌" in result
-        assert "failed" in result.lower()
+        with pytest.raises(CommandError, match="Failed to set time"):
+            await value_handler.handle(["5"], mock_twitch_context)
     
     def test_command_name_property(self, value_handler):
         """Test command_name property."""
