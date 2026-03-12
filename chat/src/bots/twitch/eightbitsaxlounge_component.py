@@ -3,6 +3,7 @@ from twitchio.ext import commands
 import twitchio
 
 from commands.command_registry import CommandRegistry
+from commands.handlers.errors import CommandError
 from services.nats_publisher import NatsPublisher
 
 logger = logging.getLogger(__name__)
@@ -98,8 +99,13 @@ class EightBitSaxLoungeComponent(commands.Component):
 
             command_registry = CommandRegistry()
             
-            response = await command_registry.execute_command(command, args, ctx)
-            
+            try:
+                response = await command_registry.execute_command(command, args, ctx)
+            except CommandError as e:
+                await ctx.send(str(e))
+                logger.info(f'Command !{command} rejected (invalid input): {e}')
+                return
+
             # Handle both single string responses and list of messages
             if isinstance(response, list):
                 logger.info(f'Sending {len(response)} messages for !{command} command')

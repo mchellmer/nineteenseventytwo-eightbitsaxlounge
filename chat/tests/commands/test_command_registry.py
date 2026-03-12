@@ -15,6 +15,7 @@ class TestCommandRegistry:
             with patch('commands.command_registry.MidiClient') as mock_client_class:
                 mock_client = Mock()
                 mock_client.send_control_change_message = AsyncMock(return_value={"success": True})
+                mock_client.set_effect = AsyncMock(return_value={"success": True})
                 mock_client.get = AsyncMock(return_value={"status": "ok"})
                 mock_client_class.return_value = mock_client
                 

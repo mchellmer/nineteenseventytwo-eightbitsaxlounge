@@ -3,6 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, List, Union
 
+from commands.handlers.errors import CommandError  # noqa: F401 - re-exported for backwards compat
+
 
 class CommandHandler(ABC):
     """Abstract base class for command handlers."""

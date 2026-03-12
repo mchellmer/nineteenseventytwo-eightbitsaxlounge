@@ -2,6 +2,7 @@
 
 import pytest
 from unittest.mock import AsyncMock
+from commands.handlers.errors import CommandError
 from commands.handlers.engine import EngineHandler
 
 
@@ -88,19 +89,15 @@ class TestEngineHandler:
     @pytest.mark.asyncio
     async def test_handle_invalid_engine(self, engine_handler, mock_twitch_context, mock_midi_client):
         """Test handling invalid engine type."""
-        response = await engine_handler.handle(["invalid"], mock_twitch_context)
-        
-        assert "Invalid engine type" in response
-        assert "invalid" in response
+        with pytest.raises(CommandError, match="Invalid engine type"):
+            await engine_handler.handle(["invalid"], mock_twitch_context)
         mock_midi_client.set_effect.assert_not_called()
     
     @pytest.mark.asyncio
     async def test_handle_no_args(self, engine_handler, mock_twitch_context, mock_midi_client):
         """Test handling command with no arguments."""
-        response = await engine_handler.handle([], mock_twitch_context)
-        
-        assert "Usage:" in response
-        assert "room" in response.lower()
+        with pytest.raises(CommandError, match="Usage:"):
+            await engine_handler.handle([], mock_twitch_context)
         mock_midi_client.set_effect.assert_not_called()
     
     @pytest.mark.asyncio
@@ -109,11 +106,8 @@ class TestEngineHandler:
         mock_midi_client.set_effect = AsyncMock(
             side_effect=Exception("MIDI service unavailable")
         )
-        
-        response = await engine_handler.handle(["room"], mock_twitch_context)
-        
-        assert "Failed to set engine" in response
-        assert "❌" in response
+        with pytest.raises(CommandError, match="Failed to set engine"):
+            await engine_handler.handle(["room"], mock_twitch_context)
     
     @pytest.mark.asyncio
     async def test_handle_preserves_proper_casing_in_api_call(self, engine_handler, mock_twitch_context, mock_midi_client):
@@ -145,9 +139,8 @@ class TestEngineHandler:
     @pytest.mark.asyncio
     async def test_handle_empty_string_arg(self, engine_handler, mock_twitch_context, mock_midi_client):
         """Test handling empty string argument."""
-        response = await engine_handler.handle([""], mock_twitch_context)
-        
-        assert "Invalid engine type" in response
+        with pytest.raises(CommandError, match="Invalid engine type"):
+            await engine_handler.handle([""], mock_twitch_context)
         mock_midi_client.set_effect.assert_not_called()
     
     @pytest.mark.asyncio
