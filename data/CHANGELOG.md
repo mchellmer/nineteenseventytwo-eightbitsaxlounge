@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.0]
+
+### Changed
+- Upgraded Go from 1.24 to 1.26.
+- Upgraded go-chi to v5.2.5 (latest).
+
 ## [1.0.3]
 
 ### Changed
