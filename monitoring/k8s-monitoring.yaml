@@ -94,7 +94,32 @@
                   external:
                     url: https://prometheus-prod-55-prod-gb-south-1.grafana.net./api/prom
             kepler:
-              enabled: true
+              enabled: false
+            kubelet:
+              metricsTuning:
+                excludeMetrics:
+                  - kubelet_cgroup_manager_duration_seconds_bucket
+                  - kubelet_pod_start_duration_seconds_bucket
+            cadvisor:
+              metricsTuning:
+                excludeMetrics:
+                  - container_network_receive_bytes_total
+                  - container_network_receive_packets_dropped_total
+                  - container_network_receive_packets_total
+                  - container_network_transmit_bytes_total
+                  - container_network_transmit_packets_dropped_total
+                  - container_network_transmit_packets_total
+                  - container_fs_reads_bytes_total
+                  - container_fs_reads_total
+                  - container_fs_writes_bytes_total
+                  - container_fs_writes_total
+                  - container_gpu_allocation
+            kubeStateMetrics:
+              metricsTuning:
+                excludeMetrics:
+                  - kube_pod_status_reason
+                  - kube_replicaset_created
+                  - kube_replicaset_metadata_generation
           clusterEvents:
             enabled: true
           podLogs:
