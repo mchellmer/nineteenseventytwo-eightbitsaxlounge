@@ -28,17 +28,17 @@ help:
 # Standard CI/CD targets
 lint:
 	@echo "Running .NET linter..."
-	@if ! command -v dotnet >/dev/null 2>&1 || [ ! -d "$$HOME/.dotnet" ]; then \
-		echo "Installing .NET SDK to $$HOME/.dotnet..."; \
-		curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir $$HOME/.dotnet; \
+	@if ! $${HOME}/.dotnet/dotnet --list-sdks 2>/dev/null | grep -q "^10\."; then \
+		echo "Installing .NET 10 SDK to $$HOME/.dotnet..."; \
+		curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0 --install-dir $$HOME/.dotnet; \
 	fi
 	@$${HOME}/.dotnet/dotnet format NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --verify-no-changes --verbosity diagnostic
 
 test:
 	@echo "Setting up .NET and running tests..."
-	@if ! command -v dotnet >/dev/null 2>&1 || [ ! -d "$$HOME/.dotnet" ]; then \
-		echo "Installing .NET SDK to $$HOME/.dotnet..."; \
-		curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir $$HOME/.dotnet; \
+	@if ! $${HOME}/.dotnet/dotnet --list-sdks 2>/dev/null | grep -q "^10\."; then \
+		echo "Installing .NET 10 SDK to $$HOME/.dotnet..."; \
+		curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0 --install-dir $$HOME/.dotnet; \
 	fi
 	@echo "Running .NET tests..."
 	@$${HOME}/.dotnet/dotnet restore NineteenSeventyTwo.EightBitSaxLounge.Midi.sln
