@@ -201,7 +201,7 @@ jobs:
 
     - name: Setup .NET
       run: |
-        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --install-dir $HOME/.dotnet
+        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0 --install-dir $HOME/.dotnet
         echo "$HOME/.dotnet" >> $GITHUB_PATH
 
     - name: Publish Windows application
