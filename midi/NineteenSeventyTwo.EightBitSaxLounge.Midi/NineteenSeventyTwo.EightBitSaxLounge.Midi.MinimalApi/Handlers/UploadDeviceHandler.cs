@@ -125,7 +125,11 @@ public class UploadDeviceHandler : IEndpointHandler<string, IResult>
                             // Update Description if provided in JSON
                             if (effectElement.TryGetProperty("Description", out var descElement))
                             {
-                                existingEffect.Description = descElement.GetString() ?? existingEffect.Description;
+                                var desc = descElement.GetString();
+                                if (desc != null)
+                                {
+                                    existingEffect.Description = desc;
+                                }
                             }
 
                             await _midiDataService.UpdateEffectByNameAsync(effectName, existingEffect);

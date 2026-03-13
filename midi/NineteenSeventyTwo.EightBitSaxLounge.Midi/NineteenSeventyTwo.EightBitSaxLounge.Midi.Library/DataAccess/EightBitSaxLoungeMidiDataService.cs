@@ -463,16 +463,9 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
             ($"No MIDI implementation found for setting '{deviceEffectSettingName}' in device '{deviceName}'."))
             .FirstOrDefault(address => address.Name == deviceEffectName);
 
-        if (settingAddress == null)
-        {
-            var msg = $"No ControlChangeAddress found for effect '{deviceEffectName}' in setting '{deviceEffectSettingName}' for device '{deviceName}'.";
-            _logger.LogError(msg);
-            throw new InvalidOperationException(msg);
-        }
-
         return new ControlChangeMessage
         {
-            Address = settingAddress.Value,
+            Address = settingAddress?.Value ?? throw new InvalidOperationException($"No ControlChangeAddress found for effect '{deviceEffectName}' in setting '{deviceEffectSettingName}' for device '{deviceName}'."),
             Value = settingValue
         };
     }
@@ -592,6 +585,6 @@ public class EightBitSaxLoungeMidiDataService : IMidiDataService
         var settingMidiConfiguration = device.MidiImplementation
             .FirstOrDefault(configuration => configuration.Name == settingMidiImplementationName);
 
-        return settingMidiConfiguration;
+        return settingMidiConfiguration ?? throw new InvalidOperationException($"No MIDI configuration found for '{settingMidiImplementationName}' in device '{device.Name}'.");
     }
 }

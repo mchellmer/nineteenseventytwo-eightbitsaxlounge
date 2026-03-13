@@ -19,7 +19,7 @@ public class MidiLogFormatter : ConsoleFormatter
         IExternalScopeProvider? scopeProvider,
         TextWriter textWriter)
     {
-        string message = logEntry.Formatter?.Invoke(logEntry.State, logEntry.Exception) ?? string.Empty;
+        var message = logEntry.Formatter?.Invoke(logEntry.State, logEntry.Exception);
             
         if (string.IsNullOrEmpty(message))
         {

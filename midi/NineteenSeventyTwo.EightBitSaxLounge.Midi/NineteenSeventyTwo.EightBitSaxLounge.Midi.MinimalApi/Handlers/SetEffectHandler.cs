@@ -33,6 +33,11 @@ public class SetEffectHandler : IEndpointHandler<SetEffectRequest, IResult>
         _logger.LogInformation("Setting effect: Device={DeviceName}, Effect={EffectName}, Setting={SettingName}, Value={Value}, Selection={Selection}",
             request.DeviceName, request.DeviceEffectName, request.DeviceEffectSettingName, request.Value, request.Selection);
 
+        if (string.IsNullOrEmpty(request.DeviceName))
+        {
+            return Results.BadRequest(new { Message = "DeviceName is required." });
+        }
+
         try
         {
             // Get the Device, the named DeviceEffect, and the named DeviceEffectSetting
