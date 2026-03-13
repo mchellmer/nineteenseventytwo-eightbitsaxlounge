@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0] - 2026-03-13
+
+### Added
+- Kubernetes startup probe on `/readyz` (30 × 10s window) to prevent CrashLoopBackOff when the NATS/state layer restarts at the same time as the overlay
+- Kubernetes liveness probe on `/healthz` to restart the container if the HTTP server becomes unresponsive
+- Kubernetes readiness probe on `/readyz` to remove the pod from service endpoints while NATS is disconnected
+- `/healthz` Express endpoint — always 200 while the process is alive
+- `/readyz` Express endpoint — 200 when NATS is connected, 503 otherwise
+- `NatsOverlayService.isConnected()` method exposing current NATS connection state
+
+### Changed
+- `NatsOverlayService` now connects with `waitOnFirstConnect: true` and `maxReconnectAttempts: -1`: retries silently on first connect and reconnects indefinitely, eliminating crashes when NATS is temporarily unavailable
+- NATS connection status tracked via the `nc.status()` async iterator; `_connected` flag updated on disconnect, error, and reconnect events
+- HTTP server now starts before the NATS connection attempt so health probes are reachable immediately during initialisation
+- `overlay.start()` is no longer awaited in the entry point; fatal errors from the service are caught and logged before exiting
+
 ## [1.0.4] - 2026-03-11
 
 ### Added

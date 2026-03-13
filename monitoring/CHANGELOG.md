@@ -1,4 +1,10 @@
 # Changelog
+
+## [2.0.0] - 2026-3-13
+
+### Changed
+- Turned off unused metrics to limit metrics to below free tier usage e.g. Keplar
+
 ## [1.0.0] - 2026-02-12
 
 ### Changed
