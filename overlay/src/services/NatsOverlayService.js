@@ -26,6 +26,11 @@ class NatsOverlayService extends OverlayService {
     this.logger = options.logger || console;
     // cache map: tail -> { subject, data }
     this.lastState = Object.create(null);
+    this._connected = false;
+  }
+
+  isConnected() {
+    return this._connected;
   }
 
   /**
@@ -46,14 +51,32 @@ class NatsOverlayService extends OverlayService {
     });
 
     // Build connection options; include credentials if supplied via env vars.
-    const connOpts = { servers: this.natsUrl };
+    const connOpts = {
+      servers: this.natsUrl,
+      waitOnFirstConnect: true,  // retry silently instead of throwing on first connect failure
+      maxReconnectAttempts: -1,  // infinite reconnects
+    };
     if (process.env.NATS_USER) connOpts.user = process.env.NATS_USER;
     if (process.env.NATS_PASS) connOpts.pass = process.env.NATS_PASS;
 
     // Connect to NATS and subscribe to overlay events.
     const nc = await connect(connOpts);
+    this._connected = true;
     logger.info('connected to NATS', this.natsUrl, connOpts.user ? `(user=${connOpts.user})` : '');
     const sc = StringCodec();
+
+    // Track connection state changes for health reporting
+    (async () => {
+      for await (const s of nc.status()) {
+        if (s.type === 'disconnect' || s.type === 'error') {
+          this._connected = false;
+          logger.info('nats disconnected', s.type);
+        } else if (s.type === 'reconnect') {
+          this._connected = true;
+          logger.info('nats reconnected');
+        }
+      }
+    })().catch(err => logger.error('nats status error', err));
 
     // jetstream / wildcard subscribe
     const sub = nc.subscribe('overlay.*');

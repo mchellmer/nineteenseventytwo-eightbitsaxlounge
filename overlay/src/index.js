@@ -31,11 +31,21 @@ async function start() {
 
   app.use(express.static('public'));
 
-  server.listen(PORT, () => logger.info(`overlay: listening on ${PORT}`));
-
   // Configure 8bitsaxlounge logic to update the broadcast view
   const overlay = new NatsOverlayService({ logger });
-  await overlay.start(io);
+
+  // Health endpoints — /healthz is a simple liveness probe, /readyz checks if the overlay is connected to NATS and ready to serve updates.
+  app.get('/healthz', (_req, res) => res.sendStatus(200));
+  app.get('/readyz', (_req, res) => overlay.isConnected() ? res.sendStatus(200) : res.sendStatus(503));
+
+  // Start HTTP server
+  server.listen(PORT, () => logger.info(`overlay: listening on ${PORT}`));
+
+  // Connect to NATS in the background
+  overlay.start(io).catch(err => {
+    logger.error('overlay service fatal error', err);
+    process.exit(1);
+  });
 }
 
 start().catch(err => {
