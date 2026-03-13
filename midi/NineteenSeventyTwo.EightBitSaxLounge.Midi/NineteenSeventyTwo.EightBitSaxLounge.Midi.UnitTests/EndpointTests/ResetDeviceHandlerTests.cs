@@ -13,7 +13,7 @@ public class ResetDeviceHandlerTests : TestBase
     private const string TestMidiConnectName = "TestMidiConnect";
     private const string TestEffectName = "ReverbEngine";
 
-    private static readonly MidiDevice TestDevice = new()
+    private static MidiDevice CreateTestDevice() => new()
     {
         Name = TestDeviceName,
         Description = "desc",
@@ -43,8 +43,9 @@ public class ResetDeviceHandlerTests : TestBase
         var loggerMock = new Mock<ILogger<ResetDeviceHandler>>();
         var deviceServiceMock = new Mock<IMidiDeviceService>();
         var dataServiceMock = new Mock<IMidiDataService>();
+        var testDevice = CreateTestDevice();
 
-        dataServiceMock.Setup(m => m.GetDeviceByNameAsync(TestDeviceName)).ReturnsAsync(TestDevice);
+        dataServiceMock.Setup(m => m.GetDeviceByNameAsync(TestDeviceName)).ReturnsAsync(testDevice);
 
         var activateMsg = new ControlChangeMessage { Address = 1, Value = 1 };
         var revertMsg = new ControlChangeMessage { Address = 1, Value = 0 };
@@ -62,7 +63,7 @@ public class ResetDeviceHandlerTests : TestBase
             .ReturnsAsync(settingMsg);
 
         deviceServiceMock.Setup(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, settingMsg)).Returns(Task.FromResult(settingMsg));
-        dataServiceMock.Setup(m => m.UpdateDeviceByNameAsync(TestDeviceName, TestDevice)).Returns(Task.CompletedTask);
+        dataServiceMock.Setup(m => m.UpdateDeviceByNameAsync(TestDeviceName, testDevice)).Returns(Task.CompletedTask);
 
         var handler = new ResetDeviceHandler(loggerMock.Object, deviceServiceMock.Object, dataServiceMock.Object);
 
@@ -77,7 +78,7 @@ public class ResetDeviceHandlerTests : TestBase
         deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, activateMsg), Times.Once);
         deviceServiceMock.Verify(m => m.SendControlChangeMessageByDeviceMidiConnectNameAsync(TestMidiConnectName, settingMsg), Times.Once);
         dataServiceMock.Verify(m => m.UpdateDeviceEffectActiveStateAsync(TestDeviceName, TestEffectName, true), Times.Once);
-        dataServiceMock.Verify(m => m.UpdateDeviceByNameAsync(TestDeviceName, TestDevice), Times.Once);
+        dataServiceMock.Verify(m => m.UpdateDeviceByNameAsync(TestDeviceName, testDevice), Times.Once);
     }
 
     [Fact]
@@ -87,8 +88,9 @@ public class ResetDeviceHandlerTests : TestBase
         var loggerMock = new Mock<ILogger<ResetDeviceHandler>>();
         var deviceServiceMock = new Mock<IMidiDeviceService>();
         var dataServiceMock = new Mock<IMidiDataService>();
+        var testDevice = CreateTestDevice();
 
-        dataServiceMock.Setup(m => m.GetDeviceByNameAsync(TestDeviceName)).ReturnsAsync(TestDevice);
+        dataServiceMock.Setup(m => m.GetDeviceByNameAsync(TestDeviceName)).ReturnsAsync(testDevice);
 
         var activateMsg = new ControlChangeMessage { Address = 1, Value = 1 };
         var revertMsg = new ControlChangeMessage { Address = 1, Value = 0 };

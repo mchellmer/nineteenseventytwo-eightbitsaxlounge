@@ -12,7 +12,12 @@ lint:
 # Run Go tests in container
 test:
 	@echo "Running Go tests..."
-	docker run --rm -v "$(shell pwd):/data" -w /data/go golang:1.24-alpine go test ./...
+	docker run --rm -v "$(shell pwd):/data" -w /data/go golang:1.26-alpine go test ./...
+	@echo "All tests passed"
+
+test-podman:
+	@echo "Running Go tests..."
+	podman run --rm -v "$(shell pwd):/data" -w /data/go golang:1.26-alpine go test ./...
 	@echo "All tests passed"
 
 # Build Docker image locally

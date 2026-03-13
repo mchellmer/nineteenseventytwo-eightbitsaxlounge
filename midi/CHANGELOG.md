@@ -1,4 +1,18 @@
 # Changelog
+## [4.0.2] - 2026-03-13
+
+### Changed
+- Upgraded target framework from `net8.0` to `net10.0` across all projects
+- Docker build and runtime images updated to `dotnet/sdk:10.0` and `dotnet/aspnet:10.0`
+- Runtime container switched from custom `midiuser` to built-in `app` user provided by the .NET 10 base image
+- `global.json` SDK pin updated from `8.0.0` to `10.0.100` (rolls forward to latest 10.x minor)
+- NuGet packages updated to .NET 10 releases: `CouchDB.NET` 4.0.0, `Dapper` 2.1.72, `JwtBearer` 10.0.4, `OpenApi` 10.0.4, `Swashbuckle.AspNetCore` 10.1.5, `Microsoft.Extensions.*` 10.0.4
+- Makefile `test` and `lint` targets simplified: removed embedded `dotnet-install.sh` logic; `dotnet` resolved from PATH (set by CI before invoking make)
+- GitHub Actions `test` and `build-pc` jobs install .NET to `$RUNNER_TOOL_CACHE/dotnet` (per-runner isolation) to prevent concurrent pipeline conflicts on shared self-hosted runners
+
+### Fixed
+- Resolved CS8603 null reference return warning in `EightBitSaxLoungeMidiDataService`
+
 ## [3.0.2] - 2026-03-10
 
 ### Added

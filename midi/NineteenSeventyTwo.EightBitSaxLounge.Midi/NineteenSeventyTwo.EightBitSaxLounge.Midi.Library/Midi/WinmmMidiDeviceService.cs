@@ -104,7 +104,7 @@ public class WinmmMidiDeviceService : IMidiDeviceService, IMidiProxyService
             }
 
             // Forward correlation ID if present
-            var correlationId = _httpContextAccessor?.HttpContext?.Request.Headers["X-Correlation-ID"].FirstOrDefault()
+            var correlationId = _httpContextAccessor?.HttpContext?.Request?.Headers["X-Correlation-ID"].FirstOrDefault()
                                 ?? _httpContextAccessor?.HttpContext?.Items["CorrelationId"] as string;
             if (!string.IsNullOrEmpty(correlationId))
             {

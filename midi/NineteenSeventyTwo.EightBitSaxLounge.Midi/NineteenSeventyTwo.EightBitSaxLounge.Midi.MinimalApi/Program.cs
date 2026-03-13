@@ -1,19 +1,19 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.OpenApi;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.DataAccess;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Midi;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Endpoints;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Handlers;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.Library.Models.Winmm;
-
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Logging;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Middleware;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Models;
 using NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.Services;
+
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +43,7 @@ builder.Services.Configure<EffectsOptions>(builder.Configuration.GetSection(Effe
 builder.Services.AddSwaggerGen(opts =>
 {
     // Setup swagger to use authentication token generated
+
     var securityScheme = new OpenApiSecurityScheme
     {
         BearerFormat = "JWT",
@@ -54,20 +55,10 @@ builder.Services.AddSwaggerGen(opts =>
     };
     var securityRequirement = new OpenApiSecurityRequirement
     {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Id = "Bearer",
-                    Type = ReferenceType.SecurityScheme
-                }
-            },
-            []
-        }
+        { new OpenApiSecuritySchemeReference("Bearer"), [] }
     };
     opts.AddSecurityDefinition("Bearer", securityScheme);
-    opts.AddSecurityRequirement(securityRequirement);
+    opts.AddSecurityRequirement(_ => securityRequirement);
 });
 
 // Inject models
@@ -108,7 +99,7 @@ if (!string.IsNullOrWhiteSpace(deviceServiceUrl))
                     // If development and localhost, accept any certificate
                     if (builder.Environment.IsDevelopment())
                     {
-                        var host = request?.RequestUri?.Host;
+                        var host = request.RequestUri?.Host;
                         if (host == "localhost" || host == "127.0.0.1")
                         {
                             return true;

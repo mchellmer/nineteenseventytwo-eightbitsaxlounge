@@ -19,8 +19,8 @@ public class UploadDeviceHandlerTests : TestBase
         dataServiceMock.Setup(m => m.GetEffectByNameAsync(It.IsAny<string>()))
             .ReturnsAsync((string name) => new Effect { Name = name, Description = "Test Description" });
 
-        dataServiceMock.Setup(m => m.GetDeviceByNameAsync(It.IsAny<string>())).ReturnsAsync((MidiDevice)null);
-        dataServiceMock.Setup(m => m.GetSelectorByNameAsync(It.IsAny<string>())).ReturnsAsync((Selector)null);
+        dataServiceMock.Setup(m => m.GetDeviceByNameAsync(It.IsAny<string>())).ReturnsAsync((MidiDevice?)null);
+        dataServiceMock.Setup(m => m.GetSelectorByNameAsync(It.IsAny<string>())).ReturnsAsync((Selector?)null);
 
         var handler = new UploadDeviceHandler(loggerMock.Object, dataServiceMock.Object);
 
@@ -45,12 +45,12 @@ public class UploadDeviceHandlerTests : TestBase
         var jsonContent = @"{
             ""Devices"": [{ ""Name"": ""NewDevice"", ""Description"": ""New Desc"", ""MidiConnectName"": ""Conn"", ""MidiImplementation"": [], ""DeviceEffects"": [] }]
         }";
-        await File.WriteAllTextAsync(filePath, jsonContent);
+        await File.WriteAllTextAsync(filePath, jsonContent, TestContext.Current.CancellationToken);
 
         try
         {
             // Mock GetDeviceByNameAsync to return null (device doesn't exist)
-            dataServiceMock.Setup(m => m.GetDeviceByNameAsync(deviceName)).ReturnsAsync((MidiDevice)null);
+            dataServiceMock.Setup(m => m.GetDeviceByNameAsync(deviceName)).ReturnsAsync((MidiDevice?)null);
             dataServiceMock.Setup(m => m.CreateDeviceAsync(It.IsAny<MidiDevice>())).Returns(Task.CompletedTask);
 
             var handler = new UploadDeviceHandler(loggerMock.Object, dataServiceMock.Object);
@@ -137,7 +137,7 @@ public class UploadDeviceHandlerTests : TestBase
               ]
             }";
 
-        await File.WriteAllTextAsync(fileName, jsonContent);
+        await File.WriteAllTextAsync(fileName, jsonContent, TestContext.Current.CancellationToken);
 
         try
         {
@@ -154,7 +154,7 @@ public class UploadDeviceHandlerTests : TestBase
 
             // Setup for Selectors: new one to create
             dataServiceMock.Setup(m => m.GetSelectorByNameAsync("TestSelector"))
-                .ReturnsAsync((Selector)null);
+                .ReturnsAsync((Selector?)null);
 
             // Setup for Effects: existing one to update/merge
             var existingEffect = new Effect { Name = "TestEffect", Description = "Old Description", DeviceSettings = new List<DeviceSetting>() };
@@ -182,6 +182,7 @@ public class UploadDeviceHandlerTests : TestBase
             // Verify Effect Update/Merge
             dataServiceMock.Verify(m => m.UpdateEffectByNameAsync("TestEffect", It.Is<Effect>(e =>
                 e.Description == "Updated Description" &&
+                e.DeviceSettings != null &&
                 e.DeviceSettings.Count == 1 &&
                 e.DeviceSettings[0].Name == "Control1" &&
                 e.DeviceSettings[0].DeviceName == "TestDeviceUpload")), Times.Once);
@@ -210,7 +211,7 @@ public class UploadDeviceHandlerTests : TestBase
               ]
             }";
 
-        await File.WriteAllTextAsync(fileName, jsonContent);
+        await File.WriteAllTextAsync(fileName, jsonContent, TestContext.Current.CancellationToken);
 
         try
         {
@@ -246,7 +247,7 @@ public class UploadDeviceHandlerTests : TestBase
         var deviceName = "InvalidDevice";
         var fileName = $"appsettings.Devices.{deviceName}.json";
 
-        await File.WriteAllTextAsync(fileName, "{ invalid json }");
+        await File.WriteAllTextAsync(fileName, "{ invalid json }", TestContext.Current.CancellationToken);
 
         try
         {
