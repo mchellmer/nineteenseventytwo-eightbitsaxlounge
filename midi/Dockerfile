@@ -24,9 +24,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Create non-root user
-RUN useradd -m -u 1000 midiuser && chown -R midiuser:midiuser /app
-USER midiuser
+RUN chown -R app:app /app
+USER app
 
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "NineteenSeventyTwo.EightBitSaxLounge.Midi.MinimalApi.dll"]
