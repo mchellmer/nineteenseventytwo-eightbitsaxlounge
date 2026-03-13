@@ -28,22 +28,13 @@ help:
 # Standard CI/CD targets
 lint:
 	@echo "Running .NET linter..."
-	@if ! $${HOME}/.dotnet/dotnet --list-sdks 2>/dev/null | grep -q "^10\."; then \
-		echo "Installing .NET 10 SDK to $$HOME/.dotnet..."; \
-		curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0 --install-dir $$HOME/.dotnet; \
-	fi
-	@$${HOME}/.dotnet/dotnet format NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --verify-no-changes --verbosity diagnostic
+	@dotnet format NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --verify-no-changes --verbosity diagnostic
 
 test:
-	@echo "Setting up .NET and running tests..."
-	@if ! $${HOME}/.dotnet/dotnet --list-sdks 2>/dev/null | grep -q "^10\."; then \
-		echo "Installing .NET 10 SDK to $$HOME/.dotnet..."; \
-		curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0 --install-dir $$HOME/.dotnet; \
-	fi
 	@echo "Running .NET tests..."
-	@$${HOME}/.dotnet/dotnet restore NineteenSeventyTwo.EightBitSaxLounge.Midi.sln
-	@$${HOME}/.dotnet/dotnet build NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-restore --configuration Release
-	@$${HOME}/.dotnet/dotnet test NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-build --configuration Release --verbosity normal
+	@dotnet restore NineteenSeventyTwo.EightBitSaxLounge.Midi.sln
+	@dotnet build NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-restore --configuration Release
+	@dotnet test NineteenSeventyTwo.EightBitSaxLounge.Midi.sln --no-build --configuration Release --verbosity normal
 
 # Build Docker image locally
 build-image:
