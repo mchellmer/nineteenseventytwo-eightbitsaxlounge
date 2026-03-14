@@ -16,6 +16,7 @@ SUBJECTS=(
   "overlay.dial2|{\"value\":10}"
   "overlay.delay|{\"value\":1}"
   "overlay.player|{\"value\":\"SJH\"}"
+  "overlay.help|{}"
 )
 for s in "${SUBJECTS[@]}"; do
   IFS='|' read -r subj payload <<< "$s"

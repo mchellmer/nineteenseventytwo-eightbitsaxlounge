@@ -25,6 +25,8 @@ function init() {
     if (val) triggerPopup(val);
   });
 
+  socket.on('overlay.help', () => triggerHelpCycle());
+
   socket.onAny((evt, msg) => console.debug('socket', evt, msg));
 
   window.addEventListener('resize', adjustPanels);
