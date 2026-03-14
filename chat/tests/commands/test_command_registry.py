@@ -34,11 +34,10 @@ class TestCommandRegistry:
     async def test_execute_help_command(self, command_registry, mock_twitch_context):
         """Test executing help command."""
         response = await command_registry.execute_command("help", [], mock_twitch_context)
-        
-        # Help returns a list of messages
-        assert isinstance(response, list)
-        full_response = ' '.join(response).lower()
-        assert "command" in full_response
+
+        # Help returns a single string confirming the overlay action
+        assert isinstance(response, str)
+        assert len(response) > 0
     
     @pytest.mark.asyncio
     async def test_execute_unknown_command(self, command_registry, mock_twitch_context):

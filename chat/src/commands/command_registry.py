@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class CommandRegistry:
     """Registry for managing and executing bot commands."""
     
-    def __init__(self):
+    def __init__(self, nats_publisher=None):
         """Initialize the command registry with all available commands."""
         from .handlers.engine import EngineHandler
         from .handlers.help import HelpHandler
@@ -29,7 +29,7 @@ class CommandRegistry:
         )
         
         self._engine_handler = EngineHandler(self._midi_client)
-        self._help_handler = HelpHandler()
+        self._help_handler = HelpHandler(nats_publisher=nats_publisher)
         
         # Value-based commands using ValueHandler
         # To add more commands like !decay, !delay, etc.:

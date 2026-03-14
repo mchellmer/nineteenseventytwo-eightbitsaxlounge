@@ -97,7 +97,9 @@ class EightBitSaxLoungeComponent(commands.Component):
             user = ctx.author.name if hasattr(ctx, 'author') else 'unknown'
             logger.info(f'Executing !{command} command from {user} with args: {args}')
 
-            command_registry = CommandRegistry()
+            if command == 'help':
+                await self._ensure_nats()
+            command_registry = CommandRegistry(nats_publisher=self._nats)
             
             try:
                 response = await command_registry.execute_command(command, args, ctx)
