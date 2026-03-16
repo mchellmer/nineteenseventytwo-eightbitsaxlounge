@@ -1,15 +1,9 @@
 /**
  * @jest-environment jsdom
- *
- * Unit tests for public/js/overlay.js
- * Tests cover the pure helper functions: setPanelText and adjustPanels.
- * The module exports them when running in Node (typeof module !== 'undefined'),
- * so no browser globals (io, socket.io) are needed here.
  */
 
-const { setPanelText, adjustPanels } = require('../public/js/overlay.js');
+const { adjustPanels, setPanelText } = require('../public/js/panels.js');
 
-// HTML matching the structure in grid.html — one div per panel
 const PANEL_HTML = `
   <div id="panel-engine" class="panel-text"></div>
   <div id="panel-player" class="panel-text"></div>
@@ -19,13 +13,7 @@ const PANEL_HTML = `
   <div id="panel-dial2"  class="panel-text"></div>
 `;
 
-beforeEach(() => {
-  document.body.innerHTML = PANEL_HTML;
-});
-
-// ---------------------------------------------------------------------------
-// setPanelText
-// ---------------------------------------------------------------------------
+beforeEach(() => { document.body.innerHTML = PANEL_HTML; });
 
 describe('setPanelText', () => {
   test('sets text from msg.data.value', () => {
@@ -58,22 +46,17 @@ describe('setPanelText', () => {
     expect(document.getElementById('panel-delay').textContent).toBe('{"value":null}');
   });
 
-  test('does not throw when the panel element does not exist', () => {
+  test('does not throw when panel element does not exist', () => {
     expect(() => setPanelText('nonexistent', { data: { value: 'x' } })).not.toThrow();
   });
 
   test('all panel ids resolve to an element', () => {
-    const panels = ['engine', 'player', 'time', 'delay', 'dial1', 'dial2'];
-    panels.forEach(id => {
+    ['engine', 'player', 'time', 'delay', 'dial1', 'dial2'].forEach(id => {
       setPanelText(id, { data: { value: id } });
-      expect(document.getElementById(`panel-${id}`).textContent).toBe(id);
+      expect(document.getElementById('panel-' + id).textContent).toBe(id);
     });
   });
 });
-
-// ---------------------------------------------------------------------------
-// adjustPanels
-// ---------------------------------------------------------------------------
 
 describe('adjustPanels', () => {
   test('sets font-size to 70% of the element height', () => {
@@ -84,17 +67,15 @@ describe('adjustPanels', () => {
   });
 
   test('leaves font-size at 0px when panel height is 0 (not yet laid out)', () => {
-    // jsdom returns 0 for height by default
     adjustPanels();
-    const el = document.getElementById('panel-engine');
-    expect(el.style.fontSize).toBe('0px');
+    expect(document.getElementById('panel-engine').style.fontSize).toBe('0px');
   });
 
   test('applies the factor independently to each panel', () => {
     const heights = { engine: 80, time: 60, delay: 40 };
     ['engine', 'time', 'delay'].forEach(id => {
-      const el = document.getElementById(`panel-${id}`);
-      jest.spyOn(el, 'getBoundingClientRect').mockReturnValue({ height: heights[id] });
+      jest.spyOn(document.getElementById('panel-' + id), 'getBoundingClientRect')
+        .mockReturnValue({ height: heights[id] });
     });
     adjustPanels();
     expect(document.getElementById('panel-engine').style.fontSize).toBe('56px');

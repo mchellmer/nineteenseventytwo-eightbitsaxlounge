@@ -92,7 +92,7 @@ describe('NatsOverlayService.start()', () => {
     }));
   });
 
-  const allTails = ['engine', 'time', 'delay', 'dial1', 'dial2', 'player'];
+  const allTails = ['engine', 'time', 'delay', 'dial1', 'dial2', 'player', 'help'];
   test.each(allTails)('correctly extracts tail for overlay.%s', async (tail) => {
     const nc = makeNc([makeMsg(`overlay.${tail}`, { value: 'x' })]);
     nats.connect.mockResolvedValue(nc);

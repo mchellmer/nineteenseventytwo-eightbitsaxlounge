@@ -50,3 +50,11 @@ html,body{height:100%;margin:0;padding:0;background:transparent;overflow:hidden}
 #panel-time   { left:2.76%;  top:33%; width:13.00%; height:12.94%; }
 #panel-dial1  { left:2.76%;  top:58.69%; width:13.00%; height:12.77%; }
 #panel-dial2  { left:2.76%;  top:84%; width:13.00%; height:12.94%; }
+
+/* ── popup panel (TwitchConsole.json: [725,0]→[976,149] in 977×564) ─── */
+#panel-popup {
+  position:absolute;
+  left:74.21%; top:0%; width:25.69%; height:26.42%;
+  object-fit:contain;
+  display:none; /* shown by startPopupCycle / triggerPopup */
+}

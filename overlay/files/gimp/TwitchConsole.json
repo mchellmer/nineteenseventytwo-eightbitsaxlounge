@@ -44,6 +44,11 @@
                 "top-px": "340",
                 "left-px": "1476"
             }
+        },
+        {
+            "name": "popup",
+            "pixel-top-left": [725,0],
+            "pixel-bottom-right": [976,149]
         }
     ]
 }

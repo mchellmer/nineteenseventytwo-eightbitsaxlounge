@@ -33,7 +33,9 @@ authorization {
             "overlay.time",
             "overlay.dial1",
             "overlay.dial2",
-            "overlay.player"
+            "overlay.player",
+            "overlay.popup",
+            "overlay.help"
           ]
         subscribe: []
       }
