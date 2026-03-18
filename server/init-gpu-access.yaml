@@ -1,7 +1,8 @@
 ---
 # init-gpu-access.yaml — one-time SSH key bootstrap for the GPU node.
+# Mirrors the pattern in init-nodes.yaml but targets gpu_nodes.
 #
-# Run AFTER openssh-server is installed on the GPU node (the only manual step):
+# Prerequisites (the only manual step on a fresh Ubuntu desktop install):
 #   sudo apt install openssh-server && sudo systemctl enable --now ssh
 #
 # Then from 1972-console:
@@ -9,10 +10,10 @@
 #
 # Uses --ask-pass so Ansible authenticates with mchellmer's password,
 # generates the cluster SSH key (if missing), and installs it in authorized_keys.
-# After this, all subsequent Ansible runs use key auth (no password needed).
+# After this, all subsequent Ansible runs use key auth (password only needed for -K sudo).
 
-- name: Ensure cluster SSH key exists on localhost
-  hosts: localhost
+- name: Setup SSH keys for GPU node
+  hosts: localhost, gpu_nodes
   vars:
     ansible_user: mchellmer
     ansible_user_dir: "/home/mchellmer"
@@ -24,46 +25,40 @@
         name: "{{ item }}"
         state: absent
       loop: "{{ groups['gpu_nodes'] }}"
+      delegate_to: localhost
+      run_once: true
 
     - name: Remove stale known_hosts entries by IP
       ansible.builtin.known_hosts:
         name: "{{ hostvars[item]['ansible_host'] | default(item) }}"
         state: absent
       loop: "{{ groups['gpu_nodes'] }}"
+      delegate_to: localhost
+      run_once: true
 
     - name: Generate SSH key pair on localhost (no-op if already exists)
       openssh_keypair:
         path: "{{ ssh_key_path }}"
         force: false
-      register: ssh_key
+      delegate_to: localhost
+      run_once: true
+
+    - name: Copy SSH public key from localhost to GPU node
+      copy:
+        src: "{{ ssh_pub_key_path }}"
+        dest: "/tmp/id_rsa.pub"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0644'
 
 - name: Install SSH key on GPU node
   hosts: gpu_nodes
-  become: false
+  become: true
   vars:
     ansible_user: mchellmer
-    ansible_user_dir: "/home/mchellmer"
-    ssh_pub_key_path: "{{ ansible_user_dir }}/.ssh/id_rsa.pub"
-    # Required because we just cleared the known_hosts entry above
-    ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
   tasks:
-    - name: Install authorized key
+    - name: Install ssh key to node
       authorized_key:
         user: "{{ ansible_user }}"
         state: present
-        key: "{{ lookup('file', hostvars['localhost']['ssh_pub_key_path'] | default(ansible_user_dir + '/.ssh/id_rsa.pub')) }}"
-
-    - name: Ensure .ssh directory has correct ownership and permissions
-      ansible.builtin.file:
-        path: "{{ ansible_user_dir }}/.ssh"
-        state: directory
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-        mode: "0700"
-
-    - name: Ensure authorized_keys has correct ownership and permissions
-      ansible.builtin.file:
-        path: "{{ ansible_user_dir }}/.ssh/authorized_keys"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-        mode: "0600"
+        key: "{{ lookup('file', '/tmp/id_rsa.pub') }}"
