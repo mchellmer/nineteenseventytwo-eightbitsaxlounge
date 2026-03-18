@@ -133,15 +133,13 @@ init-gpu:
 		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
 		chmod 600 /tmp/.ansible_become_pass; \
 		export ANSIBLE_HOST_KEY_CHECKING=False; \
-		unset ANSIBLE_BECOME_EXE; \
-		ansible-playbook init-gpu-access.yaml --ask-pass --become-password-file /tmp/.ansible_become_pass; \
-		ansible-playbook init-gpu-node.yaml --become-password-file /tmp/.ansible_become_pass; \
+		ansible-playbook init-gpu-access.yaml --ask-pass --become-password-file /tmp/.ansible_become_pass -e ansible_become_exe=sudo; \
+		ansible-playbook init-gpu-node.yaml --become-password-file /tmp/.ansible_become_pass -e ansible_become_exe=sudo; \
 		rm -f /tmp/.ansible_become_pass; \
 	else \
 		export ANSIBLE_HOST_KEY_CHECKING=False; \
-		unset ANSIBLE_BECOME_EXE; \
-		ansible-playbook init-gpu-access.yaml --ask-pass -K; \
-		ansible-playbook init-gpu-node.yaml -K; \
+		ansible-playbook init-gpu-access.yaml --ask-pass -K -e ansible_become_exe=sudo; \
+		ansible-playbook init-gpu-node.yaml -K -e ansible_become_exe=sudo; \
 	fi
 
 init-pc:
