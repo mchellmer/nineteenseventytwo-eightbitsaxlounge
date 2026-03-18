@@ -39,7 +39,7 @@
 
 - name: Install SSH key on GPU node
   hosts: gpu_nodes
-  become: true
+  become: false
   vars:
     ansible_user: mchellmer
     ansible_user_dir: "/home/mchellmer"
