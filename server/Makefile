@@ -1,4 +1,4 @@
-.PHONY: deploy-kubernetes deploy-cni console-init init-ansible-vault init-cicd
+.PHONY: deploy-kubernetes deploy-cni console-init init-ansible-vault init-cicd init-gpu
 
 ansible-docker:
 	@if [ -n "$$SUDO_PASSWORD" ]; then \
@@ -125,6 +125,21 @@ init-nodes:
 	else \
 		export ANSIBLE_HOST_KEY_CHECKING=False; \
 		ansible-playbook init-nodes.yaml --ask-pass -K; \
+	fi
+
+init-gpu:
+	@echo "Bootstrapping GPU node SSH access, then running GPU node setup..."
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		export ANSIBLE_HOST_KEY_CHECKING=False; \
+		ansible-playbook init-gpu-access.yaml --ask-pass --become-password-file /tmp/.ansible_become_pass; \
+		ansible-playbook ~/nineteenseventytwo-composer/infra/ansible/playbooks/setup-gpu-node.yaml --become-password-file /tmp/.ansible_become_pass; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		export ANSIBLE_HOST_KEY_CHECKING=False; \
+		ansible-playbook init-gpu-access.yaml --ask-pass -K; \
+		ansible-playbook ~/nineteenseventytwo-composer/infra/ansible/playbooks/setup-gpu-node.yaml -K; \
 	fi
 
 init-pc:

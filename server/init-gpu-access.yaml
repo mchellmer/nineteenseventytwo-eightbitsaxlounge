@@ -1,0 +1,40 @@
+---
+# init-gpu-access.yaml — one-time SSH key bootstrap for the GPU node.
+#
+# Run AFTER openssh-server is installed on the GPU node (the only manual step):
+#   sudo apt install openssh-server && sudo systemctl enable --now ssh
+#
+# Then from 1972-console:
+#   make init-gpu
+#
+# Uses --ask-pass so Ansible authenticates with mchellmer's password,
+# generates the cluster SSH key (if missing), and installs it in authorized_keys.
+# After this, all subsequent Ansible runs use key auth (no password needed).
+
+- name: Ensure cluster SSH key exists on localhost
+  hosts: localhost
+  vars:
+    ansible_user: mchellmer
+    ansible_user_dir: "/home/mchellmer"
+    ssh_key_path: "{{ ansible_user_dir }}/.ssh/id_rsa"
+    ssh_pub_key_path: "{{ ssh_key_path }}.pub"
+  tasks:
+    - name: Generate SSH key pair on localhost (no-op if already exists)
+      openssh_keypair:
+        path: "{{ ssh_key_path }}"
+        force: false
+      register: ssh_key
+
+- name: Install SSH key on GPU node
+  hosts: gpu_nodes
+  become: true
+  vars:
+    ansible_user: mchellmer
+    ansible_user_dir: "/home/mchellmer"
+    ssh_pub_key_path: "{{ ansible_user_dir }}/.ssh/id_rsa.pub"
+  tasks:
+    - name: Install authorized key
+      authorized_key:
+        user: "{{ ansible_user }}"
+        state: present
+        key: "{{ lookup('file', hostvars['localhost']['ssh_pub_key_path'] | default(ansible_user_dir + '/.ssh/id_rsa.pub')) }}"
