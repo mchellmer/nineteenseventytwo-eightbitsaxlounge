@@ -44,9 +44,26 @@
     ansible_user: mchellmer
     ansible_user_dir: "/home/mchellmer"
     ssh_pub_key_path: "{{ ansible_user_dir }}/.ssh/id_rsa.pub"
+    # Required because we just cleared the known_hosts entry above
+    ansible_ssh_extra_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
   tasks:
     - name: Install authorized key
       authorized_key:
         user: "{{ ansible_user }}"
         state: present
         key: "{{ lookup('file', hostvars['localhost']['ssh_pub_key_path'] | default(ansible_user_dir + '/.ssh/id_rsa.pub')) }}"
+
+    - name: Ensure .ssh directory has correct ownership and permissions
+      ansible.builtin.file:
+        path: "{{ ansible_user_dir }}/.ssh"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0700"
+
+    - name: Ensure authorized_keys has correct ownership and permissions
+      ansible.builtin.file:
+        path: "{{ ansible_user_dir }}/.ssh/authorized_keys"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0600"
