@@ -19,6 +19,18 @@
     ssh_key_path: "{{ ansible_user_dir }}/.ssh/id_rsa"
     ssh_pub_key_path: "{{ ssh_key_path }}.pub"
   tasks:
+    - name: Remove stale known_hosts entries for GPU node (fresh OS install changes host keys)
+      ansible.builtin.known_hosts:
+        name: "{{ item }}"
+        state: absent
+      loop: "{{ groups['gpu_nodes'] }}"
+
+    - name: Remove stale known_hosts entries by IP
+      ansible.builtin.known_hosts:
+        name: "{{ hostvars[item]['ansible_host'] | default(item) }}"
+        state: absent
+      loop: "{{ groups['gpu_nodes'] }}"
+
     - name: Generate SSH key pair on localhost (no-op if already exists)
       openssh_keypair:
         path: "{{ ssh_key_path }}"
