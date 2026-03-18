@@ -105,7 +105,11 @@
 
     - name: Reboot if driver install requires it
       ansible.builtin.reboot:
-        reboot_timeout: 300
+        reboot_timeout: 600
+        connect_timeout: 10
+        pre_reboot_delay: 5
+        post_reboot_delay: 30
+        test_command: systemctl is-active sshd
       when: reboot_required.stat.exists
 
     # -------------------------------------------------------------------------
@@ -256,6 +260,57 @@
       community.general.ufw:
         state: enabled
         policy: deny
+
+    # -------------------------------------------------------------------------
+    # Tailscale — remote access while travelling
+    # Skipped if tailscale_auth_key is not provided.
+    # Pass via: make init-gpu TAILSCALE_AUTH_KEY=tskey-auth-...
+    # -------------------------------------------------------------------------
+    - name: Download Tailscale apt keyring
+      ansible.builtin.get_url:
+        url: https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg
+        dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+        mode: "0644"
+      when: tailscale_auth_key is defined
+
+    - name: Add Tailscale apt repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu noble main"
+        filename: tailscale
+        state: present
+      when: tailscale_auth_key is defined
+
+    - name: Install Tailscale
+      ansible.builtin.apt:
+        name: tailscale
+        state: present
+        update_cache: true
+      when: tailscale_auth_key is defined
+
+    - name: Enable and start tailscaled
+      ansible.builtin.systemd:
+        name: tailscaled
+        enabled: true
+        state: started
+      when: tailscale_auth_key is defined
+
+    - name: Connect to tailnet
+      ansible.builtin.command:
+        cmd: tailscale up --authkey={{ tailscale_auth_key }} --accept-routes
+      changed_when: true
+      when: tailscale_auth_key is defined
+
+    - name: Show Tailscale IP
+      ansible.builtin.command:
+        cmd: tailscale ip -4
+      register: tailscale_ip
+      changed_when: false
+      when: tailscale_auth_key is defined
+
+    - name: Print Tailscale IP
+      ansible.builtin.debug:
+        msg: "Tailscale IP: {{ tailscale_ip.stdout }}"
+      when: tailscale_auth_key is defined
 
   handlers:
     - name: Restart containerd

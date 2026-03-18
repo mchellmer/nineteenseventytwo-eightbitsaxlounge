@@ -1,4 +1,4 @@
-.PHONY: deploy-kubernetes deploy-cni console-init init-ansible-vault init-cicd init-gpu
+.PHONY: deploy-kubernetes deploy-cni console-init init-ansible-vault init-cicd init-gpu setup-tailscale
 
 ansible-docker:
 	@if [ -n "$$SUDO_PASSWORD" ]; then \
@@ -134,12 +134,27 @@ init-gpu:
 		chmod 600 /tmp/.ansible_become_pass; \
 		export ANSIBLE_HOST_KEY_CHECKING=False; \
 		ansible-playbook init-gpu-access.yaml --ask-pass --become-password-file /tmp/.ansible_become_pass -e ansible_become_exe=sudo; \
-		ansible-playbook init-gpu-node.yaml --become-password-file /tmp/.ansible_become_pass -e ansible_become_exe=sudo; \
+		ansible-playbook init-gpu-node.yaml --become-password-file /tmp/.ansible_become_pass -e ansible_become_exe=sudo $$([ -n "$$TAILSCALE_AUTH_KEY" ] && echo "-e tailscale_auth_key=$$TAILSCALE_AUTH_KEY"); \
 		rm -f /tmp/.ansible_become_pass; \
 	else \
 		export ANSIBLE_HOST_KEY_CHECKING=False; \
 		ansible-playbook init-gpu-access.yaml --ask-pass -K -e ansible_become_exe=sudo; \
-		ansible-playbook init-gpu-node.yaml -K -e ansible_become_exe=sudo; \
+		ansible-playbook init-gpu-node.yaml -K -e ansible_become_exe=sudo $$([ -n "$$TAILSCALE_AUTH_KEY" ] && echo "-e tailscale_auth_key=$$TAILSCALE_AUTH_KEY"); \
+	fi
+
+setup-tailscale:
+	@if [ -z "$$TAILSCALE_AUTH_KEY" ]; then \
+		echo "ERROR: TAILSCALE_AUTH_KEY is required."; \
+		echo "  Usage: make setup-tailscale TAILSCALE_AUTH_KEY=tskey-auth-..."; \
+		exit 1; \
+	fi
+	@if [ -n "$$SUDO_PASSWORD" ]; then \
+		echo "$$SUDO_PASSWORD" > /tmp/.ansible_become_pass; \
+		chmod 600 /tmp/.ansible_become_pass; \
+		ansible-playbook setup-tailscale.yaml --become-password-file /tmp/.ansible_become_pass -e ansible_become_exe=sudo -e tailscale_auth_key=$$TAILSCALE_AUTH_KEY; \
+		rm -f /tmp/.ansible_become_pass; \
+	else \
+		ansible-playbook setup-tailscale.yaml -K -e ansible_become_exe=sudo -e tailscale_auth_key=$$TAILSCALE_AUTH_KEY; \
 	fi
 
 init-pc:
